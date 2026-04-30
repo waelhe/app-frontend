@@ -1,6 +1,7 @@
 /**
  * Catch-all API proxy route.
  * Forwards requests from /api/v1/{path} to the Java backend at {BACKEND_URL}/api/v1/{path}.
+ * Includes retry logic for when the backend is temporarily unavailable.
  * Avoids CORS issues by proxying through the Next.js server.
  */
 
@@ -41,9 +42,6 @@ function buildForwardHeaders(
     forward.set(key, value);
   }
 
-  // If we have a body, let fetch set Content-Length automatically.
-  // For form-urlencoded requests, keep the original Content-Type.
-  // For JSON requests without an explicit Content-Type, set it.
   if (body && body.byteLength > 0) {
     if (contentType) {
       forward.set('Content-Type', contentType);
@@ -51,11 +49,9 @@ function buildForwardHeaders(
       forward.set('Content-Type', 'application/json');
     }
   } else {
-    // No body — remove Content-Type if present to avoid sending it on GET/DELETE
     forward.delete('Content-Type');
   }
 
-  // Ensure Accept header is set
   if (!forward.has('Accept')) {
     forward.set('Accept', 'application/json');
   }
@@ -65,6 +61,7 @@ function buildForwardHeaders(
 
 /**
  * Core proxy handler — forwards a request to the backend and returns the response.
+ * Includes retry logic with exponential backoff for transient failures.
  */
 async function proxyRequest(request: NextRequest): Promise<NextResponse> {
   // Extract the catch-all path segments
@@ -88,7 +85,6 @@ async function proxyRequest(request: NextRequest): Promise<NextResponse> {
       body = await request.arrayBuffer();
       if (body.byteLength === 0) body = null;
     } catch {
-      // No body or failed to read — proceed without body
       body = null;
     }
   }
@@ -100,47 +96,70 @@ async function proxyRequest(request: NextRequest): Promise<NextResponse> {
     contentType,
   );
 
-  try {
-    const backendResponse = await fetch(backendUrl.toString(), {
-      method: request.method,
-      headers: forwardHeaders,
-      body: body,
-    });
+  // Retry logic for GET requests (idempotent)
+  const maxRetries = request.method === 'GET' ? 2 : 0;
+  let lastError: Error | null = null;
 
-    // Build the response, preserving the status code
-    const responseHeaders = new Headers();
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    // Forward response headers, excluding hop-by-hop
-    for (const [key, value] of backendResponse.headers.entries()) {
-      const lower = key.toLowerCase();
-      if (HOP_BY_HOP_HEADERS.has(lower)) continue;
-      // Remove content-encoding since we're not proxying the compressed stream
-      if (lower === 'content-encoding') continue;
-      responseHeaders.set(key, value);
+      const backendResponse = await fetch(backendUrl.toString(), {
+        method: request.method,
+        headers: forwardHeaders,
+        body: body,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      // Build the response, preserving the status code
+      const responseHeaders = new Headers();
+
+      // Forward response headers, excluding hop-by-hop
+      for (const [key, value] of backendResponse.headers.entries()) {
+        const lower = key.toLowerCase();
+        if (HOP_BY_HOP_HEADERS.has(lower)) continue;
+        if (lower === 'content-encoding') continue;
+        responseHeaders.set(key, value);
+      }
+
+      const responseBody = await backendResponse.arrayBuffer();
+
+      return new NextResponse(responseBody, {
+        status: backendResponse.status,
+        statusText: backendResponse.statusText,
+        headers: responseHeaders,
+      });
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+
+      // Don't retry on abort (timeout) - just fail fast
+      if (lastError.name === 'AbortError') {
+        break;
+      }
+
+      // Wait before retry with exponential backoff
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
     }
-
-    const responseBody = await backendResponse.arrayBuffer();
-
-    return new NextResponse(responseBody, {
-      status: backendResponse.status,
-      statusText: backendResponse.statusText,
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    console.error('[API Proxy] Error forwarding request:', error);
-
-    const message = error instanceof Error ? error.message : 'Unknown error';
-
-    return NextResponse.json(
-      {
-        type: 'https://httpstatus.es/502',
-        title: 'Backend Unreachable',
-        status: 502,
-        detail: `Could not reach the backend at ${BACKEND_URL}. ${message}`,
-      },
-      { status: 502 },
-    );
   }
+
+  console.error('[API Proxy] Error forwarding request after retries:', lastError);
+
+  const message = lastError?.message ?? 'Unknown error';
+
+  return NextResponse.json(
+    {
+      type: 'https://httpstatus.es/502',
+      title: 'Backend Unreachable',
+      status: 502,
+      detail: `Could not reach the backend at ${BACKEND_URL}. ${message}`,
+    },
+    { status: 502 },
+  );
 }
 
 // ── HTTP Method Handlers ──────────────────────────────────────────

@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Store, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Store, AlertCircle, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { catalogService } from '@/lib/api';
+import { catalogService, ApiError } from '@/lib/api';
 import type { ListingSummary } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -142,7 +142,14 @@ export function InteractiveMarketSection({
         ? catalogService.byCategory(category, 0, 12)
         : catalogService.list(0, 12),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
+    retry: (failureCount, err) => {
+      // Don't retry on 401 (auth required) — these endpoints should be public
+      // but if they require auth, retrying won't help
+      if (err instanceof ApiError && err.status === 401) return false;
+      // Retry up to 2 times for other errors (backend might be starting up)
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
   const listings = data?.content ?? [];
@@ -153,6 +160,10 @@ export function InteractiveMarketSection({
       : (titleEn ?? (category ? categoryNames[category]?.en ?? category : 'Market'));
 
   const ArrowIcon = language === 'ar' ? ArrowLeft : ArrowRight;
+
+  // Determine error type for better messaging
+  const isBackendDown = error instanceof ApiError && (error.status === 502 || error.status === 0);
+  const isAuthError = error instanceof ApiError && error.status === 401;
 
   return (
     <section className="py-8 sm:py-10">
@@ -195,8 +206,44 @@ export function InteractiveMarketSection({
         {/* Loading State */}
         {isLoading && <LoadingSkeleton />}
 
-        {/* Error State */}
-        {isError && (
+        {/* Error State - Backend Down */}
+        {isError && isBackendDown && (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl">
+            <WifiOff className="w-12 h-12 text-amber-400 mx-auto mb-3" />
+            <p className="text-gray-600 mb-1 font-medium">
+              {language === 'ar'
+                ? 'الخادم غير متاح حالياً'
+                : 'Server is temporarily unavailable'}
+            </p>
+            <p className="text-gray-400 text-sm mb-3">
+              {language === 'ar'
+                ? 'يتم إعادة تشغيل الخادم، يرجى المحاولة مرة أخرى'
+                : 'The server is restarting, please try again'}
+            </p>
+            <Button variant="outline" onClick={() => refetch()} className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+            </Button>
+          </div>
+        )}
+
+        {/* Error State - Auth Required */}
+        {isError && isAuthError && (
+          <div className="text-center py-12 bg-gray-50 rounded-2xl">
+            <AlertCircle className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+            <p className="text-gray-600 mb-3">
+              {language === 'ar'
+                ? 'يجب تسجيل الدخول لعرض هذا المحتوى'
+                : 'Sign in to view this content'}
+            </p>
+            <Button variant="outline" onClick={() => refetch()}>
+              {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+            </Button>
+          </div>
+        )}
+
+        {/* Error State - Generic */}
+        {isError && !isBackendDown && !isAuthError && (
           <div className="text-center py-12 bg-gray-50 rounded-2xl">
             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
             <p className="text-gray-600 mb-3">
