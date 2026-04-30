@@ -110,6 +110,10 @@ const translations: Record<Language, Record<string, string>> = {
     'booking.confirmed': 'Confirmed',
     'booking.completed': 'Completed',
     'booking.cancelled': 'Cancelled',
+    'booking.listingId': 'Listing',
+    'booking.date': 'Date',
+    'booking.price': 'Price',
+    'booking.actions': 'Actions',
 
     // Footer
     'footer.about': 'About',
@@ -160,6 +164,8 @@ const translations: Record<Language, Record<string, string>> = {
     'messages.send': 'Send',
     'messages.typePlaceholder': 'Type a message...',
     'messages.noConversations': 'No conversations',
+    'messages.comingSoon': 'Coming Soon',
+    'messages.comingSoonDesc': 'Messaging features are being built. Stay tuned!',
 
     // Payments
     'payment.title': 'Payment',
@@ -175,6 +181,10 @@ const translations: Record<Language, Record<string, string>> = {
     'review.rating': 'Rating',
     'review.comment': 'Comment',
     'review.submit': 'Submit Review',
+    'review.noReviews': 'No reviews yet',
+    'review.averageRating': 'Average Rating',
+    'review.outOf': 'out of 5',
+    'review.totalReviews': 'review(s)',
 
     // Emergency
     'emergency.title': 'Emergency Services',
@@ -269,6 +279,10 @@ const translations: Record<Language, Record<string, string>> = {
     'booking.confirmed': 'مؤكد',
     'booking.completed': 'مكتمل',
     'booking.cancelled': 'ملغى',
+    'booking.listingId': 'الإعلان',
+    'booking.date': 'التاريخ',
+    'booking.price': 'السعر',
+    'booking.actions': 'إجراءات',
 
     // Footer
     'footer.about': 'عن المنصة',
@@ -319,6 +333,8 @@ const translations: Record<Language, Record<string, string>> = {
     'messages.send': 'إرسال',
     'messages.typePlaceholder': 'اكتب رسالة...',
     'messages.noConversations': 'لا توجد محادثات',
+    'messages.comingSoon': 'قريبًا',
+    'messages.comingSoonDesc': 'ميزات المراسلة قيد التطوير. ترقبوا!',
 
     // Payments
     'payment.title': 'الدفع',
@@ -334,6 +350,10 @@ const translations: Record<Language, Record<string, string>> = {
     'review.rating': 'التقييم',
     'review.comment': 'التعليق',
     'review.submit': 'إرسال التقييم',
+    'review.noReviews': 'لا توجد تقييمات بعد',
+    'review.averageRating': 'متوسط التقييم',
+    'review.outOf': 'من 5',
+    'review.totalReviews': 'تقييم',
 
     // Emergency
     'emergency.title': 'خدمات الطوارئ',

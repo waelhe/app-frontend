@@ -12,6 +12,8 @@ import { ListingDetail } from '@/components/system/ListingDetail';
 import { SearchView } from '@/components/system/SearchView';
 import { BookingFlow } from '@/components/system/BookingFlow';
 import { MessagingView } from '@/components/system/MessagingView';
+import { ProfileView } from '@/components/system/ProfileView';
+import { BookingsListView } from '@/components/system/BookingsListView';
 import { ProviderDashboard } from '@/components/dashboard/ProviderDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { LoginDialog } from '@/components/auth/LoginDialog';
@@ -283,6 +285,10 @@ export function HomePage() {
         return <ProviderDashboard />;
       case 'create-listing':
         return <CreateListingForm />;
+      case 'profile':
+        return <ProfileView />;
+      case 'bookings-list':
+        return <BookingsListView />;
       default:
         return null;
     }

@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { setToken, identityService, ApiError } from '@/lib/api';
+import { useAuth as useAuthStore } from '@/store/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +30,7 @@ type UserRole = 'CONSUMER' | 'PROVIDER';
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const { t, isRTL } = useLanguage();
   const { signIn } = useAuth();
+  const { login: zustandLogin } = useAuthStore();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
@@ -44,6 +47,100 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     setRole('CONSUMER');
     setError('');
     setIsLoading(false);
+  };
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        let detail = isRTL ? 'بيانات الدخول غير صحيحة' : 'Invalid email or password';
+        try {
+          const problem = await res.json();
+          if (problem?.detail) detail = problem.detail;
+        } catch { /* non-JSON error */ }
+        throw new Error(detail);
+      }
+
+      const data = await res.json();
+      setToken(data.accessToken);
+
+      const profile = await identityService.me();
+      zustandLogin({
+        id: profile.id,
+        displayName: profile.displayName,
+        email: profile.email,
+        role: profile.role ?? 'CONSUMER',
+      });
+
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during sign in'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName, email, password, role }),
+      });
+
+      if (!res.ok) {
+        let detail = isRTL ? 'حدث خطأ أثناء إنشاء الحساب' : 'An error occurred during registration';
+        try {
+          const problem = await res.json();
+          if (problem?.detail) detail = problem.detail;
+          if (res.status === 409 || (problem?.detail && problem.detail.toLowerCase().includes('email')))
+            detail = isRTL ? 'البريد الإلكتروني مستخدم بالفعل' : 'Email is already taken';
+        } catch { /* non-JSON error */ }
+        throw new Error(detail);
+      }
+
+      // Auto-login after successful registration
+      const loginRes = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!loginRes.ok) {
+        // Registration succeeded but auto-login failed — switch to login tab
+        setMode('login');
+        setError(isRTL ? 'تم إنشاء الحساب. يرجى تسجيل الدخول' : 'Account created. Please sign in.');
+        return;
+      }
+
+      const data = await loginRes.json();
+      setToken(data.accessToken);
+
+      const profile = await identityService.me();
+      zustandLogin({
+        id: profile.id,
+        displayName: profile.displayName,
+        email: profile.email,
+        role: profile.role ?? 'CONSUMER',
+      });
+
+      onOpenChange(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ أثناء إنشاء الحساب' : 'An error occurred during registration'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,17 +169,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      // Use the OAuth2 PKCE sign-in flow
-      await signIn();
-    } catch {
-      setError(
-        isRTL ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during sign in'
-      );
-    } finally {
-      setIsLoading(false);
+    if (mode === 'login') {
+      await handleLogin();
+    } else {
+      await handleRegister();
     }
   };
 
@@ -192,6 +282,25 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                   'Sign In'
                 )}
               </Button>
+
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-400">
+                    {isRTL ? 'أو' : 'or'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => signIn()}
+                className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                {isRTL ? 'تسجيل الدخول عبر SSO' : 'Sign in with SSO'}
+              </button>
             </form>
           </TabsContent>
 
@@ -321,6 +430,25 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                   'Create Account'
                 )}
               </Button>
+
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-400">
+                    {isRTL ? 'أو' : 'or'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => signIn()}
+                className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                {isRTL ? 'تسجيل الدخول عبر SSO' : 'Sign in with SSO'}
+              </button>
             </form>
           </TabsContent>
         </Tabs>

@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/store/use-auth'
 import { useLanguage } from '@/store/use-language'
-import { useNavigationStore } from '@/store/use-navigation'
+import { useNavigationStore as useUiNavStore } from '@/store/use-navigation'
+import { useNavigationStore } from '@/stores/navigationStore'
 import { useRegion, REGIONS } from '@/store/use-region'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +33,8 @@ import {
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const { t, language, setLanguage } = useLanguage()
-  const { isSearchOpen, setSearchOpen } = useNavigationStore()
+  const { isSearchOpen, setSearchOpen } = useUiNavStore()
+  const { navigate } = useNavigationStore()
   const { selectedRegion, setRegion } = useRegion()
 
   const [scrolled, setScrolled] = useState(false)
@@ -62,8 +64,9 @@ export function Header() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // Search functionality will be connected later
-    console.log('Search:', searchQuery, 'Region:', selectedRegion.id)
+    if (searchQuery.trim()) {
+      navigate('search', { q: searchQuery.trim() })
+    }
   }
 
   const userInitials = user?.displayName
