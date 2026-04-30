@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users & Auth ─────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  displayName  String?
+  phone        String?
+  image        String?
+  role         String   @default("CONSUMER") // CONSUMER | PROVIDER | ADMIN
+  password     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listings     Listing[]
+  consumerBookings Booking[]  @relation("ConsumerBookings")
+  providerBookings Booking[]  @relation("ProviderBookings")
+  reviews      Review[]      @relation("UserReviews")
+  sentMessages Message[]       @relation("SentMessages")
+  conversations Conversation[]  @relation("UserConversations")
+}
+
+// ── Listings / Catalog ───────────────────────────────────────────
+
+model Listing {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // real-estate | electronics | furniture | cars | jobs | services | other
+  price       Float    @default(0)
+  currency    String   @default("SYP")
+  status      String   @default("DRAFT") // DRAFT | ACTIVE | PAUSED | ARCHIVED
+  images      String   @default("[]") // JSON array of image URLs
+  location    String?
+  providerId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  provider    User      @relation(fields: [providerId], references: [id])
+  bookings    Booking[]
+  reviews     Review[]
+}
+
+// ── Bookings ─────────────────────────────────────────────────────
+
+model Booking {
+  id          String   @id @default(cuid())
+  listingId   String
+  consumerId  String
+  providerId  String
+  status      String   @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED
+  notes       String?
+  priceCents  Int      @default(0)
+  currency    String   @default("SYP")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listing     Listing     @relation(fields: [listingId], references: [id])
+  consumer    User        @relation("ConsumerBookings", fields: [consumerId], references: [id])
+  provider    User        @relation("ProviderBookings", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment     Payment?
+  review      Review?
+  conversation Conversation?
+}
+
+// ── Payments ─────────────────────────────────────────────────────
+
+model Payment {
+  id            String   @id @default(cuid())
+  bookingId    String   @unique
+  amountCents  Int
+  currency     String   @default("SYP")
+  status       String   @default("PENDING") // PENDING | PROCESSING | SUCCEEDED | FAILED | REFUNDED
+  externalId   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  booking      Booking  @relation(fields: [bookingId], references: [id])
+}
+
+// ── Reviews ──────────────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  listingId   String?
+  reviewerId  String
+  rating      Int      // 1-5
+  comment     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  listing     Listing?  @relation(fields: [listingId], references: [id])
+  reviewer    User      @relation("UserReviews", fields: [reviewerId], references: [id])
+}
+
+// ── Messaging ────────────────────────────────────────────────────
+
+model Conversation {
+  id          String   @id @default(cuid())
+  bookingId   String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  messages    Message[]
+  participants User[]   @relation("UserConversations")
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+// ── Local Directory ──────────────────────────────────────────────
+
+model DirectoryItem {
+  id          String   @id @default(cuid())
+  nameAr      String
+  nameEn      String
+  category    String   // restaurants | cafes | doctors | pharmacies | etc.
+  group       String   // food | health | beauty | transport | education | business | public
+  phone       String?
+  address     String?
+  descriptionAr String?
+  descriptionEn String?
+  image       String?
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  isActive    Boolean  @default(true)
+  isEmergency Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Emergency Contacts ───────────────────────────────────────────
+
+model EmergencyContact {
+  id          String   @id @default(cuid())
+  nameAr      String
+  nameEn      String
+  phone       String
+  category    String   // police | fire | medical | utility
+  is24Hours   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Community ────────────────────────────────────────────────────
+
+model CommunityPost {
+  id          String   @id @default(cuid())
+  titleAr     String
+  titleEn     String
+  contentAr   String?
+  contentEn   String?
+  image       String?
+  type        String   @default("news") // news | event | charity | announcement
+  isPinned    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
