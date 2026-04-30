@@ -30,6 +30,7 @@ export interface UserResponse {
   id: string;
   email: string;
   displayName: string;
+  role?: UserRole;
   createdAt: string;
   updatedAt: string;
 }

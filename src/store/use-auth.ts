@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { UserRole } from '@/lib/types'
 
 export interface User {
   id: string
-  name: string
+  displayName: string
   email: string
   image?: string
-  role: 'user' | 'provider' | 'admin'
+  role: UserRole
   phone?: string
 }
 

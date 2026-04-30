@@ -14,6 +14,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { catalogService } from '@/lib/api';
 import type { ProviderListingSummary } from '@/lib/types';
@@ -56,6 +57,7 @@ export function ProviderDashboard() {
   const { t, isRTL } = useLanguage();
   const { navigate } = useNavigationStore();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // ── Fetch Provider Listings ──────────────────────────────────
   const {
@@ -63,8 +65,9 @@ export function ProviderDashboard() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['provider-listings'],
-    queryFn: () => catalogService.myListings(),
+    queryKey: ['provider-listings', user?.id],
+    queryFn: () => catalogService.byProvider(user!.id),
+    enabled: !!user?.id,
   });
 
   const listings: ProviderListingSummary[] = listingsData?.content ?? [];

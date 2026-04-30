@@ -67,6 +67,7 @@ function CreateListingForm() {
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const categories = [
     { value: 'real-estate', labelAr: 'عقارات', labelEn: 'Real Estate' },
@@ -77,14 +78,27 @@ function CreateListingForm() {
     { value: 'furniture', labelAr: 'أثاث', labelEn: 'Furniture' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     setIsSubmitting(true);
-    // Simulate submission - in production this would call the API
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    try {
+      const { catalogService } = await import('@/lib/api');
+      await catalogService.create({
+        title,
+        description: description || undefined,
+        category,
+        priceCents: Math.round(parseFloat(price) * 100),
+      });
       goBack();
-    }, 1500);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : t('حدث خطأ أثناء النشر', 'Failed to publish listing')
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -171,12 +185,18 @@ function CreateListingForm() {
                   required
                 />
                 <span className="absolute top-1/2 -translate-y-1/2 end-3 text-sm text-gray-400">
-                  {t('ل.س', 'SYP')}
+                  {t('ر.س', 'SAR')}
                 </span>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {submitError && (
+          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+            {submitError}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <Button
@@ -259,7 +279,7 @@ export function HomePage() {
       case 'conversation':
         return <MessagingView />;
       case 'dashboard':
-        if (user?.role === 'admin') return <AdminDashboard />;
+        if (user?.role === 'ADMIN') return <AdminDashboard />;
         return <ProviderDashboard />;
       case 'create-listing':
         return <CreateListingForm />;
@@ -498,7 +518,7 @@ export function HomePage() {
             </Button>
 
             {/* Dashboard Button - for provider/admin */}
-            {isAuthenticated && user && (user.role === 'provider' || user.role === 'admin') && (
+            {isAuthenticated && user && (user.role === 'PROVIDER' || user.role === 'ADMIN') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -517,7 +537,7 @@ export function HomePage() {
             )}
 
             {/* Create Listing Button - for provider/admin */}
-            {isAuthenticated && user && (user.role === 'provider' || user.role === 'admin') && (
+            {isAuthenticated && user && (user.role === 'PROVIDER' || user.role === 'ADMIN') && (
               <Button
                 size="sm"
                 className="gap-2 bg-red-500 text-white hover:bg-red-600 ms-auto"

@@ -57,7 +57,7 @@ export function BottomNav() {
       labelAr: 'بحث',
       labelEn: 'Search',
     },
-    ...(isAuthenticated && user?.role === 'provider'
+    ...(isAuthenticated && user?.role === 'PROVIDER'
       ? [
           {
             id: 'add',

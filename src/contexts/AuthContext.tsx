@@ -2,6 +2,7 @@
  * AuthContext — OAuth2 PKCE authentication context.
  * Handles sign-in via Authorization Code Flow with PKCE,
  * token exchange, storage, and user identity.
+ * Connects to waelhe/app-java-v3 Spring Authorization Server.
  */
 
 'use client';
@@ -15,15 +16,20 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import type { UserResponse } from '@/lib/types';
+import type { UserResponse, UserRole } from '@/lib/types';
 import { getToken, setToken, removeToken } from '@/lib/api';
 
 // ── Configuration ─────────────────────────────────────────────────
 
-const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_BASE ?? 'http://localhost:8080/oauth2';
-const CLIENT_ID = process.env.NEXT_PUBLIC_AUTH_CLIENT_ID ?? 'marketplace-client';
+/** Backend base URL for OAuth2 authorize redirect (browser navigates directly) */
+const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8080';
+const AUTH_BASE = `${BACKEND_BASE}/oauth2`;
+const CLIENT_ID = process.env.NEXT_PUBLIC_AUTH_CLIENT_ID ?? 'marketplace-web-client';
 const REDIRECT_URI = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URI ??
   (typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '');
+
+/** Token exchange uses our Next.js proxy to avoid CORS */
+const TOKEN_PROXY_ENDPOINT = '/api/auth/token';
 
 // ── PKCE Helpers ──────────────────────────────────────────────────
 
@@ -68,6 +74,7 @@ interface JwtPayload {
   email?: string;
   name?: string;
   preferred_username?: string;
+  roles?: string[];
   exp?: number;
   iat?: number;
   [key: string]: unknown;
@@ -83,6 +90,17 @@ function decodeJwt(token: string): JwtPayload | null {
   } catch {
     return null;
   }
+}
+
+/** Extract the primary role from JWT claims */
+function extractRole(payload: JwtPayload): UserRole {
+  const roles = payload.roles;
+  if (Array.isArray(roles)) {
+    if (roles.includes('ADMIN')) return 'ADMIN';
+    if (roles.includes('PROVIDER')) return 'PROVIDER';
+    if (roles.includes('CONSUMER')) return 'CONSUMER';
+  }
+  return 'CONSUMER';
 }
 
 // ── PKCE Storage ──────────────────────────────────────────────────
@@ -106,9 +124,6 @@ function clearPKCEVerifier(): void {
 
 // ── Auth Code Exchange ────────────────────────────────────────────
 
-const TOKEN_ENDPOINT = process.env.NEXT_PUBLIC_AUTH_TOKEN_ENDPOINT ??
-  'http://localhost:8080/oauth2/token';
-
 export async function exchangeAuthCode(code: string): Promise<string> {
   const verifier = loadPKCEVerifier();
   if (!verifier) {
@@ -123,7 +138,8 @@ export async function exchangeAuthCode(code: string): Promise<string> {
     code_verifier: verifier,
   });
 
-  const response = await fetch(TOKEN_ENDPOINT, {
+  // Use our Next.js proxy route to avoid CORS issues
+  const response = await fetch(TOKEN_PROXY_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -154,15 +170,16 @@ export async function exchangeAuthCode(code: string): Promise<string> {
 function initializeSession(): {
   token: string | null;
   user: UserResponse | null;
+  role: UserRole;
   needsFetch: boolean;
 } {
   if (typeof window === 'undefined') {
-    return { token: null, user: null, needsFetch: false };
+    return { token: null, user: null, role: 'CONSUMER', needsFetch: false };
   }
 
   const token = getToken();
   if (!token) {
-    return { token: null, user: null, needsFetch: false };
+    return { token: null, user: null, role: 'CONSUMER', needsFetch: false };
   }
 
   const payload = decodeJwt(token);
@@ -170,21 +187,23 @@ function initializeSession(): {
   // Check if token is expired
   if (payload?.exp && payload.exp * 1000 < Date.now()) {
     removeToken();
-    return { token: null, user: null, needsFetch: false };
+    return { token: null, user: null, role: 'CONSUMER', needsFetch: false };
   }
 
   // Build a user from the JWT claims
+  const role = payload ? extractRole(payload) : 'CONSUMER';
   const user: UserResponse | null = payload
     ? {
         id: payload.sub ?? '',
         email: payload.email ?? '',
         displayName: payload.name ?? payload.preferred_username ?? '',
+        role,
         createdAt: payload.iat ? new Date(payload.iat * 1000).toISOString() : '',
         updatedAt: payload.iat ? new Date(payload.iat * 1000).toISOString() : '',
       }
     : null;
 
-  return { token, user, needsFetch: true };
+  return { token, user, role, needsFetch: true };
 }
 
 // ── Context Types ─────────────────────────────────────────────────
@@ -194,6 +213,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   accessToken: string | null;
+  role: UserRole;
   signIn: () => Promise<void>;
   signOut: () => void;
 }
@@ -207,6 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserResponse | null>(session.user);
   const [isLoading, setIsLoading] = useState(session.needsFetch);
   const [accessToken, setAccessToken] = useState<string | null>(session.token);
+  const [role, setRole] = useState<UserRole>(session.role);
 
   // Use ref to track if we've already fetched profile for this token
   const fetchedForToken = useRef<string | null>(null);
@@ -217,9 +238,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (fetchedForToken.current === session.token) return;
     fetchedForToken.current = session.token;
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8080';
-
-    fetch(`${BACKEND_URL}/api/v1/identity/me`, {
+    // Use our Next.js proxy route
+    fetch('/api/v1/users/me', {
       headers: {
         Authorization: `Bearer ${session.token}`,
         Accept: 'application/json',
@@ -231,10 +251,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         removeToken();
         setAccessToken(null);
         setUser(null);
+        setRole('CONSUMER');
         return null;
       })
       .then((profile) => {
-        if (profile) setUser(profile);
+        if (profile) {
+          setUser(profile);
+          if (profile.role) setRole(profile.role);
+        }
       })
       .catch(() => {
         // Network error — keep the JWT-based user, will retry later
@@ -257,6 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       scope: 'openid profile email',
     });
 
+    // Browser navigates directly to backend's OAuth2 authorize endpoint
     const authUrl = `${AUTH_BASE}/authorize?${params.toString()}`;
     window.location.href = authUrl;
   }, []);
@@ -265,8 +290,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     removeToken();
     setAccessToken(null);
     setUser(null);
+    setRole('CONSUMER');
     fetchedForToken.current = null;
-    // Optionally redirect to backend logout endpoint
+    // Redirect to backend's logout endpoint
     const logoutUrl = `${AUTH_BASE}/logout?client_id=${CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`;
     window.location.href = logoutUrl;
   }, []);
@@ -279,10 +305,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       isAuthenticated,
       accessToken,
+      role,
       signIn,
       signOut,
     }),
-    [user, isLoading, isAuthenticated, accessToken, signIn, signOut],
+    [user, isLoading, isAuthenticated, accessToken, role, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

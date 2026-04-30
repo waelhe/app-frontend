@@ -66,8 +66,8 @@ export function Header() {
     console.log('Search:', searchQuery, 'Region:', selectedRegion.id)
   }
 
-  const userInitials = user?.name
-    ? user.name
+  const userInitials = user?.displayName
+    ? user.displayName
         .split(' ')
         .map((n) => n[0])
         .join('')
@@ -166,13 +166,13 @@ export function Header() {
                     className="flex items-center gap-2 px-2"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.image} alt={user.name} />
+                      <AvatarImage src={user.image} alt={user.displayName} />
                       <AvatarFallback className="bg-red-100 text-xs text-red-600">
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
                     <span className="max-w-[100px] truncate text-sm font-medium">
-                      {user.name}
+                      {user.displayName}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -254,7 +254,7 @@ export function Header() {
             {isAuthenticated && user ? (
               <Button variant="ghost" size="icon" className="h-9 w-9">
                 <Avatar className="h-7 w-7">
-                  <AvatarImage src={user.image} alt={user.name} />
+                  <AvatarImage src={user.image} alt={user.displayName} />
                   <AvatarFallback className="bg-red-100 text-[10px] text-red-600">
                     {userInitials}
                   </AvatarFallback>
@@ -351,14 +351,14 @@ export function Header() {
                 <>
                   <div className="flex items-center gap-3 px-2 pb-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.image} alt={user.name} />
+                      <AvatarImage src={user.image} alt={user.displayName} />
                       <AvatarFallback className="bg-red-100 text-sm text-red-600">
                         {userInitials}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {user.name}
+                        {user.displayName}
                       </p>
                       <p className="text-xs text-gray-500">{user.email}</p>
                     </div>

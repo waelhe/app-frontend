@@ -1,7 +1,7 @@
 /**
  * API Client for the Marketplace backend.
- * Communicates with the Spring Boot 4.0.6 REST API.
- * Uses BACKEND_URL env var defaulting to http://localhost:8080.
+ * Communicates with the waelhe/app-java-v3 Spring Boot REST API.
+ * Uses relative paths proxied through Next.js API routes.
  */
 
 import type {
@@ -35,7 +35,8 @@ import type {
 
 // ── Configuration ─────────────────────────────────────────────────
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8080';
+/** Relative path — requests are proxied through Next.js API routes */
+const BACKEND_URL = '';
 
 // ── Token Management ──────────────────────────────────────────────
 
@@ -133,79 +134,74 @@ export async function checkBackendHealth(): Promise<{ status: string }> {
   return apiFetch<{ status: string }>('/actuator/health');
 }
 
-// ── Catalog Service ───────────────────────────────────────────────
+// ── Listings Service ──────────────────────────────────────────────
 
 export const catalogService = {
-  /** List all active listings (public) */
+  /** List all active listings (public, paginated) */
   list(page = 0, size = 20): Promise<PagedResponse<ListingSummary>> {
     const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/catalog/listings${qs}`);
+    return apiFetch(`/api/v1/listings${qs}`);
   },
 
-  /** Get listings by category */
+  /** Get listings by category (paginated) */
   byCategory(category: string, page = 0, size = 20): Promise<PagedResponse<ListingSummary>> {
     const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/catalog/listings/category/${encodeURIComponent(category)}${qs}`);
+    return apiFetch(`/api/v1/listings/category/${encodeURIComponent(category)}${qs}`);
+  },
+
+  /** Get listings by provider ID (paginated) */
+  byProvider(providerId: string, page = 0, size = 20): Promise<PagedResponse<ProviderListingSummary>> {
+    const qs = buildQueryString({ page, size });
+    return apiFetch(`/api/v1/listings/provider/${encodeURIComponent(providerId)}${qs}`);
   },
 
   /** Get a single listing by ID */
   byId(id: string): Promise<ListingResponse> {
-    return apiFetch(`/api/v1/catalog/listings/${encodeURIComponent(id)}`);
+    return apiFetch(`/api/v1/listings/${encodeURIComponent(id)}`);
   },
 
-  /** Get provider's own listings */
-  myListings(page = 0, size = 20): Promise<PagedResponse<ProviderListingSummary>> {
-    const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/catalog/provider/listings${qs}`);
-  },
-
-  /** Create a new listing (Provider) */
+  /** Create a new listing (PROVIDER role) */
   create(data: CreateListingRequest): Promise<ListingResponse> {
-    return apiFetch('/api/v1/catalog/listings', {
+    return apiFetch('/api/v1/listings', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  /** Update a listing (Provider) */
+  /** Update a listing (PROVIDER role) */
   update(id: string, data: UpdateListingRequest): Promise<ListingResponse> {
-    return apiFetch(`/api/v1/catalog/listings/${encodeURIComponent(id)}`, {
+    return apiFetch(`/api/v1/listings/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
-  /** Activate a listing */
+  /** Activate a listing (POST) */
   activate(id: string): Promise<ListingResponse> {
-    return apiFetch(`/api/v1/catalog/listings/${encodeURIComponent(id)}/activate`, {
-      method: 'PATCH',
+    return apiFetch(`/api/v1/listings/${encodeURIComponent(id)}/activate`, {
+      method: 'POST',
     });
   },
 
-  /** Pause a listing */
+  /** Pause a listing (POST) */
   pause(id: string): Promise<ListingResponse> {
-    return apiFetch(`/api/v1/catalog/listings/${encodeURIComponent(id)}/pause`, {
-      method: 'PATCH',
+    return apiFetch(`/api/v1/listings/${encodeURIComponent(id)}/pause`, {
+      method: 'POST',
     });
   },
 
-  /** Archive a listing */
+  /** Archive a listing (POST) */
   archive(id: string): Promise<ListingResponse> {
-    return apiFetch(`/api/v1/catalog/listings/${encodeURIComponent(id)}/archive`, {
-      method: 'PATCH',
+    return apiFetch(`/api/v1/listings/${encodeURIComponent(id)}/archive`, {
+      method: 'POST',
     });
-  },
-
-  /** Get all categories */
-  categories(): Promise<string[]> {
-    return apiFetch('/api/v1/catalog/categories');
   },
 };
 
 // ── Search Service ────────────────────────────────────────────────
 
 export const searchService = {
-  /** Full-text search */
+  /** Full-text search (paginated) */
   search(params: SearchParams = {}): Promise<PagedResponse<ListingSummary>> {
     const qs = buildQueryString({
       q: params.q,
@@ -215,23 +211,35 @@ export const searchService = {
     });
     return apiFetch(`/api/v1/search${qs}`);
   },
+
+  /** Search by category (paginated) */
+  byCategory(category: string, page = 0, size = 20): Promise<PagedResponse<ListingSummary>> {
+    const qs = buildQueryString({ page, size });
+    return apiFetch(`/api/v1/search/category/${encodeURIComponent(category)}${qs}`);
+  },
 };
 
 // ── Booking Service ───────────────────────────────────────────────
 
 export const bookingService = {
-  /** List bookings for current user */
-  list(page = 0, size = 20): Promise<PagedResponse<BookingSummary>> {
-    const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/bookings${qs}`);
-  },
-
   /** Get a booking by ID */
   byId(id: string): Promise<BookingResponse> {
     return apiFetch(`/api/v1/bookings/${encodeURIComponent(id)}`);
   },
 
-  /** Create a new booking (Consumer) */
+  /** Get bookings for a consumer (paginated) */
+  consumerBookings(consumerId: string, page = 0, size = 20): Promise<PagedResponse<BookingSummary>> {
+    const qs = buildQueryString({ page, size });
+    return apiFetch(`/api/v1/bookings/consumer/${encodeURIComponent(consumerId)}${qs}`);
+  },
+
+  /** Get bookings for a provider (paginated) */
+  providerBookings(providerId: string, page = 0, size = 20): Promise<PagedResponse<BookingSummary>> {
+    const qs = buildQueryString({ page, size });
+    return apiFetch(`/api/v1/bookings/provider/${encodeURIComponent(providerId)}${qs}`);
+  },
+
+  /** Create a new booking (CONSUMER role) */
   create(data: CreateBookingRequest): Promise<BookingResponse> {
     return apiFetch('/api/v1/bookings', {
       method: 'POST',
@@ -239,49 +247,49 @@ export const bookingService = {
     });
   },
 
-  /** Confirm a booking (Provider) */
+  /** Confirm a booking (PROVIDER/ADMIN) (POST) */
   confirm(id: string): Promise<BookingResponse> {
     return apiFetch(`/api/v1/bookings/${encodeURIComponent(id)}/confirm`, {
-      method: 'PATCH',
+      method: 'POST',
     });
   },
 
-  /** Complete a booking (Provider) */
+  /** Complete a booking (PROVIDER/ADMIN) (POST) */
   complete(id: string): Promise<BookingResponse> {
     return apiFetch(`/api/v1/bookings/${encodeURIComponent(id)}/complete`, {
-      method: 'PATCH',
+      method: 'POST',
     });
   },
 
-  /** Cancel a booking */
+  /** Cancel a booking (POST) */
   cancel(id: string): Promise<BookingResponse> {
     return apiFetch(`/api/v1/bookings/${encodeURIComponent(id)}/cancel`, {
-      method: 'PATCH',
+      method: 'POST',
     });
-  },
-
-  /** Get bookings for a specific provider */
-  providerBookings(providerId: string, page = 0, size = 20): Promise<PagedResponse<BookingSummary>> {
-    const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/bookings/provider/${encodeURIComponent(providerId)}${qs}`);
   },
 };
 
 // ── Reviews Service ───────────────────────────────────────────────
 
 export const reviewsService = {
-  /** Get reviews for a listing */
-  byListing(listingId: string, page = 0, size = 20): Promise<PagedResponse<ReviewResponse>> {
+  /** Get a review by ID */
+  byId(id: string): Promise<ReviewResponse> {
+    return apiFetch(`/api/v1/reviews/${encodeURIComponent(id)}`);
+  },
+
+  /** Get reviews for a provider (paginated) */
+  byProvider(providerId: string, page = 0, size = 20): Promise<PagedResponse<ReviewResponse>> {
     const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/reviews/listing/${encodeURIComponent(listingId)}${qs}`);
+    return apiFetch(`/api/v1/reviews/provider/${encodeURIComponent(providerId)}${qs}`);
   },
 
-  /** Get reviews by booking */
-  byBooking(bookingId: string): Promise<ReviewResponse> {
-    return apiFetch(`/api/v1/reviews/booking/${encodeURIComponent(bookingId)}`);
+  /** Get reviews by a reviewer (paginated) */
+  byReviewer(reviewerId: string, page = 0, size = 20): Promise<PagedResponse<ReviewResponse>> {
+    const qs = buildQueryString({ page, size });
+    return apiFetch(`/api/v1/reviews/reviewer/${encodeURIComponent(reviewerId)}${qs}`);
   },
 
-  /** Create a review (Consumer) */
+  /** Create a review (CONSUMER role) */
   create(data: CreateReviewRequest): Promise<ReviewResponse> {
     return apiFetch('/api/v1/reviews', {
       method: 'POST',
@@ -289,18 +297,11 @@ export const reviewsService = {
     });
   },
 
-  /** Update a review */
+  /** Update a review (CONSUMER role) */
   update(id: string, data: UpdateReviewRequest): Promise<ReviewResponse> {
     return apiFetch(`/api/v1/reviews/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    });
-  },
-
-  /** Delete a review */
-  delete(id: string): Promise<void> {
-    return apiFetch(`/api/v1/reviews/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
     });
   },
 };
@@ -308,21 +309,20 @@ export const reviewsService = {
 // ── Messaging Service ─────────────────────────────────────────────
 
 export const messagingService = {
-  /** List conversations for current user */
-  conversations(page = 0, size = 20): Promise<PagedResponse<ConversationResponse>> {
-    const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/messages/conversations${qs}`);
-  },
-
   /** Get a conversation by ID */
   conversationById(id: string): Promise<ConversationResponse> {
     return apiFetch(`/api/v1/messages/conversations/${encodeURIComponent(id)}`);
   },
 
-  /** Get messages in a conversation */
+  /** Get messages in a conversation (paginated) */
   messages(conversationId: string, page = 0, size = 50): Promise<PagedResponse<MessageResponse>> {
     const qs = buildQueryString({ page, size });
     return apiFetch(`/api/v1/messages/conversations/${encodeURIComponent(conversationId)}/messages${qs}`);
+  },
+
+  /** Get unread count for a conversation */
+  unreadCount(conversationId: string): Promise<UnreadCountResponse> {
+    return apiFetch(`/api/v1/messages/conversations/${encodeURIComponent(conversationId)}/unread`);
   },
 
   /** Create a conversation */
@@ -341,23 +341,23 @@ export const messagingService = {
     });
   },
 
-  /** Mark messages as read */
+  /** Mark messages as read (POST) */
   markRead(conversationId: string): Promise<void> {
     return apiFetch(`/api/v1/messages/conversations/${encodeURIComponent(conversationId)}/read`, {
-      method: 'PATCH',
+      method: 'POST',
     });
-  },
-
-  /** Get unread count */
-  unreadCount(): Promise<UnreadCountResponse> {
-    return apiFetch('/api/v1/messages/unread-count');
   },
 };
 
 // ── Payments Service ──────────────────────────────────────────────
 
 export const paymentsService = {
-  /** Create a payment intent */
+  /** Get a payment intent by ID */
+  getIntent(intentId: string): Promise<PaymentIntentResponse> {
+    return apiFetch(`/api/v1/payments/intents/${encodeURIComponent(intentId)}`);
+  },
+
+  /** Create a payment intent (CONSUMER) */
   createIntent(data: CreateIntentRequest): Promise<PaymentIntentResponse> {
     return apiFetch('/api/v1/payments/intents', {
       method: 'POST',
@@ -365,7 +365,14 @@ export const paymentsService = {
     });
   },
 
-  /** Confirm a payment intent */
+  /** Process a payment intent (CONSUMER) */
+  processIntent(intentId: string): Promise<PaymentIntentResponse> {
+    return apiFetch(`/api/v1/payments/intents/${encodeURIComponent(intentId)}/process`, {
+      method: 'POST',
+    });
+  },
+
+  /** Confirm a payment intent with external ID (ADMIN) */
   confirmIntent(intentId: string, data: ConfirmIntentRequest = {}): Promise<PaymentIntentResponse> {
     return apiFetch(`/api/v1/payments/intents/${encodeURIComponent(intentId)}/confirm`, {
       method: 'POST',
@@ -373,20 +380,18 @@ export const paymentsService = {
     });
   },
 
-  /** Get a payment intent by ID */
-  getIntent(intentId: string): Promise<PaymentIntentResponse> {
-    return apiFetch(`/api/v1/payments/intents/${encodeURIComponent(intentId)}`);
+  /** Cancel a payment intent (CONSUMER) */
+  cancelIntent(intentId: string): Promise<PaymentIntentResponse> {
+    return apiFetch(`/api/v1/payments/intents/${encodeURIComponent(intentId)}/cancel`, {
+      method: 'POST',
+    });
   },
 
-  /** Get payment by booking */
-  byBooking(bookingId: string): Promise<PaymentResponse> {
-    return apiFetch(`/api/v1/payments/bookings/${encodeURIComponent(bookingId)}`);
-  },
-
-  /** List payment summaries for current user */
-  list(page = 0, size = 20): Promise<PagedResponse<PaymentSummary>> {
-    const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/payments${qs}`);
+  /** Refund a payment (ADMIN) */
+  refund(paymentId: string): Promise<PaymentResponse> {
+    return apiFetch(`/api/v1/payments/${encodeURIComponent(paymentId)}/refund`, {
+      method: 'POST',
+    });
   },
 };
 
@@ -395,52 +400,46 @@ export const paymentsService = {
 export const identityService = {
   /** Get current user profile */
   me(): Promise<UserResponse> {
-    return apiFetch('/api/v1/identity/me');
-  },
-
-  /** Get user summary */
-  summary(): Promise<UserSummary> {
-    return apiFetch('/api/v1/identity/summary');
-  },
-
-  /** Update display name */
-  updateDisplayName(displayName: string): Promise<UserResponse> {
-    return apiFetch('/api/v1/identity/display-name', {
-      method: 'PATCH',
-      body: JSON.stringify({ displayName }),
-    });
+    return apiFetch('/api/v1/users/me');
   },
 };
 
 // ── Admin Service ─────────────────────────────────────────────────
 
 export const adminService = {
-  /** List all users (Admin) */
+  /** List all users (ADMIN, paginated) */
   listUsers(page = 0, size = 20): Promise<PagedResponse<UserSummary>> {
     const qs = buildQueryString({ page, size });
     return apiFetch(`/api/v1/admin/users${qs}`);
   },
 
-  /** Get user by ID (Admin) */
-  userById(id: string): Promise<UserSummary> {
-    return apiFetch(`/api/v1/admin/users/${encodeURIComponent(id)}`);
-  },
-
-  /** List all bookings (Admin) */
-  listBookings(page = 0, size = 20): Promise<PagedResponse<BookingSummary>> {
-    const qs = buildQueryString({ page, size });
-    return apiFetch(`/api/v1/admin/bookings${qs}`);
-  },
-
-  /** List all listings (Admin) */
+  /** List all listings (ADMIN, paginated) */
   listListings(page = 0, size = 20): Promise<PagedResponse<ProviderListingSummary>> {
     const qs = buildQueryString({ page, size });
     return apiFetch(`/api/v1/admin/listings${qs}`);
   },
 
-  /** List all payments (Admin) */
+  /** Archive any listing (ADMIN) */
+  archiveListing(id: string): Promise<ListingResponse> {
+    return apiFetch(`/api/v1/admin/listings/${encodeURIComponent(id)}/archive`, {
+      method: 'POST',
+    });
+  },
+
+  /** List bookings filterable by status (ADMIN, paginated) */
+  listBookings(page = 0, size = 20, status?: string): Promise<PagedResponse<BookingSummary>> {
+    const qs = buildQueryString({ page, size, status });
+    return apiFetch(`/api/v1/admin/bookings${qs}`);
+  },
+
+  /** List all payments (ADMIN, paginated) */
   listPayments(page = 0, size = 20): Promise<PagedResponse<PaymentSummary>> {
     const qs = buildQueryString({ page, size });
     return apiFetch(`/api/v1/admin/payments${qs}`);
+  },
+
+  /** Get a payment by ID (ADMIN) */
+  getPayment(id: string): Promise<PaymentResponse> {
+    return apiFetch(`/api/v1/admin/payments/${encodeURIComponent(id)}`);
   },
 };
