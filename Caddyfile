@@ -1,23 +1,53 @@
 :81 {
-	@transform_port_query {
-		query XTransformPort=*
-	}
+        @transform_port_query {
+                query XTransformPort=*
+        }
 
-	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+        handle @transform_port_query {
+                reverse_proxy localhost:{query.XTransformPort} {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
 
-	handle {
-		reverse_proxy localhost:3000 {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+        # API v1 proxy - forward to Java backend on Railway
+        handle /api/v1/* {
+                reverse_proxy https://app-java-v3-production.up.railway.app {
+                        header_up Host app-java-v3-production.up.railway.app
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto https
+                        header_up X-Real-IP {remote_host}
+                        # Remove Origin header to prevent backend from redirecting to login
+                        header_up Origin ""
+                        header_up Referer ""
+                        header_down Access-Control-Allow-Origin "*"
+                        header_down Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                        header_down Access-Control-Allow-Headers "Authorization, Content-Type, Accept"
+                }
+        }
+
+        # Health check proxy
+        handle /api/auth/health {
+                reverse_proxy https://app-java-v3-production.up.railway.app {
+                        header_up Host app-java-v3-production.up.railway.app
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto https
+                        header_up X-Real-IP {remote_host}
+                        header_up Origin ""
+                        header_up Referer ""
+                        # Rewrite the path to the readiness endpoint
+                        rewrite /actuator/health/readiness
+                }
+        }
+
+        handle {
+                reverse_proxy localhost:3000 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
 }
