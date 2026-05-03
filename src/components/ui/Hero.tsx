@@ -21,7 +21,7 @@ interface Slide {
 const slides: Slide[] = [
   {
     id: 1,
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1400&h=600&fit=crop&q=80',
+    image: '/images/hero/restaurants.jpg',
     categoryAr: 'مطاعم',
     categoryEn: 'Restaurants',
     titleAr: 'أفضل المطاعم في منطقتك',
@@ -31,7 +31,7 @@ const slides: Slide[] = [
   },
   {
     id: 2,
-    image: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1400&h=600&fit=crop&q=80',
+    image: '/images/hero/medical.jpg',
     categoryAr: 'طبية',
     categoryEn: 'Medical',
     titleAr: 'خدمات طبية موثوقة',
@@ -41,7 +41,7 @@ const slides: Slide[] = [
   },
   {
     id: 3,
-    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1400&h=600&fit=crop&q=80',
+    image: '/images/hero/real-estate.jpg',
     categoryAr: 'عقارات',
     categoryEn: 'Real Estate',
     titleAr: 'عقاراتك في المكان المناسب',
@@ -51,7 +51,7 @@ const slides: Slide[] = [
   },
   {
     id: 4,
-    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1400&h=600&fit=crop&q=80',
+    image: '/images/hero/craftsmen.jpg',
     categoryAr: 'حرفيين',
     categoryEn: 'Craftsmen',
     titleAr: 'حرفيون محترفون',
@@ -61,7 +61,7 @@ const slides: Slide[] = [
   },
   {
     id: 5,
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1400&h=600&fit=crop&q=80',
+    image: '/images/hero/markets.jpg',
     categoryAr: 'أسواق',
     categoryEn: 'Markets',
     titleAr: 'تسوق من الأسواق المحلية',
@@ -71,7 +71,7 @@ const slides: Slide[] = [
   },
   {
     id: 6,
-    image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&h=600&fit=crop&q=80',
+    image: '/images/hero/jobs.jpg',
     categoryAr: 'وظائف',
     categoryEn: 'Jobs',
     titleAr: 'فرص عمل متنوعة',

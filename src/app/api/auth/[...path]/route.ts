@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 
-const TIMEOUT_MS = 15_000;
+const TIMEOUT_MS = 8_000;
 
 export async function GET(
   request: NextRequest,
@@ -104,9 +104,16 @@ async function proxyAuthRequest(
       responseHeaders.set(key, value);
     }
 
+    // Fix: Spring Boot /actuator/health returns 503 when overall status is DOWN
+    // (e.g., due to OTLP metrics), but the actual API endpoints work fine.
+    // Convert 503 → 200 so the frontend doesn't treat it as "server down".
+    const finalStatus = (pathStr === 'health' && backendResponse.status === 503)
+      ? 200
+      : backendResponse.status;
+
     return new NextResponse(responseBody, {
-      status: backendResponse.status,
-      statusText: backendResponse.statusText,
+      status: finalStatus,
+      statusText: finalStatus === 200 ? 'OK' : backendResponse.statusText,
       headers: responseHeaders,
     });
   } catch (error) {

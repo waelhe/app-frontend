@@ -288,7 +288,7 @@ export function InteractiveMarketSection({
   const ArrowIcon = language === 'ar' ? ArrowLeft : ArrowRight;
 
   // Determine error type for better messaging
-  const isBackendDown = error instanceof ApiError && (error.status === 502 || error.status === 0);
+  const isBackendDown = error instanceof ApiError && (error.status === 502 || error.status === 503 || error.status === 0);
   const isAuthError = error instanceof ApiError && error.status === 401;
 
   return (
