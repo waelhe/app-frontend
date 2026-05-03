@@ -1,8 +1,18 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Store, AlertCircle, ArrowLeft, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
+import {
+  Store,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  WifiOff,
+  RefreshCw,
+  ImageIcon,
+  UserCircle,
+} from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { catalogService, ApiError } from '@/lib/api';
@@ -10,6 +20,9 @@ import type { ListingSummary } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
+// ── Props ───────────────────────────────────────────────────────────
 
 interface InteractiveMarketSectionProps {
   category?: string;
@@ -20,36 +33,107 @@ interface InteractiveMarketSectionProps {
   gradientTo?: string;
 }
 
-const placeholderGradients = [
-  'from-rose-400 to-orange-300',
-  'from-violet-400 to-purple-300',
-  'from-emerald-400 to-teal-300',
-  'from-amber-400 to-yellow-300',
-  'from-sky-400 to-blue-300',
-  'from-pink-400 to-fuchsia-300',
-  'from-lime-400 to-green-300',
-  'from-indigo-400 to-blue-300',
-];
+// ── Category Translations (Arabic + English) ────────────────────────
 
 const categoryNames: Record<string, { ar: string; en: string }> = {
+  beauty: { ar: 'جمال وعناية', en: 'Beauty' },
+  cars: { ar: 'سيارات', en: 'Cars' },
+  dining: { ar: 'مطاعم وطعام', en: 'Dining' },
+  education: { ar: 'تعليم', en: 'Education' },
+  electronics: { ar: 'إلكترونيات', en: 'Electronics' },
+  furniture: { ar: 'أثاث', en: 'Furniture' },
+  jobs: { ar: 'وظائف', en: 'Jobs' },
+  'real-estate': { ar: 'عقارات', en: 'Real Estate' },
+  services: { ar: 'خدمات', en: 'Services' },
   tourism: { ar: 'سياحة', en: 'Tourism' },
   medical: { ar: 'طبية', en: 'Medical' },
-  'real-estate': { ar: 'عقارات', en: 'Real Estate' },
-  education: { ar: 'تعليم', en: 'Education' },
   business: { ar: 'أعمال', en: 'Business' },
   experiences: { ar: 'تجارب', en: 'Experiences' },
-  dining: { ar: 'مطاعم', en: 'Dining' },
   arts: { ar: 'فنون', en: 'Arts' },
   shopping: { ar: 'تسوق', en: 'Shopping' },
   food: { ar: 'طعام', en: 'Food' },
   health: { ar: 'صحة', en: 'Health' },
-  services: { ar: 'خدمات', en: 'Services' },
 };
+
+// ── Fallback Gradients per Category ─────────────────────────────────
+
+const categoryGradients: Record<string, string> = {
+  beauty: 'from-pink-400 to-rose-300',
+  cars: 'from-slate-500 to-zinc-400',
+  dining: 'from-orange-400 to-amber-300',
+  education: 'from-emerald-400 to-teal-300',
+  electronics: 'from-sky-400 to-cyan-300',
+  furniture: 'from-amber-500 to-yellow-400',
+  jobs: 'from-violet-400 to-purple-300',
+  'real-estate': 'from-emerald-500 to-green-400',
+  services: 'from-rose-400 to-pink-300',
+  tourism: 'from-teal-400 to-cyan-300',
+  medical: 'from-red-400 to-rose-300',
+  business: 'from-gray-500 to-slate-400',
+  experiences: 'from-fuchsia-400 to-pink-300',
+  arts: 'from-purple-400 to-violet-300',
+  shopping: 'from-amber-400 to-orange-300',
+  food: 'from-lime-400 to-green-300',
+  health: 'from-emerald-400 to-teal-300',
+};
+
+const defaultGradient = 'from-gray-400 to-gray-300';
+
+// ── Category Image Path Builder ─────────────────────────────────────
+
+const categoriesWithImages = new Set([
+  'cars',
+  'electronics',
+  'furniture',
+  'beauty',
+  'jobs',
+  'services',
+  'real-estate',
+  'education',
+  'dining',
+]);
+
+function getCategoryImagePath(category: string): string | null {
+  if (categoriesWithImages.has(category)) {
+    return `/images/categories/${category}.png`;
+  }
+  return null;
+}
+
+// ── Category Icon (shown in fallback) ───────────────────────────────
+
+const categoryIcons: Record<string, string> = {
+  beauty: '💎',
+  cars: '🚗',
+  dining: '🍽️',
+  education: '🎓',
+  electronics: '📱',
+  furniture: '🛋️',
+  jobs: '💼',
+  'real-estate': '🏠',
+  services: '🔧',
+  tourism: '✈️',
+  medical: '🏥',
+  business: '📊',
+  experiences: '🎯',
+  arts: '🎨',
+  shopping: '🛍️',
+  food: '🍕',
+  health: '❤️',
+};
+
+// ── Price Formatting ────────────────────────────────────────────────
+
+function formatPrice(price: number): string {
+  return `${price.toLocaleString('ar-SA')} ر.س`;
+}
+
+// ── Listing Card ────────────────────────────────────────────────────
 
 function ListingCard({ listing, index }: { listing: ListingSummary; index: number }) {
   const { language } = useLanguage();
   const navigate = useNavigationStore((s) => s.navigate);
-  const gradientIndex = index % placeholderGradients.length;
+  const [imageError, setImageError] = useState(false);
 
   const catInfo = categoryNames[listing.category];
   const categoryLabel =
@@ -57,9 +141,15 @@ function ListingCard({ listing, index }: { listing: ListingSummary; index: numbe
       ? catInfo?.ar ?? listing.category
       : catInfo?.en ?? listing.category;
 
-  const formatPrice = (price: number) => {
-    return `${price.toLocaleString('ar-SA')} ل.س`;
-  };
+  const imagePath = getCategoryImagePath(listing.category);
+  const gradient = categoryGradients[listing.category] ?? defaultGradient;
+  const icon = categoryIcons[listing.category] ?? '📋';
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+  }, []);
+
+  const showImage = imagePath && !imageError;
 
   return (
     <motion.div
@@ -67,53 +157,90 @@ function ListingCard({ listing, index }: { listing: ListingSummary; index: numbe
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
       whileHover={{ y: -4 }}
-      className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+      className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300"
       onClick={() => navigate('listing-detail', { id: listing.id })}
     >
-      {/* Gradient Placeholder Image */}
-      <div
-        className={`aspect-[4/3] bg-gradient-to-br ${placeholderGradients[gradientIndex]} flex items-center justify-center relative`}
-      >
-        <span className="text-white/60 text-5xl font-bold">
-          {listing.title.charAt(0)}
-        </span>
+      {/* Image Area */}
+      <div className="aspect-[4/3] relative overflow-hidden">
+        {showImage ? (
+          <>
+            <img
+              src={imagePath}
+              alt={categoryLabel}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={handleImageError}
+              loading="lazy"
+            />
+            {/* Overlay gradient for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          </>
+        ) : (
+          <>
+            {/* Fallback gradient with icon */}
+            <div
+              className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
+            >
+              <span className="text-4xl drop-shadow-lg">{icon}</span>
+            </div>
+            {/* Overlay gradient for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          </>
+        )}
+
         {/* Category Badge */}
         <div className="absolute top-2.5 start-2.5">
-          <Badge className="bg-white/90 text-gray-700 border-0 text-xs shadow-sm backdrop-blur-sm">
+          <Badge className="bg-white/90 text-gray-700 border-0 text-xs shadow-sm backdrop-blur-sm font-medium">
             {categoryLabel}
           </Badge>
         </div>
       </div>
 
       {/* Card Content */}
-      <div className="p-4 space-y-1.5">
+      <div className="p-3.5 space-y-2">
         <h3 className="font-semibold text-sm text-gray-900 line-clamp-1 group-hover:text-red-500 transition-colors">
           {listing.title}
         </h3>
-        <p className="text-xs text-gray-500">{listing.providerName}</p>
-        <div className="flex items-center justify-between pt-1">
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-gray-200 text-gray-400">
+
+        {/* Provider with avatar */}
+        <div className="flex items-center gap-1.5">
+          <Avatar className="h-4 w-4">
+            <AvatarFallback className="bg-gray-100 text-[8px] text-gray-500 font-medium">
+              {listing.providerName?.charAt(0)?.toUpperCase() ?? 'P'}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-gray-500 truncate">{listing.providerName}</span>
+        </div>
+
+        {/* Price row */}
+        <div className="flex items-center justify-between pt-0.5">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 border-gray-200 text-gray-400"
+          >
             {categoryLabel}
           </Badge>
-          <span className="font-bold text-sm text-gray-900">
-            {formatPrice(listing.price)}
-          </span>
+          <span className="font-bold text-sm text-gray-900">{formatPrice(listing.price)}</span>
         </div>
       </div>
     </motion.div>
   );
 }
 
+// ── Loading Skeleton ────────────────────────────────────────────────
+
 function LoadingSkeleton() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="rounded-xl overflow-hidden">
+        <div key={i} className="rounded-2xl overflow-hidden border border-gray-100">
           <Skeleton className="aspect-[4/3] w-full" />
-          <div className="p-4 space-y-2">
+          <div className="p-3.5 space-y-2">
             <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
-            <div className="flex justify-between pt-1">
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <div className="flex justify-between pt-0.5">
               <Skeleton className="h-4 w-12" />
               <Skeleton className="h-4 w-16" />
             </div>
@@ -123,6 +250,8 @@ function LoadingSkeleton() {
     </div>
   );
 }
+
+// ── Main Component ──────────────────────────────────────────────────
 
 export function InteractiveMarketSection({
   category,
@@ -143,10 +272,7 @@ export function InteractiveMarketSection({
         : catalogService.list(0, 12),
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, err) => {
-      // Don't retry on 401 (auth required) — these endpoints should be public
-      // but if they require auth, retrying won't help
       if (err instanceof ApiError && err.status === 401) return false;
-      // Retry up to 2 times for other errors (backend might be starting up)
       return failureCount < 2;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
