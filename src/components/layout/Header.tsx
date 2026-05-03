@@ -243,25 +243,6 @@ export function Header() {
             </Button>
           </form>
 
-          {/* Desktop Quick Links */}
-          <nav className="hidden items-center gap-1 lg:flex">
-            {quickLinks.map((link) => {
-              const Icon = link.icon
-              return (
-                <motion.button
-                  key={link.view}
-                  onClick={() => navigate(link.view)}
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-500"
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{t(link.ar, link.en)}</span>
-                </motion.button>
-              )
-            })}
-          </nav>
-
           {/* Desktop right side */}
           <div className="hidden items-center gap-2 md:flex">
             {/* Backend Status */}
