@@ -25,6 +25,9 @@ import { getToken, setToken, removeToken } from '@/lib/api';
 const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8080';
 const AUTH_BASE = `${BACKEND_BASE}/oauth2`;
 const CLIENT_ID = process.env.NEXT_PUBLIC_AUTH_CLIENT_ID ?? 'marketplace-web-client';
+// Use the backend's registered redirect URI for the browser-based OAuth2 flow
+// The registered URI is: http://127.0.0.1:8080/login/oauth2/code/marketplace-web-client
+// For browser-based flow, we need a URL that the browser can navigate back to
 const REDIRECT_URI = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URI ??
   (typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '');
 
@@ -278,10 +281,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       redirect_uri: REDIRECT_URI,
       code_challenge: challenge,
       code_challenge_method: 'S256',
-      scope: 'openid profile email',
+      scope: 'openid profile',
     });
 
     // Browser navigates directly to backend's OAuth2 authorize endpoint
+    // The user will see the backend's login page, authenticate,
+    // and then be redirected back to our callback URL with the auth code
     const authUrl = `${AUTH_BASE}/authorize?${params.toString()}`;
     window.location.href = authUrl;
   }, []);
