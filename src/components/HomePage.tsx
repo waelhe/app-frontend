@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/store/use-auth';
 import { useLanguage } from '@/store/use-language';
@@ -14,6 +14,8 @@ import { BookingFlow } from '@/components/system/BookingFlow';
 import { MessagingView } from '@/components/system/MessagingView';
 import { ProfileView } from '@/components/system/ProfileView';
 import { BookingsListView } from '@/components/system/BookingsListView';
+import { FavoritesView } from '@/components/system/FavoritesView';
+import { SettingsView } from '@/components/system/SettingsView';
 import { ProviderDashboard } from '@/components/dashboard/ProviderDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { LoginDialog } from '@/components/auth/LoginDialog';
@@ -41,6 +43,7 @@ import {
   Briefcase,
   HardHat,
   Loader2,
+  CalendarCheck,
 } from 'lucide-react';
 
 // ── Dynamic imports for local components (export default) ──────────
@@ -242,6 +245,18 @@ export function HomePage() {
   const [emergencyExpanded, setEmergencyExpanded] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
+  // Listen for custom 'open-login' events from Header
+  useEffect(() => {
+    const handleOpenLogin = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      // Could use detail.mode to set initial tab (login vs register)
+      void detail;
+      setLoginDialogOpen(true);
+    };
+    window.addEventListener('open-login', handleOpenLogin);
+    return () => window.removeEventListener('open-login', handleOpenLogin);
+  }, []);
+
   // Determine active tab from currentView
   const getActiveTab = (): string => {
     if (['home'].includes(currentView)) return 'home';
@@ -266,6 +281,8 @@ export function HomePage() {
     'create-listing',
     'profile',
     'bookings-list',
+    'favorites',
+    'settings',
   ].includes(currentView);
 
   // ── Render overlay views ─────────────────────────────────────
@@ -289,6 +306,10 @@ export function HomePage() {
         return <ProfileView />;
       case 'bookings-list':
         return <BookingsListView />;
+      case 'favorites':
+        return <FavoritesView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return null;
     }
@@ -538,6 +559,25 @@ export function HomePage() {
                 <LayoutDashboard className="w-4 h-4" />
                 <span className="hidden sm:inline">
                   {t('لوحة التحكم', 'Dashboard')}
+                </span>
+              </Button>
+            )}
+
+            {/* My Bookings Button - for all authenticated users */}
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200"
+                onClick={() => {
+                  if (!isOverlayView) {
+                    navigate('bookings-list');
+                  }
+                }}
+              >
+                <CalendarCheck className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {t('حجوزاتي', 'My Bookings')}
                 </span>
               </Button>
             )}

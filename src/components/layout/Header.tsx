@@ -180,29 +180,33 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4" />
-                      <span>{t('لوحة التحكم', 'Dashboard')}</span>
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={() => navigate('dashboard')}
+                    className="flex items-center gap-2"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>{t('لوحة التحكم', 'Dashboard')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>{t('الملف الشخصي', 'Profile')}</span>
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={() => navigate('profile')}
+                    className="flex items-center gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>{t('الملف الشخصي', 'Profile')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/favorites" className="flex items-center gap-2">
-                      <Heart className="h-4 w-4" />
-                      <span>{t('المفضلة', 'Favorites')}</span>
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={() => navigate('favorites')}
+                    className="flex items-center gap-2"
+                  >
+                    <Heart className="h-4 w-4" />
+                    <span>{t('المفضلة', 'Favorites')}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>{t('الإعدادات', 'Settings')}</span>
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={() => navigate('settings')}
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>{t('الإعدادات', 'Settings')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -218,16 +222,16 @@ export function Header() {
               <>
                 <Button
                   variant="ghost"
-                  asChild
                   className="text-sm font-medium text-gray-600 hover:text-red-500"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }))}
                 >
-                  <Link href="/login">{t('تسجيل الدخول', 'Log In')}</Link>
+                  {t('تسجيل الدخول', 'Log In')}
                 </Button>
                 <Button
-                  asChild
                   className="bg-red-500 text-sm font-medium hover:bg-red-600"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'register' } }))}
                 >
-                  <Link href="/signup">{t('إنشاء حساب', 'Sign Up')}</Link>
+                  {t('إنشاء حساب', 'Sign Up')}
                 </Button>
               </>
             )}
@@ -255,7 +259,7 @@ export function Header() {
             </Button>
 
             {isAuthenticated && user ? (
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('profile')}>
                 <Avatar className="h-7 w-7">
                   <AvatarImage src={user.image} alt={user.displayName} />
                   <AvatarFallback className="bg-red-100 text-[10px] text-red-600">
@@ -264,7 +268,7 @@ export function Header() {
                 </Avatar>
               </Button>
             ) : (
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } }))}>
                 <User className="h-5 w-5 text-gray-600" />
               </Button>
             )}
@@ -366,34 +370,34 @@ export function Header() {
                       <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
                   </div>
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  <button
+                    onClick={() => { navigate('dashboard'); setMobileMenuOpen(false) }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
                   >
                     <LayoutDashboard className="h-4 w-4" />
                     {t('لوحة التحكم', 'Dashboard')}
-                  </Link>
-                  <Link
-                    href="/profile"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  </button>
+                  <button
+                    onClick={() => { navigate('profile'); setMobileMenuOpen(false) }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
                   >
                     <User className="h-4 w-4" />
                     {t('الملف الشخصي', 'Profile')}
-                  </Link>
-                  <Link
-                    href="/favorites"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  </button>
+                  <button
+                    onClick={() => { navigate('favorites'); setMobileMenuOpen(false) }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
                   >
                     <Heart className="h-4 w-4" />
                     {t('المفضلة', 'Favorites')}
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  </button>
+                  <button
+                    onClick={() => { navigate('settings'); setMobileMenuOpen(false) }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
                   >
                     <Settings className="h-4 w-4" />
                     {t('الإعدادات', 'Settings')}
-                  </Link>
+                  </button>
                   <button
                     onClick={() => {
                       logout()
@@ -408,19 +412,17 @@ export function Header() {
               ) : (
                 <div className="flex flex-col gap-2 px-2">
                   <Button
-                    asChild
                     className="w-full bg-red-500 hover:bg-red-600"
+                    onClick={() => { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'register' } })); setMobileMenuOpen(false) }}
                   >
-                    <Link href="/signup">{t('إنشاء حساب', 'Sign Up')}</Link>
+                    {t('إنشاء حساب', 'Sign Up')}
                   </Button>
                   <Button
                     variant="outline"
-                    asChild
                     className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => { window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'login' } })); setMobileMenuOpen(false) }}
                   >
-                    <Link href="/login">
-                      {t('تسجيل الدخول', 'Log In')}
-                    </Link>
+                    {t('تسجيل الدخول', 'Log In')}
                   </Button>
                 </div>
               )}

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Send, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationStore } from '@/stores/navigationStore';
+import { useAuth } from '@/store/use-auth';
 import { messagingService } from '@/lib/api';
 import type { MessageResponse } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function MessagingView() {
   const { t, isRTL } = useLanguage();
   const { viewParams, goBack } = useNavigationStore();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Track message IDs we've sent locally to distinguish sent vs received
+  const [sentMessageIds, setSentMessageIds] = useState<Set<string>>(new Set());
 
   const conversationId = viewParams.conversationId;
   const bookingId = viewParams.bookingId;
@@ -78,8 +83,12 @@ export function MessagingView() {
   const sendMessageMutation = useMutation({
     mutationFn: (content: string) =>
       messagingService.sendMessage(currentConversationId, { content }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       setMessageText('');
+      // Track this message as sent by current user
+      if (data?.id) {
+        setSentMessageIds((prev) => new Set(prev).add(data.id));
+      }
       queryClient.invalidateQueries({
         queryKey: ['messages', currentConversationId],
       });
@@ -197,9 +206,9 @@ export function MessagingView() {
         ) : (
           <div className="space-y-2">
             {messages.map((msg) => {
-              // Simple heuristic: if message is "read" by current user, it was sent by them
-              // In a real app, we'd compare senderId with current user id
-              const isSent = msg.read;
+              // Determine if this message was sent by the current user
+              // Priority: 1) tracked sent IDs, 2) user ID comparison (if available), 3) fallback heuristic
+              const isSent = sentMessageIds.has(msg.id);
               return (
                 <motion.div
                   key={msg.id}

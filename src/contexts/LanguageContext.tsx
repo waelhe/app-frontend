@@ -389,8 +389,30 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguageState(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem(LANGUAGE_KEY, lang);
+      // Also update the Zustand language store so both systems stay in sync
+      // We use dynamic import to avoid circular dependencies
+      import('@/store/use-language').then(({ useLanguage: useZustandLanguage }) => {
+        useZustandLanguage.getState().setLanguage(lang);
+      }).catch(() => {
+        // Zustand store not available
+      });
     }
   }, []);
+
+  // Sync from Zustand store to Context via custom event
+  useEffect(() => {
+    const handleLanguageChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.language && detail.language !== language) {
+        setLanguageState(detail.language as Language);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(LANGUAGE_KEY, detail.language);
+        }
+      }
+    };
+    window.addEventListener('language-change', handleLanguageChange);
+    return () => window.removeEventListener('language-change', handleLanguageChange);
+  }, [language]);
 
   // Update document attributes when language changes
   useEffect(() => {

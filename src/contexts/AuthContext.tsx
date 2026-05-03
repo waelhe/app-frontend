@@ -99,14 +99,20 @@ function decodeJwt(token: string): JwtPayload | null {
   }
 }
 
-/** Extract the primary role from JWT claims */
+/** Extract the primary role from JWT claims or infer from username */
 function extractRole(payload: JwtPayload): UserRole {
+  // First check if JWT has explicit roles
   const roles = payload.roles;
   if (Array.isArray(roles)) {
     if (roles.includes('ADMIN')) return 'ADMIN';
     if (roles.includes('PROVIDER')) return 'PROVIDER';
     if (roles.includes('CONSUMER')) return 'CONSUMER';
   }
+  // Fallback: infer role from username (sub claim)
+  // since the backend's OAuth2 server doesn't include roles in JWT
+  const sub = payload.sub ?? '';
+  if (sub === 'admin') return 'ADMIN';
+  if (sub.startsWith('provider-')) return 'PROVIDER';
   return 'CONSUMER';
 }
 

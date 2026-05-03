@@ -14,7 +14,13 @@ export const useLanguage = create<LanguageState>()(
   persist(
     (set, get) => ({
       language: 'ar' as Language,
-      setLanguage: (language: Language) => set({ language, isRTL: language === 'ar' }),
+      setLanguage: (language: Language) => {
+        set({ language, isRTL: language === 'ar' })
+        // Dispatch custom event so LanguageContext can sync
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('language-change', { detail: { language } }))
+        }
+      },
       t: (ar: string, en: string) => {
         const lang = get().language
         return lang === 'ar' ? ar : en

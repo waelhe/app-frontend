@@ -25,7 +25,17 @@ interface LoginDialogProps {
 }
 
 type AuthMode = 'login' | 'register';
-type UserRole = 'CONSUMER' | 'PROVIDER';
+type UserRole = 'CONSUMER' | 'PROVIDER' | 'ADMIN';
+
+/**
+ * Infer user role from username since JWT doesn't include role claims.
+ * Maps known username patterns to their expected roles.
+ */
+function inferRoleFromUsername(username: string): UserRole {
+  if (username === 'admin') return 'ADMIN';
+  if (username.startsWith('provider-')) return 'PROVIDER';
+  return 'CONSUMER';
+}
 
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const { isRTL } = useLanguage();
@@ -105,11 +115,18 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
           const parts = data.accessToken.split('.');
           if (parts.length === 3) {
             const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            const jwtSub = payload.sub || username;
+            // JWT doesn't include roles, so infer from username
+            const inferredRole = payload.roles?.includes('ADMIN')
+              ? 'ADMIN' as UserRole
+              : payload.roles?.includes('PROVIDER')
+                ? 'PROVIDER' as UserRole
+                : inferRoleFromUsername(jwtSub);
             zustandLogin({
-              id: payload.sub || '',
-              displayName: payload.name || payload.preferred_username || username,
+              id: jwtSub,
+              displayName: payload.name || payload.preferred_username || jwtSub,
               email: payload.email || '',
-              role: payload.roles?.includes('ADMIN') ? 'ADMIN' : payload.roles?.includes('PROVIDER') ? 'PROVIDER' : 'CONSUMER',
+              role: inferredRole,
             });
           }
         } catch {
@@ -117,7 +134,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
             id: username,
             displayName: username,
             email: '',
-            role: 'CONSUMER',
+            role: inferRoleFromUsername(username),
           });
         }
       }
@@ -151,6 +168,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       if (!res.ok) {
         if (res.status === 502 || res.status === 504) {
           throw new Error(isRTL ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً' : 'Server is currently unavailable, please try again later');
+        }
+        if (data.error === 'registration_limited') {
+          setError(isRTL ? 'التسجيل محدود حالياً. استخدم حسابات التجربة أدناه.' : 'Registration is currently limited. Use the demo accounts below.');
+          return;
         }
         if (data.error === 'registration_unavailable' || data.needsBrowserAuth) {
           setError(isRTL ? 'التسجيل غير متاح حالياً. يرجى استخدام تسجيل الدخول عبر المتصفح.' : 'Registration is currently unavailable. Please use browser-based sign in.');
@@ -541,6 +562,31 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                 </svg>
                 {isRTL ? 'تسجيل الدخول عبر Google' : 'Sign in with Google'}
               </button>
+
+              {/* Demo Accounts Info */}
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 space-y-2">
+                <p className="text-xs font-semibold text-gray-600">
+                  {isRTL ? 'حسابات للتجربة:' : 'Demo Accounts:'}
+                </p>
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setUsername('admin'); setPassword('Admin@2024'); setMode('login'); setError(''); }}
+                    className="flex items-center justify-between w-full text-xs bg-white rounded-md border border-gray-100 px-2.5 py-1.5 hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="text-gray-700 font-mono">admin / Admin@2024</span>
+                    <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700">ADMIN</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setUsername('provider-ahmad'); setPassword('Ahmad@2024'); setMode('login'); setError(''); }}
+                    className="flex items-center justify-between w-full text-xs bg-white rounded-md border border-gray-100 px-2.5 py-1.5 hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="text-gray-700 font-mono">provider-ahmad / Ahmad@2024</span>
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">PROVIDER</span>
+                  </button>
+                </div>
+              </div>
             </form>
           </TabsContent>
         </Tabs>

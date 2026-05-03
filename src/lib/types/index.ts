@@ -243,7 +243,9 @@ export type AppView =
   | 'conversation'
   | 'search'
   | 'profile'
-  | 'create-listing';
+  | 'create-listing'
+  | 'favorites'
+  | 'settings';
 
 export interface NavigationState {
   currentView: AppView;
