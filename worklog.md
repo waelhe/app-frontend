@@ -220,3 +220,37 @@ Stage Summary:
 - ✅ All API requests retry automatically on transient failures
 - ✅ Lint passes with zero errors
 - ✅ Dev server running and responding on port 3000
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Fix backend CRASHED status and empty data on Railway
+
+Work Log:
+- Found backend was CRASHED on Railway (latest deployment status)
+- Railway project ID corrected: 6512f980-cf70-4252-b298-55bd8f509a21 (name: marketplace)
+- Backend service ID: 798f1f36-b209-41e9-bb22-a0a8c14b2c8d (name: app-java-v3)
+- Database service ID: bba32251-97be-43bd-8e9b-9af8f93ec772 (name: Database)
+- Environment ID: a122908a-d725-4021-8c3f-25c4639ec531 (name: production)
+- Added JAVA_OPTS=-Xmx256m -Xms128m -XX:+UseSerialGC -XX:+UseCompressedOops to reduce memory usage
+- Added BPL_JVM_HEAD_ROOM=50 for JVM container headroom
+- Successfully redeployed with new memory settings (status: SUCCESS)
+- Backend returned empty listings (0 results) despite 31 records in database
+- Investigated via GitHub repo: Entity is ProviderListing mapped to provider_listings table
+- Data verified in PostgreSQL: 31 listings with status=ACTIVE, is_deleted=false
+- Found "Cannot serialize" error in backend logs — Spring Cache (Redis) serialization failure
+- The @Cacheable annotation on CatalogService was trying to cache Page<ListingSummary> to Redis but Lettuce serializer couldn't handle it
+- Solution: Set SPRING_CACHE_TYPE=none to disable Redis caching
+- Also had to restart Redis service to clear stale cache
+- After disabling cache and restarting both Redis and Java app: ✅ API returns 31 listings
+- Cleaned up unnecessary env vars (Hibernate SQL logging, BPL_JVM_HEAD_ROOM)
+- Dropped temporary 'listings' database view
+
+Stage Summary:
+- ✅ Backend running successfully on Railway with optimized JAVA_OPTS
+- ✅ All 31 listings now accessible via API
+- ✅ Category endpoints working (cars, real-estate, etc.)
+- ✅ Frontend proxy correctly forwarding requests
+- ⚠️ Spring Cache disabled (SPRING_CACHE_TYPE=none) due to Redis serialization issue
+- ⚠️ Health endpoint still shows DOWN (OTLP metrics, non-critical)
+- 🔑 Key fix: Redis cache serialization was the root cause of empty API responses
