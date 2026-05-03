@@ -1,15 +1,12 @@
 # Railway deployment configuration for نبض (Nabd) Frontend
-# See: https://railway.app/docs/deploy/config-as-code
+# Uses NIXPACKS builder (Railway default) which handles Next.js automatically
 
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
-# Railway provides PORT automatically — the app reads it from env
-# Health check to confirm the service is ready
+# Railway provides PORT automatically — Next.js standalone reads it from env
 healthcheckPath = "/api"
 healthcheckTimeout = 300
-# Restart on failure
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
