@@ -264,13 +264,15 @@ export function InteractiveMarketSection({
   const { language } = useLanguage();
   const navigate = useNavigationStore((s) => s.navigate);
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['listings', category ?? 'all', 0, 12],
     queryFn: () =>
       category
         ? catalogService.byCategory(category, 0, 12)
         : catalogService.list(0, 12),
     staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+    placeholderData: (previousData) => previousData, // Show previous data while fetching
     retry: (failureCount, err) => {
       if (err instanceof ApiError && err.status === 401) return false;
       return failureCount < 2;
@@ -288,8 +290,9 @@ export function InteractiveMarketSection({
   const ArrowIcon = language === 'ar' ? ArrowLeft : ArrowRight;
 
   // Determine error type for better messaging
-  const isBackendDown = error instanceof ApiError && (error.status === 502 || error.status === 503 || error.status === 0);
-  const isAuthError = error instanceof ApiError && error.status === 401;
+  const isBackendDown = error instanceof ApiError && (error.category === 'server' || error.category === 'network' || error.category === 'timeout');
+  const isAuthError = error instanceof ApiError && error.category === 'auth';
+  const isStaleData = !!data && isFetching; // Showing data while refreshing
 
   return (
     <section className="py-8 sm:py-10">

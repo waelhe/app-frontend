@@ -158,3 +158,65 @@ Authentication Setup:
 - OAuth2 Client ID: marketplace-web-client (public, no secret)
 - OAuth2 Redirect URIs: http://localhost:3000/auth/callback, http://127.0.0.1:8080/login/oauth2/code/marketplace-web-client
 - JWT Issuer: https://app-java-v3-production.up.railway.app
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Improve frontend resilience and auth handling when backend is intermittently available
+
+Work Log:
+- Completely rewrote `/src/lib/api.ts` with resilience features:
+  - Retry logic (2 retries) for transient failures (502, 503, 504, 429, network errors)
+  - Exponential backoff between retries (1s, 2s)
+  - Request timeout handling (15s default)
+  - Error categorization (network, auth, server, client, timeout)
+  - Dual-layer response caching (memory + localStorage) with 5-minute TTL
+  - Backend status tracker (online/degraded/offline) with change listeners
+  - Cached data fallback when backend is down — GET requests show cached data instead of errors
+  - Debounced health check to avoid multiple simultaneous calls
+  - Arabic error messages in ApiError for network/server failures
+- Updated `/src/contexts/AuthContext.tsx` for resilience:
+  - JWT-based session initialization works offline (no profile fetch needed)
+  - Profile fetch failures don't clear auth — network errors are tolerated
+  - Only 401 Unauthorized clears the session (genuinely invalid/expired token)
+  - Added `isOfflineSession` flag to indicate when using JWT-based auth without backend
+  - Proper cleanup with `cancelled` flag in useEffect
+- Updated `/src/providers/auth-provider.tsx`:
+  - Only syncs logout from AuthContext when NOT in offline session
+  - Prevents being logged out when backend is temporarily unavailable
+- Created `/src/components/system/BackendStatusBanner.tsx`:
+  - Shows subtle banner when backend is offline or degraded
+  - Amber warning for offline ("الخادم غير متاح حالياً — يتم عرض البيانات المحفوظة")
+  - Orange warning for degraded ("الخادم يعمل بشكل متقطع")
+  - Retry button with spinning animation
+  - Animated show/hide with framer-motion
+  - Auto-updates from backend status listener
+- Updated `/src/components/sections/InteractiveMarketSection.tsx`:
+  - Added `placeholderData` to keep showing previous data while refreshing
+  - Added `gcTime: 30 minutes` for longer cache retention
+  - Improved error categorization using new `error.category` field
+  - Better detection of network/server/auth errors
+- Updated API proxy routes (`/src/app/api/v1/[...path]/route.ts`, `/src/app/api/auth/[...path]/route.ts`):
+  - Added Arabic error messages in JSON responses
+  - Added `X-Backend-Status: reachable` header for successful responses
+  - Better error categorization in responses
+  - Auth proxy now maps `/api/auth/token` → `/oauth2/token` explicitly
+- Updated `/src/components/auth/LoginDialog.tsx`:
+  - Shows warning banner when backend is offline
+  - Disables login/register buttons when backend is down
+  - Better error styling: amber for server unavailability, red for auth errors
+  - Uses `ApiError.category` for better error message selection
+- Updated `/src/app/layout.tsx`:
+  - Added `BackendStatusBanner` component between Header and main content
+- Updated `/src/lib/types/index.ts`:
+  - Added 'community' to AppView type
+
+Stage Summary:
+- ✅ Frontend fully resilient to backend intermittency
+- ✅ Cached data displayed when backend is down
+- ✅ Auth session preserved on network errors
+- ✅ Backend status banner shows when server is unavailable
+- ✅ Login dialog shows warning when backend is down
+- ✅ All API requests retry automatically on transient failures
+- ✅ Lint passes with zero errors
+- ✅ Dev server running and responding on port 3000

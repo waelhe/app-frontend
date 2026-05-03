@@ -234,6 +234,7 @@ export type AppView =
   | 'services'
   | 'directory'
   | 'emergency'
+  | 'community'
   | 'dashboard'
   | 'listing-detail'
   | 'booking'

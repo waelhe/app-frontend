@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, Lock, User, WifiOff, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { setToken, identityService } from '@/lib/api';
+import { setToken, getBackendStatus, type ApiError } from '@/lib/api';
 import { useAuth as useAuthStore } from '@/store/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,9 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const [role, setRole] = useState<UserRole>('CONSUMER');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const backendStatus = getBackendStatus();
+  const isBackendDown = backendStatus === 'offline';
 
   const resetForm = () => {
     setUsername('');
@@ -77,6 +80,10 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
           // Fall back to browser-based OAuth2 flow
           signIn();
           return;
+        }
+        // Server error / network error
+        if (res.status === 502 || res.status === 504) {
+          throw new Error(isRTL ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً' : 'Server is currently unavailable, please try again later');
         }
         throw new Error(data.error_description || (isRTL ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during sign in'));
       }
@@ -117,7 +124,12 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
 
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during sign in'));
+      // Check if it's a network/server error
+      if (err instanceof ApiError && (err.category === 'network' || err.category === 'server' || err.category === 'timeout')) {
+        setError(isRTL ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً' : 'Server is currently unavailable, please try again later');
+      } else {
+        setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during sign in'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -137,6 +149,9 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 502 || res.status === 504) {
+          throw new Error(isRTL ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً' : 'Server is currently unavailable, please try again later');
+        }
         if (data.error === 'registration_unavailable' || data.needsBrowserAuth) {
           setError(isRTL ? 'التسجيل غير متاح حالياً. يرجى استخدام تسجيل الدخول عبر المتصفح.' : 'Registration is currently unavailable. Please use browser-based sign in.');
           return;
@@ -148,7 +163,11 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
       setUsername(email);
       await handleLogin();
     } catch (err) {
-      setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ أثناء إنشاء الحساب' : 'An error occurred during registration'));
+      if (err instanceof ApiError && (err.category === 'network' || err.category === 'server' || err.category === 'timeout')) {
+        setError(isRTL ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً' : 'Server is currently unavailable, please try again later');
+      } else {
+        setError(err instanceof Error ? err.message : (isRTL ? 'حدث خطأ أثناء إنشاء الحساب' : 'An error occurred during registration'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -208,6 +227,18 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
+        {/* Backend down warning */}
+        {isBackendDown && (
+          <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+            <WifiOff className="h-4 w-4 shrink-0" />
+            <span>
+              {isRTL
+                ? 'الخادم غير متاح حالياً، تسجيل الدخول قد لا يعمل'
+                : 'Server is currently unavailable, login may not work'}
+            </span>
+          </div>
+        )}
+
         <Tabs value={mode} onValueChange={handleModeChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">
@@ -266,19 +297,26 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               </div>
 
               {error && (
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-red-500"
+                  className={`flex items-center gap-2 rounded-lg p-3 text-sm ${
+                    error.includes('غير متاح')
+                      ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                      : 'bg-red-50 border border-red-200 text-red-600'
+                  }`}
                 >
+                  {error.includes('غير متاح') ? (
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                  ) : null}
                   {error}
-                </motion.p>
+                </motion.div>
               )}
 
               <Button
                 type="submit"
                 className="w-full bg-red-500 text-white hover:bg-red-600"
-                disabled={isLoading}
+                disabled={isLoading || isBackendDown}
               >
                 {isLoading ? (
                   <>
@@ -306,7 +344,8 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               <button
                 type="button"
                 onClick={() => signIn()}
-                className="w-full flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                className="w-full flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                disabled={isBackendDown}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                   <path
@@ -432,19 +471,26 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               </div>
 
               {error && (
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-red-500"
+                  className={`flex items-center gap-2 rounded-lg p-3 text-sm ${
+                    error.includes('غير متاح')
+                      ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                      : 'bg-red-50 border border-red-200 text-red-600'
+                  }`}
                 >
+                  {error.includes('غير متاح') ? (
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                  ) : null}
                   {error}
-                </motion.p>
+                </motion.div>
               )}
 
               <Button
                 type="submit"
                 className="w-full bg-red-500 text-white hover:bg-red-600"
-                disabled={isLoading}
+                disabled={isLoading || isBackendDown}
               >
                 {isLoading ? (
                   <>
@@ -472,7 +518,8 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
               <button
                 type="button"
                 onClick={() => signIn()}
-                className="w-full flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                className="w-full flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                disabled={isBackendDown}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                   <path

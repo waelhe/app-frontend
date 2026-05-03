@@ -3,13 +3,18 @@
  * Maps /api/auth/health → /actuator/health
  * Maps /api/auth/oauth2/* → /oauth2/*
  * Maps /api/auth/login → /login (for form login)
+ * Maps /api/auth/token → /oauth2/token (for token exchange)
+ *
+ * Resilience improvements:
+ * - Better Arabic error messages
+ * - Proper handling of backend restart scenarios
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 
-const TIMEOUT_MS = 8_000;
+const TIMEOUT_MS = 10_000;
 
 export async function GET(
   request: NextRequest,
@@ -43,6 +48,8 @@ async function proxyAuthRequest(
   let backendPath: string;
   if (pathStr === 'health') {
     backendPath = '/actuator/health';
+  } else if (pathStr === 'token') {
+    backendPath = '/oauth2/token';
   } else if (pathStr.startsWith('oauth2/')) {
     backendPath = `/${pathStr}`;
   } else if (pathStr === 'login') {
@@ -111,6 +118,9 @@ async function proxyAuthRequest(
       ? 200
       : backendResponse.status;
 
+    // Add a custom header so the frontend knows the backend responded
+    responseHeaders.set('X-Backend-Status', 'reachable');
+
     return new NextResponse(responseBody, {
       status: finalStatus,
       statusText: finalStatus === 200 ? 'OK' : backendResponse.statusText,
@@ -125,8 +135,8 @@ async function proxyAuthRequest(
         status: isTimeout ? 504 : 502,
         title: isTimeout ? 'Gateway Timeout' : 'Bad Gateway',
         detail: isTimeout
-          ? 'The backend server took too long to respond.'
-          : `Could not reach the backend server at ${BACKEND_URL}.`,
+          ? 'الخادم يستغرق وقتاً طويلاً للرد، قد يكون قيد إعادة التشغيل'
+          : 'لا يمكن الاتصال بالخادم حالياً',
       },
       { status: isTimeout ? 504 : 502 },
     );

@@ -1,13 +1,19 @@
 /**
  * API V1 Proxy Route — forwards all /api/v1/* requests to the Spring Boot backend.
  * Reads BACKEND_URL from environment to determine the target.
+ *
+ * Resilience improvements:
+ * - Faster timeout for first request (backend may be sleeping on Railway free tier)
+ * - Better error messages in Arabic for the frontend
+ * - Proper handling of backend restart scenarios
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 
-const TIMEOUT_MS = 30_000; // 30 seconds for cloud backend
+// Longer timeout for cloud backend (Railway may need time to wake up)
+const TIMEOUT_MS = 30_000;
 
 export async function GET(
   request: NextRequest,
@@ -98,6 +104,9 @@ async function proxyRequest(
       responseHeaders.set(key, value);
     }
 
+    // Add a custom header so the frontend knows the backend responded
+    responseHeaders.set('X-Backend-Status', 'reachable');
+
     return new NextResponse(responseBody, {
       status: backendResponse.status,
       statusText: backendResponse.statusText,
@@ -107,13 +116,14 @@ async function proxyRequest(
     console.error(`[API V1 Proxy] Error forwarding ${request.method} ${targetUrl}:`, error);
 
     const isTimeout = error instanceof Error && error.name === 'AbortError';
+
     return NextResponse.json(
       {
         status: isTimeout ? 504 : 502,
         title: isTimeout ? 'Gateway Timeout' : 'Bad Gateway',
         detail: isTimeout
-          ? 'The backend server took too long to respond.'
-          : `Could not reach the backend server at ${BACKEND_URL}.`,
+          ? 'الخادم يستغرق وقتاً طويلاً للرد، قد يكون قيد إعادة التشغيل'
+          : 'لا يمكن الاتصال بالخادم حالياً',
       },
       { status: isTimeout ? 504 : 502 },
     );

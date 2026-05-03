@@ -3,6 +3,12 @@
  * Handles sign-in via Authorization Code Flow with PKCE,
  * token exchange, storage, and user identity.
  * Connects to waelhe/app-java-v3 Spring Authorization Server.
+ *
+ * Resilience features:
+ * - JWT-based session initialization works offline
+ * - Profile fetch failures don't clear auth (network errors are tolerated)
+ * - Only 401 Unauthorized clears the session (invalid/expired token)
+ * - Automatic session restoration from localStorage
  */
 
 'use client';
@@ -26,8 +32,6 @@ const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:80
 const AUTH_BASE = `${BACKEND_BASE}/oauth2`;
 const CLIENT_ID = process.env.NEXT_PUBLIC_AUTH_CLIENT_ID ?? 'marketplace-web-client';
 // Use the backend's registered redirect URI for the browser-based OAuth2 flow
-// The registered URI is: http://127.0.0.1:8080/login/oauth2/code/marketplace-web-client
-// For browser-based flow, we need a URL that the browser can navigate back to
 const REDIRECT_URI = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URI ??
   (typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '');
 
@@ -193,7 +197,7 @@ function initializeSession(): {
     return { token: null, user: null, role: 'CONSUMER', needsFetch: false };
   }
 
-  // Build a user from the JWT claims
+  // Build a user from the JWT claims — this works offline!
   const role = payload ? extractRole(payload) : 'CONSUMER';
   const user: UserResponse | null = payload
     ? {
@@ -219,6 +223,8 @@ interface AuthContextType {
   role: UserRole;
   signIn: () => Promise<void>;
   signOut: () => void;
+  /** Whether we're using a cached/offline session */
+  isOfflineSession: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -231,17 +237,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(session.needsFetch);
   const [accessToken, setAccessToken] = useState<string | null>(session.token);
   const [role, setRole] = useState<UserRole>(session.role);
+  const [isOfflineSession, setIsOfflineSession] = useState(false);
 
   // Use ref to track if we've already fetched profile for this token
   const fetchedForToken = useRef<string | null>(null);
 
   // Fetch fresh profile from backend when we have a token
+  // But DON'T clear the session on network errors — only on 401
   useEffect(() => {
     if (!session.needsFetch || !session.token) return;
     if (fetchedForToken.current === session.token) return;
     fetchedForToken.current = session.token;
 
-    // Use our Next.js proxy route
+    let cancelled = false;
+
     fetch('/api/v1/users/me', {
       headers: {
         Authorization: `Bearer ${session.token}`,
@@ -249,26 +258,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     })
       .then((response) => {
+        if (cancelled) return null;
+
+        if (response.status === 401) {
+          // Token is genuinely invalid/expired — clear session
+          removeToken();
+          setAccessToken(null);
+          setUser(null);
+          setRole('CONSUMER');
+          setIsOfflineSession(false);
+          return null;
+        }
+
+        if (response.status === 500 || response.status === 502 || response.status === 503 || response.status === 504) {
+          // Server error or unavailable — keep the JWT-based user
+          // We can still function with the JWT claims
+          setIsOfflineSession(true);
+          return null;
+        }
+
         if (response.ok) return response.json() as Promise<UserResponse>;
-        // Token might be invalid — clear session
-        removeToken();
-        setAccessToken(null);
-        setUser(null);
-        setRole('CONSUMER');
+
+        // Other errors — keep JWT-based user, mark as offline
+        setIsOfflineSession(true);
         return null;
       })
       .then((profile) => {
+        if (cancelled) return;
         if (profile) {
           setUser(profile);
           if (profile.role) setRole(profile.role);
+          setIsOfflineSession(false);
         }
       })
       .catch(() => {
+        if (cancelled) return;
         // Network error — keep the JWT-based user, will retry later
+        // This is the key resilience improvement: don't log out on network errors
+        setIsOfflineSession(true);
       })
       .finally(() => {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [session.needsFetch, session.token]);
 
   const signIn = useCallback(async () => {
@@ -285,8 +322,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Browser navigates directly to backend's OAuth2 authorize endpoint
-    // The user will see the backend's login page, authenticate,
-    // and then be redirected back to our callback URL with the auth code
     const authUrl = `${AUTH_BASE}/authorize?${params.toString()}`;
     window.location.href = authUrl;
   }, []);
@@ -296,6 +331,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessToken(null);
     setUser(null);
     setRole('CONSUMER');
+    setIsOfflineSession(false);
     fetchedForToken.current = null;
     // Redirect to backend's logout endpoint
     const logoutUrl = `${AUTH_BASE}/logout?client_id=${CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`;
@@ -313,8 +349,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role,
       signIn,
       signOut,
+      isOfflineSession,
     }),
-    [user, isLoading, isAuthenticated, accessToken, role, signIn, signOut],
+    [user, isLoading, isAuthenticated, accessToken, role, signIn, signOut, isOfflineSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

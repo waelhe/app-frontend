@@ -10,6 +10,7 @@ import { RegionProvider } from "@/providers/region-provider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { BackendStatusBanner } from "@/components/system/BackendStatusBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,6 +60,7 @@ export default function RootLayout({
                 <RegionProvider>
                   <div className="flex min-h-screen flex-col">
                     <Header />
+                    <BackendStatusBanner />
                     <main className="flex-1 pt-16 pb-20 md:pb-0">
                       {children}
                     </main>

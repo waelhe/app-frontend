@@ -2,6 +2,13 @@
  * API Client for the Marketplace backend.
  * Communicates with the waelhe/app-java-v3 Spring Boot REST API.
  * Uses relative paths proxied through Next.js API routes.
+ *
+ * Resilience features:
+ * - Retry logic for transient failures (502, 503, 504, network errors)
+ * - Request timeout handling
+ * - Error categorization (network, auth, server, client)
+ * - Response caching for GET requests (in-memory + localStorage)
+ * - Graceful degradation when backend is intermittently available
  */
 
 import type {
@@ -38,6 +45,18 @@ import type {
 /** Relative path — requests are proxied through Next.js API routes */
 const BACKEND_URL = '';
 
+/** Maximum number of retry attempts for transient errors */
+const MAX_RETRIES = 2;
+
+/** Base delay between retries (ms), doubled each attempt */
+const RETRY_BASE_DELAY = 1000;
+
+/** Default request timeout (ms) */
+const REQUEST_TIMEOUT = 15_000;
+
+/** Cache TTL in milliseconds (5 minutes) */
+const CACHE_TTL = 5 * 60 * 1000;
+
 // ── Token Management ──────────────────────────────────────────────
 
 const TOKEN_KEY = 'marketplace_access_token';
@@ -59,25 +78,168 @@ export function removeToken(): void {
 
 // ── API Error ─────────────────────────────────────────────────────
 
+export type ErrorCategory = 'network' | 'auth' | 'server' | 'client' | 'timeout';
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
   problem?: ProblemDetail;
+  category: ErrorCategory;
+  isRetryable: boolean;
 
-  constructor(status: number, problem?: ProblemDetail) {
+  constructor(status: number, problem?: ProblemDetail, category?: ErrorCategory) {
     super(problem?.detail ?? problem?.title ?? `API Error ${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.detail = problem?.detail;
     this.problem = problem;
+    this.category = category ?? categorizeError(status);
+    this.isRetryable = isRetryableStatus(status);
   }
+}
+
+function categorizeError(status: number): ErrorCategory {
+  if (status === 401 || status === 403) return 'auth';
+  if (status === 502 || status === 503 || status === 504) return 'server';
+  if (status >= 400 && status < 500) return 'client';
+  return 'server';
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 502 || status === 503 || status === 504 || status === 429;
+}
+
+// ── Response Cache ────────────────────────────────────────────────
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  etag?: string;
+}
+
+const memoryCache = new Map<string, CacheEntry<unknown>>();
+
+function getCacheKey(path: string): string {
+  return `nabd_api_cache:${path}`;
+}
+
+function getCachedData<T>(path: string): T | null {
+  // Check memory cache first
+  const memEntry = memoryCache.get(path) as CacheEntry<T> | undefined;
+  if (memEntry && Date.now() - memEntry.timestamp < CACHE_TTL) {
+    return memEntry.data;
+  }
+
+  // Check localStorage cache
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(getCacheKey(path));
+      if (stored) {
+        const entry = JSON.parse(stored) as CacheEntry<T>;
+        if (Date.now() - entry.timestamp < CACHE_TTL) {
+          // Restore to memory cache
+          memoryCache.set(path, entry);
+          return entry.data;
+        }
+        // Expired — clean up
+        localStorage.removeItem(getCacheKey(path));
+      }
+    } catch {
+      // Corrupted cache entry
+      try { localStorage.removeItem(getCacheKey(path)); } catch {}
+    }
+  }
+
+  return null;
+}
+
+function setCachedData<T>(path: string, data: T): void {
+  const entry: CacheEntry<T> = { data, timestamp: Date.now() };
+
+  // Store in memory cache
+  memoryCache.set(path, entry);
+
+  // Store in localStorage for persistence across page loads
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(getCacheKey(path), JSON.stringify(entry));
+    } catch {
+      // localStorage might be full — clear old cache entries
+      clearExpiredCache();
+      try {
+        localStorage.setItem(getCacheKey(path), JSON.stringify(entry));
+      } catch {
+        // Still can't store — memory cache only
+      }
+    }
+  }
+}
+
+function clearExpiredCache(): void {
+  if (typeof window === 'undefined') return;
+  const now = Date.now();
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith('nabd_api_cache:')) {
+      try {
+        const entry = JSON.parse(localStorage.getItem(key) || '{}');
+        if (now - entry.timestamp > CACHE_TTL) {
+          keysToRemove.push(key);
+        }
+      } catch {
+        keysToRemove.push(key);
+      }
+    }
+  }
+  keysToRemove.forEach((key) => {
+    try { localStorage.removeItem(key); } catch {}
+  });
+}
+
+// ── Backend Status Tracker ────────────────────────────────────────
+
+type BackendStatus = 'unknown' | 'online' | 'degraded' | 'offline';
+
+let _backendStatus: BackendStatus = 'unknown';
+let _lastStatusCheck = 0;
+const STATUS_CHECK_INTERVAL = 30_000; // 30 seconds
+
+const statusListeners = new Set<(status: BackendStatus) => void>();
+
+export function getBackendStatus(): BackendStatus {
+  return _backendStatus;
+}
+
+export function onBackendStatusChange(listener: (status: BackendStatus) => void): () => void {
+  statusListeners.add(listener);
+  return () => statusListeners.delete(listener);
+}
+
+function updateBackendStatus(status: BackendStatus): void {
+  const prev = _backendStatus;
+  _backendStatus = status;
+  _lastStatusCheck = Date.now();
+  if (prev !== status) {
+    statusListeners.forEach((fn) => fn(status));
+  }
+}
+
+/** Check if we should attempt a status check */
+function shouldCheckStatus(): boolean {
+  return Date.now() - _lastStatusCheck > STATUS_CHECK_INTERVAL;
 }
 
 // ── Core Fetch Helper ─────────────────────────────────────────────
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
+  retryCount = 0,
 ): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -91,28 +253,119 @@ async function apiFetch<T>(
   }
 
   const url = `${BACKEND_URL}${path}`;
+  const isGetRequest = !options.method || options.method === 'GET';
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    let problem: ProblemDetail | undefined;
-    try {
-      problem = await response.json();
-    } catch {
-      // Non-JSON error response
+  // For GET requests, try cache first when backend might be down
+  if (isGetRequest && _backendStatus === 'offline') {
+    const cached = getCachedData<T>(path);
+    if (cached) {
+      return cached;
     }
-    throw new ApiError(response.status, problem);
   }
 
-  // Handle 204 No Content
-  if (response.status === 204) {
-    return undefined as T;
-  }
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
-  return response.json() as Promise<T>;
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: options.signal ?? controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let problem: ProblemDetail | undefined;
+      try {
+        problem = await response.json();
+      } catch {
+        // Non-JSON error response
+      }
+
+      const error = new ApiError(response.status, problem);
+
+      // Retry on transient server errors
+      if (error.isRetryable && retryCount < MAX_RETRIES) {
+        const delay = RETRY_BASE_DELAY * Math.pow(2, retryCount);
+        console.warn(`[API] Retrying ${path} (attempt ${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms`);
+        await sleep(delay);
+        return apiFetch<T>(path, options, retryCount + 1);
+      }
+
+      // Update backend status based on error
+      if (error.category === 'server') {
+        updateBackendStatus('degraded');
+      } else if (error.category === 'auth' && response.status === 401) {
+        // Token might be expired — but don't remove it automatically
+        // Let the auth context handle that
+      }
+
+      throw error;
+    }
+
+    // Handle 204 No Content
+    if (response.status === 204) {
+      updateBackendStatus('online');
+      return undefined as T;
+    }
+
+    const data = await response.json() as T;
+
+    // Cache successful GET responses
+    if (isGetRequest) {
+      setCachedData(path, data);
+    }
+
+    // Update backend status
+    if (_backendStatus !== 'online') {
+      updateBackendStatus('online');
+    }
+
+    return data;
+  } catch (error) {
+    // Handle network errors and timeouts
+    if (error instanceof ApiError) throw error;
+
+    const isTimeout = error instanceof DOMException && error.name === 'AbortError';
+    const isNetwork = error instanceof TypeError && error.message.includes('fetch');
+
+    if (isTimeout || isNetwork) {
+      // Try cache on network failure
+      if (isGetRequest) {
+        const cached = getCachedData<T>(path);
+        if (cached) {
+          updateBackendStatus('offline');
+          console.warn(`[API] Using cached data for ${path} (backend unavailable)`);
+          return cached;
+        }
+      }
+
+      // Retry on network failure
+      if (retryCount < MAX_RETRIES) {
+        const delay = RETRY_BASE_DELAY * Math.pow(2, retryCount);
+        console.warn(`[API] Retrying ${path} (attempt ${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms — ${isTimeout ? 'timeout' : 'network error'}`);
+        await sleep(delay);
+        return apiFetch<T>(path, options, retryCount + 1);
+      }
+
+      updateBackendStatus('offline');
+
+      throw new ApiError(
+        isTimeout ? 504 : 502,
+        {
+          status: isTimeout ? 504 : 502,
+          title: isTimeout ? 'Gateway Timeout' : 'Network Error',
+          detail: isTimeout
+            ? 'الخادم يستغرق وقتاً طويلاً للرد'
+            : 'لا يمكن الاتصال بالخادم حالياً',
+        },
+        isTimeout ? 'timeout' : 'network',
+      );
+    }
+
+    throw error;
+  }
 }
 
 // ── Query String Builder ──────────────────────────────────────────
@@ -130,8 +383,27 @@ function buildQueryString(params: Record<string, string | number | boolean | und
 
 // ── Health Check ──────────────────────────────────────────────────
 
+let healthCheckPromise: Promise<{ status: string }> | null = null;
+
 export async function checkBackendHealth(): Promise<{ status: string }> {
-  return apiFetch<{ status: string }>('/api/auth/health');
+  // Debounce: don't fire multiple simultaneous health checks
+  if (healthCheckPromise) return healthCheckPromise;
+
+  healthCheckPromise = apiFetch<{ status: string }>('/api/auth/health')
+    .then((result) => {
+      if (_backendStatus !== 'online') updateBackendStatus('online');
+      return result;
+    })
+    .catch((error) => {
+      if (_backendStatus !== 'offline') updateBackendStatus('offline');
+      // Return a graceful fallback instead of throwing
+      return { status: 'DOWN' };
+    })
+    .finally(() => {
+      healthCheckPromise = null;
+    });
+
+  return healthCheckPromise;
 }
 
 // ── Listings Service ──────────────────────────────────────────────
