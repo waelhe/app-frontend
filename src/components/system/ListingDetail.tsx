@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -21,6 +20,8 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
+import { useFavorites } from '@/store/use-favorites';
+import { useAuth as useAuthStore } from '@/store/use-auth';
 import { catalogService } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,10 +50,12 @@ const categoryGradients: Record<string, string> = {
 export function ListingDetail() {
   const { t, isRTL } = useLanguage();
   const { isAuthenticated } = useAuth();
+  const { user } = useAuthStore();
   const { viewParams, navigate, goBack } = useNavigationStore();
-  const [isFavorited, setIsFavorited] = useState(false);
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
 
   const listingId = viewParams.id;
+  const isProviderOrAdmin = user?.role === 'PROVIDER' || user?.role === 'ADMIN';
 
   const {
     data: listing,
@@ -167,11 +170,23 @@ export function ListingDetail() {
             variant="secondary"
             size="icon"
             className="h-9 w-9 rounded-full bg-white/90 shadow-md"
-            onClick={() => setIsFavorited(!isFavorited)}
+            onClick={() => {
+              if (isFavorite(listingId)) {
+                removeFavorite(listingId);
+              } else if (listing) {
+                addFavorite({
+                  id: listing.id,
+                  title: listing.title,
+                  category: listing.category,
+                  price: listing.price,
+                  providerName: '',
+                });
+              }
+            }}
           >
             <Heart
               className={`h-4 w-4 ${
-                isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-600'
+                isFavorite(listingId) ? 'fill-red-500 text-red-500' : 'text-gray-600'
               }`}
             />
           </Button>
@@ -263,12 +278,21 @@ export function ListingDetail() {
 
       {/* Action Buttons */}
       <div className="flex gap-3 pt-2">
+        {isProviderOrAdmin && (
+          <Button
+            variant="outline"
+            className="flex-1 border-gray-200 text-gray-700 hover:bg-gray-50 gap-1"
+            onClick={() => navigate('edit-listing' as any, { id: listing.id })}
+          >
+            {isRTL ? 'تعديل' : 'Edit'}
+          </Button>
+        )}
         <Button
           className="flex-1 bg-red-500 text-white hover:bg-red-600"
           onClick={handleBook}
           disabled={!isAuthenticated}
         >
-          {t('listing.bookNow')}
+          {isRTL ? 'احجز الآن' : 'Book Now'}
         </Button>
         <Button
           variant="outline"

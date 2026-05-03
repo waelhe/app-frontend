@@ -13,11 +13,14 @@ import {
   AlertCircle,
   Loader2,
   Filter,
+  Star,
+  MessageSquare,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { bookingService } from '@/lib/api';
+import { WriteReviewDialog } from '@/components/system/WriteReviewDialog';
 import type { BookingSummary, BookingStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,10 +106,11 @@ const filterTabs: { id: StatusFilter; labelAr: string; labelEn: string }[] = [
 export function BookingsListView() {
   const { t, isRTL } = useLanguage();
   const { user, role, isAuthenticated, accessToken } = useAuth();
-  const { goBack } = useNavigationStore();
+  const { goBack, navigate } = useNavigationStore();
   const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const isProvider = role === 'PROVIDER' || role === 'ADMIN';
@@ -373,6 +377,29 @@ export function BookingsListView() {
                               {t('booking.cancel')}
                             </Button>
                           )}
+                          {/* Write Review - for consumers with completed bookings */}
+                          {!isProvider && booking.status === 'COMPLETED' && (
+                            <Button
+                              size="sm"
+                              className="gap-1 bg-amber-500 text-white hover:bg-amber-600 text-xs h-7"
+                              onClick={() => setReviewBookingId(booking.id)}
+                            >
+                              <Star className="h-3 w-3" />
+                              {isRTL ? 'أضف تقييم' : 'Write Review'}
+                            </Button>
+                          )}
+                          {/* Message - for any active booking */}
+                          {(booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 border-red-200 text-red-600 hover:bg-red-50 text-xs h-7"
+                              onClick={() => navigate('messages' as any, { bookingId: booking.id })}
+                            >
+                              <MessageSquare className="h-3 w-3" />
+                              {isRTL ? 'رسالة' : 'Message'}
+                            </Button>
+                          )}
                         </div>
                       </>
                     )}
@@ -383,6 +410,17 @@ export function BookingsListView() {
           </div>
         </AnimatePresence>
       )}
+
+      {/* ── Write Review Dialog ──────────────────────────────────── */}
+      <WriteReviewDialog
+        open={!!reviewBookingId}
+        onOpenChange={(open) => { if (!open) setReviewBookingId(null); }}
+        bookingId={reviewBookingId ?? ''}
+        onSuccess={() => {
+          setReviewBookingId(null);
+          queryClient.invalidateQueries({ queryKey: ['bookings-list'] });
+        }}
+      />
     </motion.div>
   );
 }

@@ -28,6 +28,8 @@ import {
   Menu,
   X,
   ChevronDown,
+  MessageSquare,
+  CalendarCheck,
 } from 'lucide-react'
 
 export function Header() {
@@ -186,6 +188,20 @@ export function Header() {
                   >
                     <LayoutDashboard className="h-4 w-4" />
                     <span>{t('لوحة التحكم', 'Dashboard')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate('inbox')}
+                    className="flex items-center gap-2"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span>{t('الرسائل', 'Messages')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate('bookings-list')}
+                    className="flex items-center gap-2"
+                  >
+                    <CalendarCheck className="h-4 w-4" />
+                    <span>{t('حجوزاتي', 'My Bookings')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate('profile')}
@@ -376,6 +392,20 @@ export function Header() {
                   >
                     <LayoutDashboard className="h-4 w-4" />
                     {t('لوحة التحكم', 'Dashboard')}
+                  </button>
+                  <button
+                    onClick={() => { navigate('inbox'); setMobileMenuOpen(false) }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {t('الرسائل', 'Messages')}
+                  </button>
+                  <button
+                    onClick={() => { navigate('bookings-list'); setMobileMenuOpen(false) }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full"
+                  >
+                    <CalendarCheck className="h-4 w-4" />
+                    {t('حجوزاتي', 'My Bookings')}
                   </button>
                   <button
                     onClick={() => { navigate('profile'); setMobileMenuOpen(false) }}

@@ -241,11 +241,14 @@ export type AppView =
   | 'bookings-list'
   | 'messages'
   | 'conversation'
+  | 'inbox'
   | 'search'
   | 'profile'
   | 'create-listing'
+  | 'edit-listing'
   | 'favorites'
-  | 'settings';
+  | 'settings'
+  | 'write-review';
 
 export interface NavigationState {
   currentView: AppView;
