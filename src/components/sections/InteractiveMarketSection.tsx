@@ -294,6 +294,10 @@ export function InteractiveMarketSection({
   const isAuthError = error instanceof ApiError && error.category === 'auth';
   const isStaleData = !!data && isFetching; // Showing data while refreshing
 
+  // If we have cached/stale data and the error is just a refetch failure,
+  // don't show the error state — keep showing the data
+  const showBackendDownError = isError && isBackendDown && listings.length === 0;
+
   return (
     <section className="py-8 sm:py-10">
       <div className="max-w-7xl mx-auto px-4">
@@ -336,7 +340,7 @@ export function InteractiveMarketSection({
         {isLoading && <LoadingSkeleton />}
 
         {/* Error State - Backend Down */}
-        {isError && isBackendDown && (
+        {isError && showBackendDownError && (
           <div className="text-center py-12 bg-gray-50 rounded-2xl">
             <WifiOff className="w-12 h-12 text-amber-400 mx-auto mb-3" />
             <p className="text-gray-600 mb-1 font-medium">
@@ -372,7 +376,7 @@ export function InteractiveMarketSection({
         )}
 
         {/* Error State - Generic */}
-        {isError && !isBackendDown && !isAuthError && (
+        {isError && !showBackendDownError && !isAuthError && listings.length === 0 && (
           <div className="text-center py-12 bg-gray-50 rounded-2xl">
             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
             <p className="text-gray-600 mb-3">
@@ -386,8 +390,8 @@ export function InteractiveMarketSection({
           </div>
         )}
 
-        {/* Listings Grid */}
-        {!isLoading && !isError && listings.length > 0 && (
+        {/* Listings Grid — show if we have data, even if a background refetch failed */}
+        {!isLoading && listings.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {listings.map((listing, idx) => (
               <ListingCard key={listing.id} listing={listing} index={idx} />

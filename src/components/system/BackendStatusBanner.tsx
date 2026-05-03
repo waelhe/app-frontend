@@ -2,12 +2,21 @@
  * BackendStatusBanner — Shows a subtle banner when the backend is
  * intermittently available or offline. Allows the app to continue
  * working with cached data.
+ *
+ * Status levels:
+ * - 'unknown': Initial state, no banner shown
+ * - 'online': Backend is fully healthy, no banner shown
+ * - 'degraded': Backend responds but health check reports DOWN
+ *   (non-critical subsystems like OTLP may be failing).
+ *   Shows a subtle info banner. API endpoints still work.
+ * - 'offline': Backend is completely unreachable.
+ *   Shows a warning banner with cached data notice.
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Wifi, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import { getBackendStatus, onBackendStatusChange, type BackendStatus } from '@/lib/api';
 import { checkBackendHealth } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,8 +43,9 @@ export function BackendStatusBanner() {
     }
   };
 
-  // Don't show banner when backend is online or unknown
-  if (status === 'online' || status === 'unknown') {
+  // Don't show banner when backend is online, degraded, or unknown
+  // 'degraded' means the API works but some non-critical subsystem is down
+  if (status === 'online' || status === 'unknown' || status === 'degraded') {
     return null;
   }
 

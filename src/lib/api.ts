@@ -391,7 +391,17 @@ export async function checkBackendHealth(): Promise<{ status: string }> {
 
   healthCheckPromise = apiFetch<{ status: string }>('/api/auth/health')
     .then((result) => {
-      if (_backendStatus !== 'online') updateBackendStatus('online');
+      // The health endpoint may return { status: "DOWN" } due to non-critical
+      // subsystems (e.g., OTLP metrics), but the API endpoints still work fine.
+      // If we got a response at all, the server is reachable and functional.
+      // Set to 'online' unless the server explicitly reports UP status.
+      if (result.status === 'UP') {
+        updateBackendStatus('online');
+      } else {
+        // Server responds but reports DOWN — mark as 'degraded' not 'offline'
+        // because the actual API endpoints work fine.
+        updateBackendStatus('degraded');
+      }
       return result;
     })
     .catch((error) => {

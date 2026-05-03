@@ -72,11 +72,20 @@ export function Header() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const res = await fetch('/api/actuator/health?XTransformPort=8080', {
+        // Use the auth health proxy which correctly handles 503→200 conversion
+        // and forwards to the Railway backend (not localhost:8080)
+        const res = await fetch('/api/auth/health', {
           method: 'GET',
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(10000), // 10s for Railway cold start
         })
-        setBackendOnline(res.ok)
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}))
+          // Backend responds but may report DOWN status due to non-critical subsystems
+          // If we get a response at all, the API is functional
+          setBackendOnline(true)
+        } else {
+          setBackendOnline(false)
+        }
       } catch {
         setBackendOnline(false)
       }

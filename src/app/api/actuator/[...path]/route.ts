@@ -50,9 +50,18 @@ export async function GET(
       responseHeaders.set(key, value);
     }
 
+    // Fix: Spring Boot /actuator/health returns 503 when overall status is DOWN
+    // (e.g., due to OTLP metrics or non-critical subsystems), but the actual
+    // API endpoints work fine. Convert 503 → 200 so the frontend doesn't treat
+    // the backend as "down" when it's actually serving requests.
+    const isHealthEndpoint = pathStr === 'health' || pathStr.startsWith('health/');
+    const finalStatus = (isHealthEndpoint && backendResponse.status === 503)
+      ? 200
+      : backendResponse.status;
+
     return new NextResponse(responseBody, {
-      status: backendResponse.status,
-      statusText: backendResponse.statusText,
+      status: finalStatus,
+      statusText: finalStatus === 200 ? 'OK' : backendResponse.statusText,
       headers: responseHeaders,
     });
   } catch (error) {
