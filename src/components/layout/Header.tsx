@@ -44,6 +44,7 @@ export function Header() {
 
   const [scrolled, setScrolled] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchOpen, setSearchOpen] = useState(false)
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false)
   const [backendOnline, setBackendOnline] = useState(true)
   const [unreadNotifications, setUnreadNotifications] = useState(3)
@@ -408,7 +409,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleSearchClick}
+              onClick={() => setSearchOpen(!isSearchOpen)}
               className="h-9 w-9"
             >
               <Search className="h-5 w-5 text-gray-600" />
