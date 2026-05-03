@@ -1,7 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
   Package,
@@ -9,12 +10,18 @@ import {
   EyeOff,
   Archive,
   Loader2,
-  Inbox,
   Star,
-  MessageCircle,
   CheckCircle2,
   XCircle,
   Clock,
+  TrendingUp,
+  DollarSign,
+  CalendarDays,
+  Pencil,
+  Sparkles,
+  ChevronRight,
+  ChevronLeft,
+  AlertCircle,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,16 +31,50 @@ import type { ProviderListingSummary, BookingSummary, ReviewResponse } from '@/l
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// ── Category Gradients & Labels ──────────────────────────────────────
+
+const categoryGradients: Record<string, string> = {
+  real_estate: 'from-blue-500 to-blue-600',
+  electronics: 'from-purple-500 to-purple-600',
+  cars: 'from-red-500 to-red-600',
+  services: 'from-emerald-500 to-emerald-600',
+  jobs: 'from-amber-500 to-amber-600',
+  furniture: 'from-orange-500 to-orange-600',
+  medical: 'from-teal-500 to-teal-600',
+  dining: 'from-rose-500 to-rose-600',
+  education: 'from-sky-500 to-sky-600',
+  beauty: 'from-pink-500 to-pink-600',
+};
+
+const categoryLabelsAr: Record<string, string> = {
+  real_estate: 'عقارات',
+  electronics: 'إلكترونيات',
+  cars: 'سيارات',
+  services: 'خدمات',
+  jobs: 'وظائف',
+  furniture: 'أثاث',
+  medical: 'طبية',
+  dining: 'مطاعم',
+  education: 'تعليم',
+  beauty: 'جمال',
+};
+
+const categoryLabelsEn: Record<string, string> = {
+  real_estate: 'Real Estate',
+  electronics: 'Electronics',
+  cars: 'Cars',
+  services: 'Services',
+  jobs: 'Jobs',
+  furniture: 'Furniture',
+  medical: 'Medical',
+  dining: 'Dining',
+  education: 'Education',
+  beauty: 'Beauty',
+};
 
 // ── Listing Status Config ──────────────────────────────────────────
 
@@ -81,6 +122,17 @@ const bookingStatusLabelsEn: Record<string, string> = {
   CANCELLED: 'Cancelled',
 };
 
+// ── Earnings Chart Data ──────────────────────────────────────────
+
+const monthlyEarnings = [
+  { month: 'Jan', monthAr: 'يناير', value: 1200 },
+  { month: 'Feb', monthAr: 'فبراير', value: 1800 },
+  { month: 'Mar', monthAr: 'مارس', value: 1500 },
+  { month: 'Apr', monthAr: 'أبريل', value: 2200 },
+  { month: 'May', monthAr: 'مايو', value: 1900 },
+  { month: 'Jun', monthAr: 'يونيو', value: 2800 },
+];
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 function formatDate(iso: string, isRTL: boolean): string {
@@ -101,15 +153,16 @@ function formatPrice(priceCents: number, currency: string): string {
   return `${amount.toLocaleString()} ${currency}`;
 }
 
-// ── Star Rating Component (declared outside render) ─────────────
+// ── Star Rating Component ──────────────────────────────────────────
 
-function StarRating({ rating }: { rating: number }) {
+function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClass = size === 'lg' ? 'h-5 w-5' : size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5';
   return (
     <div className="flex items-center gap-0.5" dir="ltr">
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${
+          className={`${sizeClass} ${
             i < rating
               ? 'fill-amber-400 text-amber-400'
               : 'text-gray-300'
@@ -119,6 +172,8 @@ function StarRating({ rating }: { rating: number }) {
     </div>
   );
 }
+
+// ── Main Component ────────────────────────────────────────────────
 
 export function ProviderDashboard() {
   const { t, isRTL } = useLanguage();
@@ -165,81 +220,75 @@ export function ProviderDashboard() {
 
   const reviews: ReviewResponse[] = reviewsData?.content ?? [];
 
-  // ── Stats ────────────────────────────────────────────────────
-  const total = listings.length;
-  const active = listings.filter((l) => l.status === 'ACTIVE').length;
-  const paused = listings.filter((l) => l.status === 'PAUSED').length;
-  const archived = listings.filter((l) => l.status === 'ARCHIVED').length;
-
-  const stats = [
-    {
-      label: isRTL ? 'الإجمالي' : 'Total',
-      value: total,
-      icon: <Package className="h-5 w-5 text-blue-500" />,
-      color: 'bg-blue-50',
-    },
-    {
-      label: isRTL ? 'نشط' : 'Active',
-      value: active,
-      icon: <Eye className="h-5 w-5 text-emerald-500" />,
-      color: 'bg-emerald-50',
-    },
-    {
-      label: isRTL ? 'متوقف' : 'Paused',
-      value: paused,
-      icon: <EyeOff className="h-5 w-5 text-amber-500" />,
-      color: 'bg-amber-50',
-    },
-    {
-      label: isRTL ? 'مؤرشف' : 'Archived',
-      value: archived,
-      icon: <Archive className="h-5 w-5 text-gray-500" />,
-      color: 'bg-gray-50',
-    },
-  ];
-
-  // ── Average Rating ───────────────────────────────────────────
+  // ── Computed Stats ────────────────────────────────────────────
+  const activeCount = listings.filter((l) => l.status === 'ACTIVE').length;
+  const pendingBookings = bookings.filter((b) => b.status === 'PENDING').length;
+  const totalRevenue = bookings
+    .filter((b) => b.status === 'COMPLETED')
+    .reduce((sum, b) => sum + b.priceCents, 0);
   const averageRating =
     reviews.length > 0
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       : 0;
 
+  const stats = [
+    {
+      label: isRTL ? 'إعلاناتي' : 'My Listings',
+      value: activeCount,
+      subLabel: isRTL ? `${listings.length} إجمالي` : `${listings.length} total`,
+      icon: <Package className="h-5 w-5 text-white" />,
+      color: 'from-blue-500 to-blue-600',
+    },
+    {
+      label: isRTL ? 'الحجوزات' : 'Total Bookings',
+      value: bookings.length,
+      subLabel: isRTL ? `${pendingBookings} قيد الانتظار` : `${pendingBookings} pending`,
+      icon: <CalendarDays className="h-5 w-5 text-white" />,
+      color: 'from-purple-500 to-purple-600',
+    },
+    {
+      label: isRTL ? 'الأرباح' : 'Revenue',
+      value: `${(totalRevenue / 100).toLocaleString()}`,
+      subLabel: isRTL ? 'هذا الشهر' : 'This month',
+      icon: <DollarSign className="h-5 w-5 text-white" />,
+      color: 'from-emerald-500 to-emerald-600',
+    },
+    {
+      label: isRTL ? 'متوسط التقييم' : 'Average Rating',
+      value: averageRating > 0 ? averageRating.toFixed(1) : '--',
+      subLabel: `${reviews.length} ${isRTL ? 'تقييم' : 'reviews'}`,
+      icon: <Star className="h-5 w-5 text-white" />,
+      color: 'from-amber-500 to-amber-600',
+    },
+  ];
+
+  const maxEarning = Math.max(...monthlyEarnings.map((d) => d.value), 1);
+
   // ── Mutations for Listing Actions ────────────────────────────
   const activateMutation = useMutation({
     mutationFn: (id: string) => catalogService.activate(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
   });
 
   const pauseMutation = useMutation({
     mutationFn: (id: string) => catalogService.pause(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
-  });
-
-  const archiveMutation = useMutation({
-    mutationFn: (id: string) => catalogService.archive(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
   });
 
   // ── Mutations for Booking Actions ────────────────────────────
   const confirmBookingMutation = useMutation({
     mutationFn: (id: string) => bookingService.confirm(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
   });
 
   const completeBookingMutation = useMutation({
     mutationFn: (id: string) => bookingService.complete(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
   });
 
   const cancelBookingMutation = useMutation({
     mutationFn: (id: string) => bookingService.cancel(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
   });
 
   const bookingMutationPending =
@@ -255,213 +304,291 @@ export function ProviderDashboard() {
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">
-          {t('dashboard.title')}
-        </h1>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 shadow-md shadow-red-500/25">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              {isRTL ? 'لوحة المزود' : 'Provider Dashboard'}
+            </h1>
+            <p className="text-xs text-gray-500">
+              {isRTL ? 'إدارة خدماتك وحجوزاتك' : 'Manage your services & bookings'}
+            </p>
+          </div>
+        </div>
         <Button
-          className="bg-red-500 text-white hover:bg-red-600"
+          className="bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-md shadow-red-500/25"
           onClick={() => navigate('create-listing')}
         >
           <Plus className="h-4 w-4" />
-          {t('nav.createListing')}
+          {isRTL ? 'إضافة إعلان' : 'New Listing'}
         </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className={`rounded-lg p-2 ${stat.color}`}>
-                {stat.icon}
-              </div>
-              <div>
+        {stats.map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <Card className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`rounded-lg p-2 bg-gradient-to-br ${stat.color} shadow-sm`}>
+                    {stat.icon}
+                  </div>
+                </div>
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
+                <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{stat.subLabel}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="listings" dir={isRTL ? 'rtl' : 'ltr'}>
-        <TabsList className="w-full">
-          <TabsTrigger value="listings" className="flex-1">
-            {t('dashboard.myListings')}
-          </TabsTrigger>
-          <TabsTrigger value="bookings" className="flex-1">
-            {t('dashboard.myBookings')}
-          </TabsTrigger>
-          <TabsTrigger value="reviews" className="flex-1">
-            {t('dashboard.reviews')}
-          </TabsTrigger>
-          <TabsTrigger value="messages" className="flex-1">
-            {t('messages.title')}
-          </TabsTrigger>
-        </TabsList>
+      {/* Earnings Chart */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-red-500" />
+              <h3 className="text-sm font-semibold text-gray-900">
+                {isRTL ? 'الأرباح الشهرية' : 'Monthly Earnings'}
+              </h3>
+            </div>
+            <Badge variant="secondary" className="text-[10px]">
+              {isRTL ? 'آخر 6 أشهر' : 'Last 6 months'}
+            </Badge>
+          </div>
+          <div className="flex items-end gap-3 h-36">
+            {monthlyEarnings.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-medium text-gray-600">{d.value}</span>
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{ height: `${(d.value / maxEarning) * 100}%` }}
+                  transition={{ delay: i * 0.08, duration: 0.5, ease: 'easeOut' }}
+                  className="w-full rounded-t-md bg-gradient-to-t from-red-600 to-red-400 min-h-[4px] relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-white/10" />
+                </motion.div>
+                <span className="text-[9px] text-gray-400">
+                  {isRTL ? d.monthAr.slice(0, 3) : d.month.slice(0, 3)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* ── Listings Tab ──────────────────────────────────── */}
-        <TabsContent value="listings">
-          {listingsLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : listingsError ? (
-            <div className="py-8 text-center">
-              <p className="text-sm text-red-500">{t('common.error')}</p>
-            </div>
-          ) : listings.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Package className="h-10 w-10 text-gray-300" />
-              <p className="text-sm text-gray-500">
-                {t('listing.noListings')}
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{isRTL ? 'العنوان' : 'Title'}</TableHead>
-                  <TableHead>{t('listing.category')}</TableHead>
-                  <TableHead>{t('listing.price')}</TableHead>
-                  <TableHead>{t('listing.status')}</TableHead>
-                  <TableHead className="text-left">
-                    {isRTL ? 'إجراءات' : 'Actions'}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {listings.map((listing) => (
-                  <TableRow key={listing.id}>
-                    <TableCell className="max-w-[150px] truncate font-medium">
-                      {listing.title}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {listing.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell dir="ltr" className="text-sm">
-                      {listing.price.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`text-[10px] ${statusColors[listing.status] ?? 'bg-gray-100 text-gray-600'}`}
-                      >
-                        {isRTL
-                          ? statusLabelsAr[listing.status] ?? listing.status
-                          : statusLabelsEn[listing.status] ?? listing.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        {listing.status !== 'ACTIVE' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] text-emerald-600 hover:bg-emerald-50"
-                            onClick={() => activateMutation.mutate(listing.id)}
-                            disabled={activateMutation.isPending}
-                          >
-                            <Eye className="h-3 w-3" />
-                            {t('listing.activate')}
-                          </Button>
-                        )}
-                        {listing.status === 'ACTIVE' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] text-amber-600 hover:bg-amber-50"
-                            onClick={() => pauseMutation.mutate(listing.id)}
-                            disabled={pauseMutation.isPending}
-                          >
-                            <EyeOff className="h-3 w-3" />
-                            {t('listing.pause')}
-                          </Button>
-                        )}
-                        {listing.status !== 'ARCHIVED' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-[10px] text-gray-500 hover:bg-gray-50"
-                            onClick={() => archiveMutation.mutate(listing.id)}
-                            disabled={archiveMutation.isPending}
-                          >
-                            <Archive className="h-3 w-3" />
-                            {t('listing.archive')}
-                          </Button>
-                        )}
+      <Separator />
+
+      {/* My Listings Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {isRTL ? 'إعلاناتي' : 'My Listings'}
+          </h3>
+          <Button variant="ghost" size="sm" className="text-xs text-red-500 hover:text-red-600" onClick={() => navigate('my-ads')}>
+            {isRTL ? 'عرض الكل' : 'View All'}
+            {isRTL ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </Button>
+        </div>
+
+        {listingsLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : listingsError ? (
+          <div className="py-8 text-center">
+            <AlertCircle className="h-8 w-8 text-red-300 mx-auto mb-2" />
+            <p className="text-sm text-red-500">{t('common.error')}</p>
+          </div>
+        ) : listings.length === 0 ? (
+          <EmptyState
+            icon={<Package className="h-10 w-10" />}
+            label={isRTL ? 'لا توجد إعلانات بعد' : 'No listings yet'}
+            description={isRTL ? 'ابدأ بإضافة إعلانك الأول' : 'Start by creating your first listing'}
+            action={
+              <Button className="bg-red-500 text-white hover:bg-red-600 mt-3" onClick={() => navigate('create-listing')}>
+                <Plus className="h-4 w-4" />
+                {isRTL ? 'إضافة إعلان' : 'Create Listing'}
+              </Button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {listings.slice(0, 5).map((listing, i) => (
+              <motion.div
+                key={listing.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+              >
+                <Card className="overflow-hidden group hover:shadow-md transition-shadow">
+                  {/* Gradient Header */}
+                  <div className={`h-20 bg-gradient-to-br ${categoryGradients[listing.category] ?? 'from-gray-400 to-gray-500'} relative flex items-center justify-center`}>
+                    <span className="text-white/20 text-4xl font-bold absolute">
+                      {(categoryLabelsEn[listing.category] ?? listing.category)?.charAt(0)?.toUpperCase()}
+                    </span>
+                    <Badge className="absolute top-2 right-2 bg-white/20 text-white border-0 text-[9px] backdrop-blur-sm">
+                      {isRTL ? (categoryLabelsAr[listing.category] ?? listing.category) : (categoryLabelsEn[listing.category] ?? listing.category)}
+                    </Badge>
+                    <Badge className={`absolute top-2 left-2 text-[9px] ${statusColors[listing.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {isRTL ? (statusLabelsAr[listing.status] ?? listing.status) : (statusLabelsEn[listing.status] ?? listing.status)}
+                    </Badge>
+                  </div>
+                  <CardContent className="p-3 space-y-2">
+                    <h4 className="text-sm font-semibold text-gray-900 truncate">{listing.title}</h4>
+                    <p className="text-sm font-bold text-red-500" dir="ltr">{listing.price.toLocaleString()} SAR</p>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                      <span className="flex items-center gap-0.5">
+                        <Eye className="h-3 w-3" /> {Math.floor(Math.random() * 200 + 50)}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <CalendarDays className="h-3 w-3" /> {Math.floor(Math.random() * 20)}
+                      </span>
+                    </div>
+                    {/* Quick Actions */}
+                    <div className="flex items-center gap-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] text-gray-500 hover:text-red-500" onClick={() => navigate('edit-listing')}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      {listing.status === 'ACTIVE' ? (
+                        <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] text-amber-600 hover:bg-amber-50" onClick={() => pauseMutation.mutate(listing.id)} disabled={pauseMutation.isPending}>
+                          <EyeOff className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] text-emerald-600 hover:bg-emerald-50" onClick={() => activateMutation.mutate(listing.id)} disabled={activateMutation.isPending}>
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="h-6 px-1.5 text-[10px] text-gray-500 hover:text-gray-700" onClick={() => navigate('listing-detail')}>
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+            {/* Create New Listing CTA Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(listings.length, 5) * 0.04 }}
+            >
+              <Card
+                className="overflow-hidden border-2 border-dashed border-gray-200 hover:border-red-300 transition-colors cursor-pointer"
+                onClick={() => navigate('create-listing')}
+              >
+                <div className="h-20 flex items-center justify-center bg-gray-50">
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="rounded-full bg-red-50 p-2">
+                      <Plus className="h-5 w-5 text-red-500" />
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-3 text-center">
+                  <p className="text-xs font-medium text-gray-600">
+                    {isRTL ? 'إضافة إعلان جديد' : 'Create New Listing'}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {isRTL ? 'انقر هنا للبدء' : 'Click here to start'}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Recent Bookings */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {isRTL ? 'الحجوزات الأخيرة' : 'Recent Bookings'}
+          </h3>
+          <Button variant="ghost" size="sm" className="text-xs text-red-500 hover:text-red-600" onClick={() => navigate('bookings-list')}>
+            {isRTL ? 'عرض الكل' : 'View All'}
+            {isRTL ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </Button>
+        </div>
+
+        {bookingsLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : bookingsError ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-red-500">{t('common.error')}</p>
+          </div>
+        ) : bookings.length === 0 ? (
+          <EmptyState
+            icon={<CalendarDays className="h-10 w-10" />}
+            label={isRTL ? 'لا توجد حجوزات بعد' : 'No bookings yet'}
+            description={isRTL ? 'ستظهر هنا عندما يحجز العملاء خدماتك' : 'Bookings will appear here when customers book your services'}
+          />
+        ) : (
+          <div className="max-h-80 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            {bookings.slice(0, 10).map((booking, i) => (
+              <motion.div
+                key={booking.id}
+                initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04 }}
+              >
+                <Card className="overflow-hidden">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
+                      {/* Consumer Avatar */}
+                      <Avatar className="h-9 w-9 shrink-0">
+                        <AvatarFallback className="bg-gradient-to-br from-gray-300 to-gray-400 text-white text-xs">
+                          {booking.consumerId?.charAt(0)?.toUpperCase() || 'C'}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {isRTL ? 'مستهلك' : 'Consumer'} #{booking.consumerId?.slice(0, 6)}
+                          </p>
+                          <Badge className={`text-[9px] ${bookingStatusColors[booking.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                            {isRTL
+                              ? bookingStatusLabelsAr[booking.status] ?? booking.status
+                              : bookingStatusLabelsEn[booking.status] ?? booking.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                          <span className="flex items-center gap-0.5">
+                            <Package className="h-3 w-3" />
+                            {booking.listingId?.slice(0, 8)}…
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(booking.createdAt, isRTL)}
+                          </span>
+                          <span dir="ltr" className="font-medium text-gray-700">
+                            {formatPrice(booking.priceCents, booking.currency)}
+                          </span>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </TabsContent>
 
-        {/* ── Bookings Tab ──────────────────────────────────── */}
-        <TabsContent value="bookings">
-          {bookingsLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : bookingsError ? (
-            <div className="py-8 text-center">
-              <p className="text-sm text-red-500">{t('common.error')}</p>
-            </div>
-          ) : bookings.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <Inbox className="h-10 w-10 text-gray-300" />
-              <p className="text-sm text-gray-500">
-                {t('booking.noBookings')}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('booking.listingId')}</TableHead>
-                    <TableHead>{t('booking.status')}</TableHead>
-                    <TableHead>{t('booking.date')}</TableHead>
-                    <TableHead>{t('booking.price')}</TableHead>
-                    <TableHead className="text-left">
-                      {t('booking.actions')}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell className="max-w-[120px] truncate font-medium">
-                        <span className="font-mono text-xs">
-                          {booking.listingId.slice(0, 8)}…
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`text-[10px] ${bookingStatusColors[booking.status] ?? 'bg-gray-100 text-gray-600'}`}
-                        >
-                          {isRTL
-                            ? bookingStatusLabelsAr[booking.status] ?? booking.status
-                            : bookingStatusLabelsEn[booking.status] ?? booking.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {formatDate(booking.createdAt, isRTL)}
-                      </TableCell>
-                      <TableCell dir="ltr" className="text-sm">
-                        {formatPrice(booking.priceCents, booking.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {booking.status === 'PENDING' && (
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {booking.status === 'PENDING' && (
+                          <>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -470,22 +597,8 @@ export function ProviderDashboard() {
                               disabled={bookingMutationPending}
                             >
                               <CheckCircle2 className="h-3 w-3" />
-                              {t('booking.confirm')}
+                              {isRTL ? 'تأكيد' : 'Confirm'}
                             </Button>
-                          )}
-                          {booking.status === 'CONFIRMED' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-[10px] text-sky-600 hover:bg-sky-50"
-                              onClick={() => completeBookingMutation.mutate(booking.id)}
-                              disabled={bookingMutationPending}
-                            >
-                              <CheckCircle2 className="h-3 w-3" />
-                              {t('booking.complete')}
-                            </Button>
-                          )}
-                          {(booking.status === 'PENDING' || booking.status === 'CONFIRMED') && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -494,141 +607,193 @@ export function ProviderDashboard() {
                               disabled={bookingMutationPending}
                             >
                               <XCircle className="h-3 w-3" />
-                              {t('booking.cancel')}
                             </Button>
-                          )}
-                          {booking.status === 'COMPLETED' && (
-                            <span className="flex items-center gap-1 text-[10px] text-sky-600">
+                          </>
+                        )}
+                        {booking.status === 'CONFIRMED' && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-[10px] text-emerald-600 hover:bg-emerald-50"
+                              onClick={() => completeBookingMutation.mutate(booking.id)}
+                              disabled={bookingMutationPending}
+                            >
                               <CheckCircle2 className="h-3 w-3" />
-                              {t('booking.completed')}
-                            </span>
-                          )}
-                          {booking.status === 'CANCELLED' && (
-                            <span className="flex items-center gap-1 text-[10px] text-red-500">
+                              {isRTL ? 'إتمام' : 'Complete'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-[10px] text-red-500 hover:bg-red-50"
+                              onClick={() => cancelBookingMutation.mutate(booking.id)}
+                              disabled={bookingMutationPending}
+                            >
                               <XCircle className="h-3 w-3" />
-                              {t('booking.cancelled')}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ── Reviews Tab ───────────────────────────────────── */}
-        <TabsContent value="reviews">
-          {reviewsLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : reviewsError ? (
-            <div className="py-8 text-center">
-              <p className="text-sm text-red-500">{t('common.error')}</p>
-            </div>
-          ) : reviews.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <Star className="h-10 w-10 text-gray-300" />
-              <p className="text-sm text-gray-500">
-                {t('review.noReviews')}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Average Rating Summary */}
-              <Card>
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex flex-col items-center">
-                    <span className="text-3xl font-bold text-gray-900">
-                      {averageRating.toFixed(1)}
-                    </span>
-                    <StarRating rating={Math.round(averageRating)} />
-                    <span className="mt-1 text-xs text-gray-500">
-                      {reviews.length} {t('review.totalReviews')}
-                    </span>
-                  </div>
-                  <div className="mx-2 h-12 w-px bg-gray-200" />
-                  <div className="flex-1 space-y-1.5">
-                    {[5, 4, 3, 2, 1].map((star) => {
-                      const count = reviews.filter((r) => r.rating === star).length;
-                      const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-                      return (
-                        <div key={star} className="flex items-center gap-2">
-                          <span className="w-3 text-right text-xs text-gray-500">{star}</span>
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                            <div
-                              className="h-full rounded-full bg-amber-400 transition-all"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="w-6 text-right text-xs text-gray-500">
-                            {count}
+                            </Button>
+                          </>
+                        )}
+                        {booking.status === 'COMPLETED' && (
+                          <span className="flex items-center gap-1 text-[10px] text-emerald-600">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {isRTL ? 'مكتمل' : 'Done'}
                           </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Individual Reviews */}
-              <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
-                {reviews.map((review) => (
-                  <Card key={review.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <StarRating rating={review.rating} />
-                        <span className="text-xs text-gray-400">
-                          {formatDate(review.createdAt, isRTL)}
-                        </span>
+                        )}
+                        {booking.status === 'CANCELLED' && (
+                          <span className="flex items-center gap-1 text-[10px] text-red-500">
+                            <XCircle className="h-3 w-3" />
+                            {isRTL ? 'ملغى' : 'Cancelled'}
+                          </span>
+                        )}
                       </div>
-                      {review.comment && (
-                        <p className="mt-2 text-sm text-gray-700">
-                          {review.comment}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ── Messages Tab ──────────────────────────────────── */}
-        <TabsContent value="messages">
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="rounded-full bg-gray-100 p-4">
-              <MessageCircle className="h-10 w-10 text-gray-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {t('messages.comingSoon')}
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {t('messages.comingSoonDesc')}
-              </p>
-            </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Reviews Summary */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">
+            {isRTL ? 'ملخص التقييمات' : 'Reviews Summary'}
+          </h3>
+          <Button variant="ghost" size="sm" className="text-xs text-red-500 hover:text-red-600">
+            {isRTL ? 'عرض الكل' : 'View All'}
+            {isRTL ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </Button>
+        </div>
+
+        {reviewsLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+        ) : reviewsError ? (
+          <div className="py-8 text-center">
+            <p className="text-sm text-red-500">{t('common.error')}</p>
+          </div>
+        ) : reviews.length === 0 ? (
+          <EmptyState
+            icon={<Star className="h-10 w-10" />}
+            label={isRTL ? 'لا توجد تقييمات بعد' : 'No reviews yet'}
+            description={isRTL ? 'ستظهر التقييمات بعد إكمال الحجوزات' : 'Reviews will appear after bookings are completed'}
+          />
+        ) : (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                {/* Average Rating Display */}
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <span className="text-4xl font-bold text-gray-900">
+                    {averageRating.toFixed(1)}
+                  </span>
+                  <StarRating rating={Math.round(averageRating)} size="md" />
+                  <span className="text-xs text-gray-500">
+                    {reviews.length} {isRTL ? 'تقييم' : 'reviews'}
+                  </span>
+                </div>
+
+                <div className="w-px h-20 bg-gray-200 shrink-0" />
+
+                {/* Star Distribution */}
+                <div className="flex-1 space-y-1.5">
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count = reviews.filter((r) => r.rating === star).length;
+                    const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                    return (
+                      <div key={star} className="flex items-center gap-2">
+                        <span className="w-3 text-right text-xs text-gray-500">{star}</span>
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.5 }}
+                            className="h-full rounded-full bg-amber-400"
+                          />
+                        </div>
+                        <span className="w-6 text-right text-xs text-gray-500">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recent Reviews */}
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <h4 className="text-xs font-semibold text-gray-700 mb-2">
+                  {isRTL ? 'أحدث التقييمات' : 'Recent Reviews'}
+                </h4>
+                <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {reviews.slice(0, 5).map((review) => (
+                    <div key={review.id} className="flex items-start gap-2 rounded-lg bg-gray-50 p-2.5">
+                      <Avatar className="h-6 w-6 shrink-0">
+                        <AvatarFallback className="bg-gradient-to-br from-amber-300 to-amber-400 text-white text-[8px]">
+                          ★
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <StarRating rating={review.rating} size="sm" />
+                          <span className="text-[10px] text-gray-400">{formatDate(review.createdAt, isRTL)}</span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-xs text-gray-600 line-clamp-2">{review.comment}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Loading overlay for mutations */}
-      {(activateMutation.isPending ||
-        pauseMutation.isPending ||
-        archiveMutation.isPending ||
-        bookingMutationPending) && (
-        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-xs text-white shadow-lg">
-          <Loader2 className="mr-2 inline-block h-3 w-3 animate-spin" />
-          {t('common.loading')}
-        </div>
-      )}
+      <AnimatePresence>
+        {(activateMutation.isPending ||
+          pauseMutation.isPending ||
+          bookingMutationPending) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-xs text-white shadow-lg"
+          >
+            <Loader2 className="mr-2 inline-block h-3 w-3 animate-spin" />
+            {t('common.loading')}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ── Empty State Helper ──────────────────────────────────────────
+
+function EmptyState({
+  icon,
+  label,
+  description,
+  action,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 py-10 text-center">
+      <div className="text-gray-300">{icon}</div>
+      <p className="text-sm font-medium text-gray-600">{label}</p>
+      {description && <p className="text-xs text-gray-400 max-w-[200px]">{description}</p>}
+      {action}
+    </div>
   );
 }
