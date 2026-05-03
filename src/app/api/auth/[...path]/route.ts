@@ -47,7 +47,10 @@ async function proxyAuthRequest(
   // Map auth proxy paths to actual backend paths
   let backendPath: string;
   if (pathStr === 'health') {
-    backendPath = '/actuator/health';
+    // Use the readiness endpoint which reports UP when the app is ready,
+    // instead of the full health endpoint which reports DOWN due to
+    // non-critical subsystems (e.g., OTLP metrics).
+    backendPath = '/actuator/health/readiness';
   } else if (pathStr === 'token') {
     backendPath = '/oauth2/token';
   } else if (pathStr.startsWith('oauth2/')) {
@@ -58,7 +61,10 @@ async function proxyAuthRequest(
     backendPath = `/${pathStr}`;
   }
 
-  const searchParams = request.nextUrl.searchParams.toString();
+  // Strip XTransformPort from search params before forwarding to backend
+  const sp = new URLSearchParams(request.nextUrl.searchParams);
+  sp.delete('XTransformPort');
+  const searchParams = sp.toString();
   const targetUrl = `${BACKEND_URL}${backendPath}${searchParams ? `?${searchParams}` : ''}`;
 
   try {

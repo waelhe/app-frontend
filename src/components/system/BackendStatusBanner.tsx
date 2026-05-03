@@ -16,7 +16,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, Info } from 'lucide-react';
+import { WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getBackendStatus, onBackendStatusChange, type BackendStatus } from '@/lib/api';
 import { checkBackendHealth } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,7 +65,7 @@ export function BackendStatusBanner() {
           {status === 'offline' ? (
             <>
               <WifiOff className="h-4 w-4" />
-              <span>الخادم غير متاح حالياً — يتم عرض البيانات المحفوظة</span>
+              <span>لا يمكن الاتصال بالخادم حالياً — يتم عرض البيانات المحفوظة</span>
             </>
           ) : (
             <>

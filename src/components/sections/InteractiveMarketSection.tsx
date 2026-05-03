@@ -339,54 +339,62 @@ export function InteractiveMarketSection({
         {/* Loading State */}
         {isLoading && <LoadingSkeleton />}
 
-        {/* Error State - Backend Down */}
+        {/* Error State - Backend Down (subtle banner, not full replacement) */}
         {isError && showBackendDownError && (
-          <div className="text-center py-12 bg-gray-50 rounded-2xl">
-            <WifiOff className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-1 font-medium">
-              {language === 'ar'
-                ? 'الخادم غير متاح حالياً'
-                : 'Server is temporarily unavailable'}
-            </p>
-            <p className="text-gray-400 text-sm mb-3">
-              {language === 'ar'
-                ? 'يتم إعادة تشغيل الخادم، يرجى المحاولة مرة أخرى'
-                : 'The server is restarting, please try again'}
-            </p>
-            <Button variant="outline" onClick={() => refetch()} className="gap-2">
-              <RefreshCw className="w-4 h-4" />
-              {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
-            </Button>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6">
+            <div className="flex flex-col items-center text-center gap-3">
+              <WifiOff className="w-8 h-8 text-amber-500" />
+              <div>
+                <p className="text-gray-700 font-medium text-sm">
+                  {language === 'ar'
+                    ? 'لا يمكن الاتصال بالخادم حالياً'
+                    : 'Cannot connect to the server right now'}
+                </p>
+                <p className="text-gray-400 text-xs mt-1">
+                  {language === 'ar'
+                    ? 'يتم عرض البيانات المحفوظة، حاول مرة أخرى'
+                    : 'Showing cached data, please try again'}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5 text-xs">
+                <RefreshCw className="w-3.5 h-3.5" />
+                {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* Error State - Auth Required */}
+        {/* Error State - Auth Required (subtle banner) */}
         {isError && isAuthError && (
-          <div className="text-center py-12 bg-gray-50 rounded-2xl">
-            <AlertCircle className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-3">
-              {language === 'ar'
-                ? 'يجب تسجيل الدخول لعرض هذا المحتوى'
-                : 'Sign in to view this content'}
-            </p>
-            <Button variant="outline" onClick={() => refetch()}>
-              {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
-            </Button>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6">
+            <div className="flex flex-col items-center text-center gap-3">
+              <AlertCircle className="w-8 h-8 text-blue-500" />
+              <p className="text-gray-600 text-sm">
+                {language === 'ar'
+                  ? 'يجب تسجيل الدخول لعرض هذا المحتوى'
+                  : 'Sign in to view this content'}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs">
+                {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* Error State - Generic */}
+        {/* Error State - Generic (subtle banner) */}
         {isError && !showBackendDownError && !isAuthError && listings.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 rounded-2xl">
-            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-3">
-              {language === 'ar'
-                ? 'حدث خطأ أثناء تحميل البيانات'
-                : 'An error occurred while loading data'}
-            </p>
-            <Button variant="outline" onClick={() => refetch()}>
-              {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
-            </Button>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 sm:p-6">
+            <div className="flex flex-col items-center text-center gap-3">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+              <p className="text-gray-600 text-sm">
+                {language === 'ar'
+                  ? 'حدث خطأ أثناء تحميل البيانات'
+                  : 'An error occurred while loading data'}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs">
+                {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+              </Button>
+            </div>
           </div>
         )}
 

@@ -42,8 +42,11 @@ import type {
 
 // ── Configuration ─────────────────────────────────────────────────
 
-/** Relative path — requests are proxied through Next.js API routes */
+/** Relative path — requests are proxied through Next.js API routes.
+ *  XTransformPort=3000 ensures Caddy routes to Next.js instead of
+ *  proxying directly to the Railway backend (which fails through CDN). */
 const BACKEND_URL = '';
+const PROXY_PORT_PARAM = 'XTransformPort=3000';
 
 /** Maximum number of retry attempts for transient errors */
 const MAX_RETRIES = 2;
@@ -120,7 +123,9 @@ interface CacheEntry<T> {
 const memoryCache = new Map<string, CacheEntry<unknown>>();
 
 function getCacheKey(path: string): string {
-  return `nabd_api_cache:${path}`;
+  // Strip XTransformPort from cache key so it's consistent
+  const cleanPath = path.replace(/[?&]XTransformPort=\d+/, '');
+  return `nabd_api_cache:${cleanPath}`;
 }
 
 function getCachedData<T>(path: string): T | null {
@@ -199,7 +204,7 @@ function clearExpiredCache(): void {
 
 // ── Backend Status Tracker ────────────────────────────────────────
 
-type BackendStatus = 'unknown' | 'online' | 'degraded' | 'offline';
+export type BackendStatus = 'unknown' | 'online' | 'degraded' | 'offline';
 
 let _backendStatus: BackendStatus = 'unknown';
 let _lastStatusCheck = 0;
@@ -252,7 +257,11 @@ async function apiFetch<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = `${BACKEND_URL}${path}`;
+  // Route through Next.js API proxy by adding XTransformPort=3000
+  // This ensures Caddy forwards the request to Next.js (port 3000)
+  // instead of proxying directly to the Railway backend (which fails via CDN).
+  const separator = path.includes('?') ? '&' : '?';
+  const url = `${BACKEND_URL}${path}${separator}${PROXY_PORT_PARAM}`;
   const isGetRequest = !options.method || options.method === 'GET';
 
   // For GET requests, try cache first when backend might be down
@@ -389,12 +398,11 @@ export async function checkBackendHealth(): Promise<{ status: string }> {
   // Debounce: don't fire multiple simultaneous health checks
   if (healthCheckPromise) return healthCheckPromise;
 
-  healthCheckPromise = apiFetch<{ status: string }>('/api/auth/health')
+  healthCheckPromise = apiFetch<{ status: string }>('/api/actuator/health/readiness')
     .then((result) => {
-      // The health endpoint may return { status: "DOWN" } due to non-critical
-      // subsystems (e.g., OTLP metrics), but the API endpoints still work fine.
-      // If we got a response at all, the server is reachable and functional.
-      // Set to 'online' unless the server explicitly reports UP status.
+      // The readiness endpoint reports UP when the app is ready to serve requests.
+      // This is more reliable than /actuator/health which reports DOWN due to
+      // non-critical subsystems (e.g., OTLP metrics).
       if (result.status === 'UP') {
         updateBackendStatus('online');
       } else {

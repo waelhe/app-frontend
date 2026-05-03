@@ -12,36 +12,11 @@
                 }
         }
 
-        # API v1 proxy - forward to Java backend on Railway
-        handle /api/v1/* {
-                reverse_proxy https://app-java-v3-production.up.railway.app {
-                        header_up Host app-java-v3-production.up.railway.app
-                        header_up X-Forwarded-For {remote_host}
-                        header_up X-Forwarded-Proto https
-                        header_up X-Real-IP {remote_host}
-                        # Remove Origin header to prevent backend from redirecting to login
-                        header_up Origin ""
-                        header_up Referer ""
-                        header_down Access-Control-Allow-Origin "*"
-                        header_down Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-                        header_down Access-Control-Allow-Headers "Authorization, Content-Type, Accept"
-                }
-        }
-
-        # Health check proxy
-        handle /api/auth/health {
-                reverse_proxy https://app-java-v3-production.up.railway.app {
-                        header_up Host app-java-v3-production.up.railway.app
-                        header_up X-Forwarded-For {remote_host}
-                        header_up X-Forwarded-Proto https
-                        header_up X-Real-IP {remote_host}
-                        header_up Origin ""
-                        header_up Referer ""
-                        # Rewrite the path to the readiness endpoint
-                        rewrite /actuator/health/readiness
-                }
-        }
-
+        # Route ALL requests through Next.js - the API proxy routes
+        # in Next.js handle forwarding to the Java backend on Railway.
+        # This is more reliable than Caddy proxying directly to Railway
+        # because Next.js has proper error handling, retry logic, and
+        # environment variable management.
         handle {
                 reverse_proxy localhost:3000 {
                         header_up Host {host}

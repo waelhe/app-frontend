@@ -56,7 +56,10 @@ async function proxyRequest(
 ) {
   const { path } = await paramsPromise;
   const pathStr = path.join('/');
-  const searchParams = request.nextUrl.searchParams.toString();
+  // Strip XTransformPort from search params before forwarding to backend
+  const sp = new URLSearchParams(request.nextUrl.searchParams);
+  sp.delete('XTransformPort');
+  const searchParams = sp.toString();
   const targetUrl = `${BACKEND_URL}/api/v1/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
 
   try {
