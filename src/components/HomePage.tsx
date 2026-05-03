@@ -19,9 +19,12 @@ import { BookingsListView } from '@/components/system/BookingsListView';
 import { EditListingForm } from '@/components/system/EditListingForm';
 import { FavoritesView } from '@/components/system/FavoritesView';
 import { SettingsView } from '@/components/system/SettingsView';
+import { NotificationCenter } from '@/components/system/NotificationCenter';
 import { ProviderDashboard } from '@/components/dashboard/ProviderDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { LoginDialog } from '@/components/auth/LoginDialog';
+import { QuickActions } from '@/components/ui/QuickActions';
+import { RecentlyViewed } from '@/components/ui/RecentlyViewed';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -53,6 +56,7 @@ import {
   UtensilsCrossed,
   GraduationCap,
   Sparkles,
+  Bell,
 } from 'lucide-react';
 
 // ── Dynamic imports for local components (export default) ──────────
@@ -483,6 +487,8 @@ export function HomePage() {
     'favorites',
     'settings',
     'write-review',
+    'notifications',
+    'my-ads',
   ].includes(currentView);
 
   // ── Render overlay views ─────────────────────────────────────
@@ -514,6 +520,11 @@ export function HomePage() {
         return <FavoritesView />;
       case 'settings':
         return <SettingsView />;
+      case 'notifications':
+        return <NotificationCenter />;
+      case 'my-ads':
+        if (user?.role === 'ADMIN') return <AdminDashboard />;
+        return <ProviderDashboard />;
       default:
         return null;
     }
@@ -527,6 +538,50 @@ export function HomePage() {
           <>
             {/* Hero Carousel */}
             <Hero />
+
+            {/* Quick Actions */}
+            <QuickActions />
+
+            {/* Categories Showcase */}
+            <section className="py-6 sm:py-8">
+              <div className="max-w-7xl mx-auto px-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm">
+                    <ShoppingBag className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                      {t('تصفح الفئات', 'Browse Categories')}
+                    </h2>
+                    <p className="text-xs text-gray-400">
+                      {t('اختر الفئة التي تهمك', 'Choose the category that interests you')}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                  {allCategories.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <button
+                        key={cat.value}
+                        onClick={() => navigate('market', { category: cat.value })}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
+                      >
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200`}>
+                          <Icon className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-[10px] font-medium text-gray-600 text-center leading-tight line-clamp-1">
+                          {t(cat.labelAr, cat.labelEn)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* Recently Viewed */}
+            <RecentlyViewed />
 
             {/* Main Market Section */}
             <InteractiveMarketSection
@@ -705,6 +760,19 @@ export function HomePage() {
               </Button>
             )}
 
+            {/* Notification Bell - authenticated users */}
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200 relative"
+                onClick={() => { if (!isOverlayView) navigate('notifications'); }}
+              >
+                <Bell className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('الإشعارات', 'Notifications')}</span>
+              </Button>
+            )}
+
             {/* Dashboard Button - for provider/admin */}
             {isAuthenticated && user && (user.role === 'PROVIDER' || user.role === 'ADMIN') && (
               <Button
@@ -715,6 +783,19 @@ export function HomePage() {
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('لوحة التحكم', 'Dashboard')}</span>
+              </Button>
+            )}
+
+            {/* My Ads Button - for provider/admin */}
+            {isAuthenticated && user && (user.role === 'PROVIDER' || user.role === 'ADMIN') && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200"
+                onClick={() => { if (!isOverlayView) navigate('my-ads'); }}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('إعلاناتي', 'My Ads')}</span>
               </Button>
             )}
 
@@ -749,8 +830,8 @@ export function HomePage() {
               </Button>
             )}
 
-            {/* Create Listing Button - for provider/admin */}
-            {isAuthenticated && user && (user.role === 'PROVIDER' || user.role === 'ADMIN') && (
+            {/* Create Listing Button - for ALL authenticated users */}
+            {isAuthenticated && (
               <Button
                 size="sm"
                 className="gap-1.5 bg-red-500 text-white hover:bg-red-600 ms-auto"

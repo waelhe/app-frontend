@@ -248,7 +248,9 @@ export type AppView =
   | 'edit-listing'
   | 'favorites'
   | 'settings'
-  | 'write-review';
+  | 'write-review'
+  | 'notifications'
+  | 'my-ads';
 
 export interface NavigationState {
   currentView: AppView;
