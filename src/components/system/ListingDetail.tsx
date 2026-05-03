@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -245,11 +245,11 @@ export function ListingDetail() {
 
   // ── Track Recently Viewed ───────────────────────────────────────────
 
-  const [trackedId, setTrackedId] = useState<string | null>(null);
-  if (listing && listing.id !== trackedId) {
-    setTrackedId(listing.id);
-    addViewed(listing.id, listing.title, listing.category, listing.price);
-  }
+  useEffect(() => {
+    if (listing && listing.id) {
+      addViewed(listing.id, listing.title, listing.category, listing.price);
+    }
+  }, [listing?.id]);
 
   // ── Derived Data ────────────────────────────────────────────────────
 
@@ -1253,12 +1253,15 @@ export function ListingDetail() {
           </motion.div>
         </div>
         {!isAuthenticated && (
-          <div className="pb-1 px-4 text-center">
-            <p className="text-[10px] text-gray-400">
+          <div className="pb-2 px-4 text-center">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-login', { detail: { mode: 'register' } }))}
+              className="text-xs text-red-500 hover:text-red-600 font-medium underline underline-offset-2"
+            >
               {isRTL
-                ? 'سجّل الدخول للحجز والمراسلة'
-                : 'Sign in to book and message'}
-            </p>
+                ? 'أنشئ حساباً مجاناً للحجز والمراسلة'
+                : 'Create a free account to book and message'}
+            </button>
           </div>
         )}
       </div>

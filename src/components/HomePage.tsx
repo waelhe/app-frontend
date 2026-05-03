@@ -25,6 +25,7 @@ import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { LoginDialog } from '@/components/auth/LoginDialog';
 import { QuickActions } from '@/components/ui/QuickActions';
 import { RecentlyViewed } from '@/components/ui/RecentlyViewed';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -894,6 +895,9 @@ export function HomePage() {
 
       {/* ── Content Area ─────────────────────────────────────────── */}
       {isOverlayView ? renderOverlayView() : renderTabContent()}
+
+      {/* ── Floating Action Button ──────────────────────────────── */}
+      {!isOverlayView && <FloatingActionButton />}
 
       {/* ── Login Dialog ─────────────────────────────────────────── */}
       <LoginDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen} />

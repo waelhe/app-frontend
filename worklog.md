@@ -83,3 +83,34 @@ Stage Summary:
 - Categories Showcase allows quick navigation to any category
 - Post Ad button now available for ALL authenticated users (not just providers)
 - Notification bell and My Ads buttons added to action bar
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix three critical console errors and enhance marketplace UX
+
+Work Log:
+- Fixed ListingDetail setState-during-render error: Moved `addViewed()` call from render phase to `useEffect`
+- Fixed ListingDetail "React is not defined" error: Added `React` to the import statement (was needed for `React.cloneElement`)
+- Fixed RecentlyViewed hydration mismatch: Replaced direct localStorage access during render with `useSyncExternalStore` pattern that returns `[]` on server and actual items on client
+- Enhanced QuickActions component:
+  - Split into `authenticatedActions` and `guestActions` configs
+  - Added "Sign Up" prominent action for guests with green gradient
+  - Added "Register" and "Login" quick actions for unauthenticated users
+  - Changed header text dynamically: "إجراءات سريعة" for auth, "ابدأ الآن" for guests
+  - Made primary actions use gradient backgrounds instead of plain backgrounds
+  - Added Market and Services quick actions for guests
+- Created FloatingActionButton component:
+  - Shows single "Post Ad" FAB for authenticated users
+  - Shows expandable FAB with Sign Up / Login options for guests
+  - Animated open/close with rotation on the plus icon
+  - Positioned at bottom-right, above the bottom nav
+- Added FloatingActionButton to HomePage (only shown when not in overlay view)
+- Improved ListingDetail unauthenticated CTA: Changed from passive "Sign in to book and message" text to an actionable "Create a free account to book and message" button that opens registration dialog
+- All lint checks pass (0 errors, 1 pre-existing warning)
+
+Stage Summary:
+- Three critical React errors resolved: setState-during-render, React undefined, hydration mismatch
+- Guest users now see prominent Sign Up and Login CTAs via QuickActions and FloatingActionButton
+- Registration flow is more discoverable with multiple entry points
+- ListingDetail encourages registration with actionable CTA
+- App loads cleanly with 200 status code

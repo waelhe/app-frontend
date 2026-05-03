@@ -1,10 +1,11 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ArrowLeft, ArrowRight, Trash2, Eye } from 'lucide-react';
 import { useLanguage } from '@/store/use-language';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { useRecentlyViewed } from '@/store/use-recently-viewed';
+import { useRecentlyViewed, type RecentlyViewedItem } from '@/store/use-recently-viewed';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,13 +51,38 @@ const categoryLabelsEn: Record<string, string> = {
   beauty: 'Beauty',
 };
 
+// ── useClientItems hook ─────────────────────────────────────────────
+// Uses useSyncExternalStore to safely read from zustand persisted store
+// Returns [] on server (avoiding hydration mismatch) and actual items on client
+
+const emptyItems: RecentlyViewedItem[] = [];
+
+function useClientItems(): RecentlyViewedItem[] {
+  const store = useRecentlyViewed;
+
+  const subscribe = (callback: () => void) => {
+    const unsub = store.subscribe(callback);
+    return unsub;
+  };
+
+  const getSnapshot = () => {
+    return store.getState().items;
+  };
+
+  const getServerSnapshot = () => {
+    return emptyItems;
+  };
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
 // ── Component ──────────────────────────────────────────────────────
 
 export function RecentlyViewed() {
   const { t, isRTL } = useLanguage();
   const { navigate } = useNavigationStore();
-  const { getRecentlyViewed, clearAll } = useRecentlyViewed();
-  const items = getRecentlyViewed();
+  const clearAll = useRecentlyViewed((s) => s.clearAll);
+  const items = useClientItems();
 
   if (items.length === 0) return null;
 
