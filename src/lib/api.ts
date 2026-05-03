@@ -131,7 +131,7 @@ function buildQueryString(params: Record<string, string | number | boolean | und
 // ── Health Check ──────────────────────────────────────────────────
 
 export async function checkBackendHealth(): Promise<{ status: string }> {
-  return apiFetch<{ status: string }>('/actuator/health');
+  return apiFetch<{ status: string }>('/api/auth/health');
 }
 
 // ── Listings Service ──────────────────────────────────────────────
