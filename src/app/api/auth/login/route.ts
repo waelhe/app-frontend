@@ -155,11 +155,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Extract the new session cookie (backend may issue a new one after login)
+    // Extract the new session cookie (backend issues a new one after login)
     const loginSetCookie = loginResponse.headers.get('set-cookie');
     const newSessionMatch = loginSetCookie?.match(/SESSION=([^;]+)/);
-    const authenticatedSessionId = newSessionMatch ?? sessionId;
-    console.log(`[Auth Login] Login successful for user: ${username}`);
+    const authenticatedSessionId = newSessionMatch ? newSessionMatch[1] : sessionId;
+    console.log(`[Auth Login] Login successful for user: ${username}, session: ${authenticatedSessionId.substring(0, 8)}...`);
 
     // Step 3: Generate PKCE
     const { verifier, challenge } = await generatePKCE();
