@@ -3,13 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/store/use-auth'
 import { useLanguage } from '@/store/use-language'
-import { useNavigationStore as useUiNavStore } from '@/store/use-navigation'
 import { useNavigationStore } from '@/stores/navigationStore'
 import { useRegion, REGIONS } from '@/store/use-region'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,30 +31,22 @@ import {
   LogOut,
   X,
   ChevronDown,
-  MessageSquare,
   Bell,
   Activity,
   ShoppingCart,
-  Briefcase,
-  BookOpen,
-  Users,
-  Plus,
 } from 'lucide-react'
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const { t, language, setLanguage, isRTL } = useLanguage()
-  const { isSearchOpen, setSearchOpen } = useUiNavStore()
   const { navigate } = useNavigationStore()
   const { selectedRegion, setRegion } = useRegion()
 
   const [scrolled, setScrolled] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [backendOnline, setBackendOnline] = useState(true)
   const [unreadNotifications, setUnreadNotifications] = useState(3)
-  const [unreadMessages, setUnreadMessages] = useState(2)
   const locationRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -125,14 +114,6 @@ export function Header() {
         .join('')
         .slice(0, 2)
     : ''
-
-  // Quick links for desktop
-  const quickLinks = [
-    { view: 'market' as const, icon: ShoppingCart, ar: 'السوق', en: 'Market' },
-    { view: 'services' as const, icon: Briefcase, ar: 'الخدمات', en: 'Services' },
-    { view: 'directory' as const, icon: BookOpen, ar: 'الدليل', en: 'Directory' },
-    { view: 'community' as const, icon: Users, ar: 'المجتمع', en: 'Community' },
-  ]
 
   return (
     <header
@@ -599,35 +580,7 @@ export function Header() {
         </AnimatePresence>
       </div>
 
-      {/* Mobile Quick Links - horizontal scroll strip below header on mobile */}
-      <div className="border-t border-gray-100 md:hidden">
-        <div className="scrollbar-hide flex items-center gap-1 overflow-x-auto px-4 py-2">
-          {quickLinks.map((link) => {
-            const Icon = link.icon
-            return (
-              <button
-                key={link.view}
-                onClick={() => navigate(link.view)}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-500"
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{t(link.ar, link.en)}</span>
-              </button>
-            )
-          })}
-          {/* Backend status indicator mobile */}
-          <div className="flex shrink-0 items-center gap-1 px-2">
-            <div
-              className={`h-1.5 w-1.5 rounded-full ${
-                backendOnline ? 'bg-emerald-500' : 'bg-red-500'
-              }`}
-            />
-            <span className="text-[10px] text-gray-400">
-              {backendOnline ? t('متصل', 'Online') : t('غير متصل', 'Offline')}
-            </span>
-          </div>
-        </div>
-      </div>
+
     </header>
   )
 }
