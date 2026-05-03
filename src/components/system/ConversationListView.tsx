@@ -19,7 +19,8 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { bookingService, messagingService } from '@/lib/api';
+import { useBookings, useProviderBookings } from '@/hooks/useApi';
+import { messagingService } from '@/lib/api';
 import type {
   BookingSummary,
   ConversationResponse,
@@ -150,14 +151,8 @@ function truncateText(text: string, maxLength: number): string {
 // ── Custom hook: Fetch conversation summaries ──────────────────────
 
 async function fetchConversationSummaries(
-  userId: string,
-  isProvider: boolean
+  bookings: BookingSummary[],
 ): Promise<ConversationSummary[]> {
-  const bookingsData = isProvider
-    ? await bookingService.providerBookings(userId, 0, 50)
-    : await bookingService.consumerBookings(userId, 0, 50);
-
-  const bookings: BookingSummary[] = bookingsData.content ?? [];
   if (bookings.length === 0) return [];
 
   const results: ConversationSummary[] = [];
@@ -203,22 +198,35 @@ async function fetchConversationSummaries(
 function useConversationSummaries() {
   const { user, role, isAuthenticated } = useAuth();
   const isProvider = role === 'PROVIDER' || role === 'ADMIN';
+
+  // Use hooks for the initial bookings fetch
+  const bookingsQueryConsumer = useBookings(user?.id, { page: 0, size: 50 });
+  const bookingsQueryProvider = useProviderBookings(user?.id ?? '', { page: 0, size: 50 });
+
+  const bookingsData = isProvider ? bookingsQueryProvider.data : bookingsQueryConsumer.data;
+  const bookings = bookingsData?.content ?? [];
+  const isBookingsLoading = isProvider ? bookingsQueryProvider.isLoading : bookingsQueryConsumer.isLoading;
+  const bookingsError = isProvider ? bookingsQueryProvider.error : bookingsQueryConsumer.error;
+  const bookingsRefetch = isProvider ? bookingsQueryProvider.refetch : bookingsQueryConsumer.refetch;
+
+  // Then use a secondary query for conversation summaries based on fetched bookings
   const {
     data: summaries = [],
-    isLoading,
-    error,
-    refetch,
+    isLoading: isSummariesLoading,
+    error: summariesError,
+    refetch: summariesRefetch,
   } = useQuery({
-    queryKey: ['conversation-summaries', user?.id, role],
-    queryFn: () => {
-      if (!user?.id) throw new Error('Not authenticated');
-      return fetchConversationSummaries(user.id, isProvider);
-    },
-    enabled: isAuthenticated && !!user?.id,
+    queryKey: ['conversation-summaries', user?.id, role, bookings.map(b => b.id).join(',')],
+    queryFn: () => fetchConversationSummaries(bookings),
+    enabled: isAuthenticated && !!user?.id && bookings.length > 0,
     staleTime: 30_000,
   });
 
-  return { summaries, isLoading, error: error ? (error as Error).message : null, refetch };
+  const isLoading = isBookingsLoading || (bookings.length > 0 && isSummariesLoading);
+  const error = bookingsError ? (bookingsError as Error).message : summariesError ? (summariesError as Error).message : null;
+  const refetch = () => { bookingsRefetch(); summariesRefetch(); };
+
+  return { summaries, isLoading, error, refetch };
 }
 
 // ── Skeleton Loader ────────────────────────────────────────────────

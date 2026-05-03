@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Store,
@@ -15,7 +14,8 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { catalogService, ApiError } from '@/lib/api';
+import { useListings, useListingsByCategory } from '@/hooks/useApi';
+import { ApiError } from '@/lib/api';
 import type { ListingSummary } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -264,21 +264,13 @@ export function InteractiveMarketSection({
   const { language } = useLanguage();
   const navigate = useNavigationStore((s) => s.navigate);
 
-  const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
-    queryKey: ['listings', category ?? 'all', 0, 12],
-    queryFn: () =>
-      category
-        ? catalogService.byCategory(category, 0, 12)
-        : catalogService.list(0, 12),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
-    placeholderData: (previousData) => previousData, // Show previous data while fetching
-    retry: (failureCount, err) => {
-      if (err instanceof ApiError && err.status === 401) return false;
-      return failureCount < 2;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-  });
+  // Both hooks must be called unconditionally (rules of hooks)
+  const categoryResult = useListingsByCategory(category ?? '', { page: 0, size: 12 });
+  const allResult = useListings({ page: 0, size: 12 });
+
+  const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = category
+    ? categoryResult
+    : allResult;
 
   const listings = data?.content ?? [];
   const totalElements = data?.totalElements ?? 0;

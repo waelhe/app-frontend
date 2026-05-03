@@ -8,6 +8,16 @@ import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 type CallbackStatus = 'loading' | 'success' | 'error';
 
+/**
+ * OAuth2 Callback Page
+ *
+ * Handles two flows:
+ * 1. Client-side PKCE flow (default): Exchanges the authorization code
+ *    using the PKCE verifier stored in sessionStorage.
+ * 2. Server-side BFF flow (server_auth=true): The server has already
+ *    exchanged the code and set httpOnly cookies. We fetch the token
+ *    from the session endpoint and store it in localStorage.
+ */
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<CallbackStatus>('loading');
@@ -17,6 +27,7 @@ export default function AuthCallbackPage() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const errorParam = params.get('error');
+    const serverAuth = params.get('server_auth');
 
     if (errorParam) {
       const errorDesc = params.get('error_description') ?? errorParam;
@@ -35,6 +46,42 @@ export default function AuthCallbackPage() {
       return;
     }
 
+    // ── Server-side BFF flow ─────────────────────────────────────
+    // The server at /api/auth/callback already exchanged the code
+    // and set httpOnly cookies. Fetch the token from the session API.
+    if (serverAuth === 'true') {
+      fetch('/api/auth/session')
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error('Failed to retrieve session from server cookies.');
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (!data.access_token) {
+            throw new Error('No access token in server session.');
+          }
+          setToken(data.access_token);
+          startTransition(() => {
+            setStatus('success');
+          });
+          // Clean up URL params
+          window.history.replaceState({}, '', '/');
+          setTimeout(() => {
+            router.replace('/');
+          }, 1500);
+        })
+        .catch((err) => {
+          console.error('[Auth Callback] Server auth session fetch failed:', err);
+          startTransition(() => {
+            setStatus('error');
+            setError(err instanceof Error ? err.message : 'Failed to retrieve authentication session.');
+          });
+        });
+      return;
+    }
+
+    // ── Client-side PKCE flow (default) ─────────────────────────
     exchangeAuthCode(code)
       .then((token) => {
         setToken(token);

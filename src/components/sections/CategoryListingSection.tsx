@@ -1,12 +1,11 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { Store, AlertCircle, ArrowLeft, ArrowRight, PackageOpen } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { catalogService } from '@/lib/api';
+import { useListingsByCategory } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -244,11 +243,9 @@ export function CategoryListingSection({
   const { language, isRTL } = useLanguage();
   const navigate = useNavigationStore((s) => s.navigate);
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['listings', category, 0, pageSize],
-    queryFn: () => catalogService.byCategory(category, 0, pageSize),
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
+  const { data, isLoading, isError, refetch } = useListingsByCategory(category, {
+    page: 0,
+    size: pageSize,
   });
 
   const listings = data?.content ?? [];

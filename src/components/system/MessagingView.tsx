@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -26,7 +25,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuth as useAuthStore } from '@/store/use-auth';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { messagingService, catalogService, bookingService } from '@/lib/api';
+import { useMessages, useListing, useBooking, useCreateConversation, useSendMessage, useMarkRead } from '@/hooks/useApi';
 import type { MessageResponse, ConversationResponse, ListingResponse, BookingSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,7 +106,6 @@ export function MessagingView() {
   const { user, accessToken } = useAuth();
   const authStore = useAuthStore();
   const { viewParams, goBack } = useNavigationStore();
-  const queryClient = useQueryClient();
 
   const conversationId = viewParams.conversationId;
   const bookingId = viewParams.bookingId;
@@ -127,17 +125,11 @@ export function MessagingView() {
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   // ── Create conversation if bookingId provided ────────────────
-  const createConversationMutation = useMutation({
-    mutationFn: () =>
-      messagingService.createConversation({ bookingId: bookingId! }),
-    onSuccess: (data: ConversationResponse) => {
-      setCurrentConversationId(data.id);
-    },
-  });
+  const createConversationMutation = useCreateConversation();
 
   useEffect(() => {
     if (!conversationId && bookingId) {
-      createConversationMutation.mutate();
+      createConversationMutation.mutate({ bookingId: bookingId! });
     }
   }, [conversationId, bookingId]);
 
@@ -146,50 +138,28 @@ export function MessagingView() {
     data: messagesData,
     isLoading,
     isError,
-  } = useQuery({
-    queryKey: ['messages', currentConversationId],
-    queryFn: () => messagingService.messages(currentConversationId),
-    enabled: !!currentConversationId,
-    refetchInterval: 5000,
-  });
+  } = useMessages(currentConversationId, { page: 0, size: 50 });
 
   const messages: MessageResponse[] = messagesData?.content ?? [];
 
   // ── Fetch listing info ───────────────────────────────────────
-  const { data: listingData } = useQuery({
-    queryKey: ['listing-for-chat', listingId],
-    queryFn: () => catalogService.byId(listingId!),
-    enabled: !!listingId,
-    staleTime: 60_000,
-  });
+  const { data: listingData } = useListing(listingId!);
 
   // ── Fetch booking info for listing context ───────────────────
-  const { data: bookingData } = useQuery({
-    queryKey: ['booking-for-chat', bookingId],
-    queryFn: () => bookingService.byId(bookingId!),
-    enabled: !!bookingId,
-    staleTime: 60_000,
-  });
+  const { data: bookingData } = useBooking(bookingId!);
 
   // If no listingId, try to get from booking
   const effectiveListingId = listingId || (bookingData as BookingSummary | undefined)?.listingId;
-  const { data: bookingListingData } = useQuery({
-    queryKey: ['listing-from-booking', effectiveListingId],
-    queryFn: () => catalogService.byId(effectiveListingId!),
-    enabled: !!effectiveListingId && !listingData,
-    staleTime: 60_000,
-  });
+  const { data: bookingListingData } = useListing(effectiveListingId!);
 
   const chatListing: ListingResponse | null = listingData ?? bookingListingData ?? null;
 
   // ── Mark as Read ─────────────────────────────────────────────
-  const markReadMutation = useMutation({
-    mutationFn: () => messagingService.markRead(currentConversationId),
-  });
+  const markReadMutation = useMarkRead();
 
   useEffect(() => {
     if (currentConversationId) {
-      markReadMutation.mutate();
+      markReadMutation.mutate(currentConversationId);
     }
   }, [currentConversationId]);
 
@@ -199,26 +169,24 @@ export function MessagingView() {
   }, [messages]);
 
   // ── Send Message ─────────────────────────────────────────────
-  const sendMessageMutation = useMutation({
-    mutationFn: (content: string) =>
-      messagingService.sendMessage(currentConversationId, { content }),
-    onSuccess: (data: MessageResponse) => {
-      setMessageText('');
-      if (data?.id) {
-        setSentMessageIds((prev) => new Set(prev).add(data.id));
-      }
-      queryClient.invalidateQueries({
-        queryKey: ['messages', currentConversationId],
-      });
-    },
-  });
+  const sendMessageMutation = useSendMessage();
 
   const handleSend = useCallback(() => {
     const trimmed = messageText.trim();
     if (!trimmed || sendMessageMutation.isPending) return;
-    sendMessageMutation.mutate(trimmed);
+    sendMessageMutation.mutate(
+      { conversationId: currentConversationId, data: { content: trimmed } },
+      {
+        onSuccess: (data: MessageResponse) => {
+          setMessageText('');
+          if (data?.id) {
+            setSentMessageIds((prev) => new Set(prev).add(data.id));
+          }
+        },
+      },
+    );
     setShowQuickReplies(false);
-  }, [messageText, sendMessageMutation]);
+  }, [messageText, sendMessageMutation, currentConversationId]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -232,9 +200,9 @@ export function MessagingView() {
 
   const handleQuickReply = useCallback((text: string) => {
     setMessageText(text);
-    sendMessageMutation.mutate(text);
+    sendMessageMutation.mutate({ conversationId: currentConversationId, data: { content: text } });
     setShowQuickReplies(false);
-  }, [sendMessageMutation]);
+  }, [sendMessageMutation, currentConversationId]);
 
   // ── Message grouping for date separators ─────────────────────
   const messageGroups = useMemo(() => {

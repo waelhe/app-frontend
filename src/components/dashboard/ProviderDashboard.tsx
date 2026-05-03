@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -26,7 +25,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { catalogService, bookingService, reviewsService } from '@/lib/api';
+import { useListingsByProvider, useProviderBookings, useReviews, useActivateListing, usePauseListing, useConfirmBooking, useCompleteBooking, useCancelBooking } from '@/hooks/useApi';
 import type { ProviderListingSummary, BookingSummary, ReviewResponse } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -178,7 +177,6 @@ function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md
 export function ProviderDashboard() {
   const { t, isRTL } = useLanguage();
   const { navigate } = useNavigationStore();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
 
   // ── Fetch Provider Listings ──────────────────────────────────
@@ -186,11 +184,7 @@ export function ProviderDashboard() {
     data: listingsData,
     isLoading: listingsLoading,
     isError: listingsError,
-  } = useQuery({
-    queryKey: ['provider-listings', user?.id],
-    queryFn: () => catalogService.byProvider(user!.id),
-    enabled: !!user?.id,
-  });
+  } = useListingsByProvider(user!.id);
 
   const listings: ProviderListingSummary[] = listingsData?.content ?? [];
 
@@ -199,11 +193,7 @@ export function ProviderDashboard() {
     data: bookingsData,
     isLoading: bookingsLoading,
     isError: bookingsError,
-  } = useQuery({
-    queryKey: ['provider-bookings', user?.id],
-    queryFn: () => bookingService.providerBookings(user!.id),
-    enabled: !!user?.id,
-  });
+  } = useProviderBookings(user!.id);
 
   const bookings: BookingSummary[] = bookingsData?.content ?? [];
 
@@ -212,11 +202,7 @@ export function ProviderDashboard() {
     data: reviewsData,
     isLoading: reviewsLoading,
     isError: reviewsError,
-  } = useQuery({
-    queryKey: ['provider-reviews', user?.id],
-    queryFn: () => reviewsService.byProvider(user!.id),
-    enabled: !!user?.id,
-  });
+  } = useReviews(user!.id);
 
   const reviews: ReviewResponse[] = reviewsData?.content ?? [];
 
@@ -265,31 +251,13 @@ export function ProviderDashboard() {
   const maxEarning = Math.max(...monthlyEarnings.map((d) => d.value), 1);
 
   // ── Mutations for Listing Actions ────────────────────────────
-  const activateMutation = useMutation({
-    mutationFn: (id: string) => catalogService.activate(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
-  });
-
-  const pauseMutation = useMutation({
-    mutationFn: (id: string) => catalogService.pause(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-listings'] }),
-  });
+  const activateMutation = useActivateListing();
+  const pauseMutation = usePauseListing();
 
   // ── Mutations for Booking Actions ────────────────────────────
-  const confirmBookingMutation = useMutation({
-    mutationFn: (id: string) => bookingService.confirm(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
-  });
-
-  const completeBookingMutation = useMutation({
-    mutationFn: (id: string) => bookingService.complete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
-  });
-
-  const cancelBookingMutation = useMutation({
-    mutationFn: (id: string) => bookingService.cancel(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['provider-bookings'] }),
-  });
+  const confirmBookingMutation = useConfirmBooking();
+  const completeBookingMutation = useCompleteBooking();
+  const cancelBookingMutation = useCancelBooking();
 
   const bookingMutationPending =
     confirmBookingMutation.isPending ||

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -48,7 +47,7 @@ import { useNavigationStore } from '@/stores/navigationStore';
 import { useFavorites } from '@/store/use-favorites';
 import { useAuth as useAuthStore } from '@/store/use-auth';
 import { useRecentlyViewed } from '@/store/use-recently-viewed';
-import { catalogService, reviewsService } from '@/lib/api';
+import { useListing, useReviews, useListingsByCategory } from '@/hooks/useApi';
 import type { ListingResponse, ReviewResponse, ListingSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -363,29 +362,17 @@ export function ListingDetail() {
     isError: listingError,
     error: listingErrorObj,
     refetch: refetchListing,
-  } = useQuery({
-    queryKey: ['listing', listingId],
-    queryFn: () => catalogService.byId(listingId),
-    enabled: !!listingId,
-  });
+  } = useListing(listingId);
 
   const {
     data: reviewsData,
     isLoading: reviewsLoading,
-  } = useQuery({
-    queryKey: ['reviews-provider', listingId],
-    queryFn: () => reviewsService.byProvider(listingId ?? '', 0, 20),
-    enabled: !!listingId,
-  });
+  } = useReviews(listingId, { page: 0, size: 20 });
 
   const {
     data: relatedData,
     isLoading: relatedLoading,
-  } = useQuery({
-    queryKey: ['related-listings', listing?.category],
-    queryFn: () => catalogService.byCategory(listing?.category ?? '', 0, 8),
-    enabled: !!listing?.category,
-  });
+  } = useListingsByCategory(listing?.category ?? '', { page: 0, size: 8 });
 
   // ── Track Recently Viewed (useEffect, not during render) ────────────
 

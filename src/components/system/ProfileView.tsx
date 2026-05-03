@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -36,7 +36,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuth as useAuthStore } from '@/store/use-auth';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { identityService, bookingService, catalogService, reviewsService } from '@/lib/api';
+import { identityService } from '@/lib/api';
+import { useListingsByProvider, useReviews, useBookings, useProviderBookings } from '@/hooks/useApi';
 import type { BookingSummary, ProviderListingSummary, ReviewResponse } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -209,42 +210,22 @@ export function ProfileView() {
   const {
     data: providerListingsData,
     isLoading: providerListingsLoading,
-  } = useQuery({
-    queryKey: ['provider-listings', targetUserId],
-    queryFn: () => catalogService.byProvider(targetUserId),
-    enabled: !!targetUserId && (targetRole === 'PROVIDER' || targetRole === 'ADMIN' || !isOwnProfile),
-    staleTime: 15_000,
-  });
+  } = useListingsByProvider(targetUserId, { page: 0, size: 20 });
 
   // ── Fetch reviews ──────────────────────────────────────────
   const {
     data: reviewsData,
     isLoading: reviewsLoading,
-  } = useQuery({
-    queryKey: ['provider-reviews', targetUserId],
-    queryFn: () => reviewsService.byProvider(targetUserId),
-    enabled: !!targetUserId,
-    staleTime: 15_000,
-  });
+  } = useReviews(targetUserId, { page: 0, size: 20 });
 
   // ── Fetch bookings ──────────────────────────────────────────
   const {
     data: consumerBookingsData,
-  } = useQuery({
-    queryKey: ['consumer-bookings', currentUser?.id],
-    queryFn: () => bookingService.consumerBookings(currentUser!.id),
-    enabled: isOwnProfile && !!currentUser?.id && currentRole === 'CONSUMER',
-    staleTime: 15_000,
-  });
+  } = useBookings(currentUser?.id, { page: 0, size: 50 });
 
   const {
     data: providerBookingsData,
-  } = useQuery({
-    queryKey: ['provider-bookings', currentUser?.id],
-    queryFn: () => bookingService.providerBookings(currentUser!.id),
-    enabled: isOwnProfile && !!currentUser?.id && (currentRole === 'PROVIDER' || currentRole === 'ADMIN'),
-    staleTime: 15_000,
-  });
+  } = useProviderBookings(currentUser?.id ?? '', { page: 0, size: 50 });
 
   const isProvider = (currentRole === 'PROVIDER' || currentRole === 'ADMIN');
   const bookings = isOwnProfile

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -29,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/store/use-language';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { searchService, catalogService } from '@/lib/api';
+import { useSearch, useListingsByCategory } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -386,35 +385,22 @@ export function SearchView() {
         ? undefined // multiple categories, let search handle
         : undefined;
 
+  const effectiveSearchCategory = selectedCategory !== 'all' ? selectedCategory : undefined;
   const {
     data: searchResults,
     isLoading,
     isError,
-  } = useQuery({
-    queryKey: ['search', searchTerm, selectedCategory, categoryFilters.join(',')],
-    queryFn: () => {
-      const cat = selectedCategory !== 'all' ? selectedCategory : undefined;
-      return searchService.search({
-        q: searchTerm || undefined,
-        category: cat,
-      });
-    },
-    enabled: searchTerm !== '' || selectedCategory !== 'all' || categoryFilters.length > 0,
+  } = useSearch({
+    q: searchTerm || undefined,
+    category: effectiveSearchCategory,
   });
 
   // Also fetch listings for category-only filtering
+  const firstCategoryFilter = categoryFilters.length > 0 ? categoryFilters[0] : '';
   const {
     data: categoryResults,
     isLoading: isCategoryLoading,
-  } = useQuery({
-    queryKey: ['listings', 'category-filter', categoryFilters.join(',')],
-    queryFn: async () => {
-      if (categoryFilters.length === 0) return { content: [] };
-      const firstCategory = categoryFilters[0];
-      return catalogService.byCategory(firstCategory, 0, 20);
-    },
-    enabled: searchTerm === '' && selectedCategory === 'all' && categoryFilters.length > 0,
-  });
+  } = useListingsByCategory(firstCategoryFilter, { page: 0, size: 20 });
 
   let results: ListingSummary[] = searchResults?.content ?? [];
 

@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { reviewsService, type ApiError } from '@/lib/api';
+import { useCreateReview } from '@/hooks/useApi';
+import type { ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -55,9 +56,23 @@ export function WriteReviewDialog({
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [comment, setComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState('');
+
+  const createReviewMutation = useCreateReview();
+  const isSubmitting = createReviewMutation.isPending;
+  const mutationError = createReviewMutation.error as Error | undefined;
+
+  // Derive error message from mutation error
+  const [localError, setLocalError] = useState('');
+  const error = localError || (mutationError ? (() => {
+    const apiErr = mutationError as unknown as ApiError;
+    if (apiErr?.category === 'network' || apiErr?.category === 'server' || apiErr?.category === 'timeout') {
+      return isRTL ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً' : 'Server is currently unavailable, please try again later';
+    } else if (apiErr?.category === 'auth') {
+      return isRTL ? 'يرجى تسجيل الدخول أولاً' : 'Please sign in to submit a review';
+    }
+    return apiErr?.detail || (isRTL ? 'حدث خطأ أثناء إرسال التقييم' : 'An error occurred while submitting your review');
+  })() : '');
 
   // ── Reset state when dialog opens/closes ───────────────────────
 
@@ -65,9 +80,8 @@ export function WriteReviewDialog({
     setRating(0);
     setHoveredStar(0);
     setComment('');
-    setIsSubmitting(false);
     setIsSuccess(false);
-    setError('');
+    setLocalError('');
   }, []);
 
   const handleOpenChange = useCallback(
@@ -82,51 +96,25 @@ export function WriteReviewDialog({
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      setError(isRTL ? 'يرجى اختيار تقييم' : 'Please select a rating');
+      setLocalError(isRTL ? 'يرجى اختيار تقييم' : 'Please select a rating');
       return;
     }
 
-    setIsSubmitting(true);
-    setError('');
+    setLocalError('');
 
-    try {
-      await reviewsService.create({
+    createReviewMutation.mutate(
+      {
         bookingId,
         rating,
         comment: comment.trim() || undefined,
-      });
-
-      setIsSuccess(true);
-      onSuccess?.();
-    } catch (err) {
-      const apiErr = err as ApiError;
-      if (
-        apiErr?.category === 'network' ||
-        apiErr?.category === 'server' ||
-        apiErr?.category === 'timeout'
-      ) {
-        setError(
-          isRTL
-            ? 'الخادم غير متاح حالياً، يرجى المحاولة لاحقاً'
-            : 'Server is currently unavailable, please try again later',
-        );
-      } else if (apiErr?.category === 'auth') {
-        setError(
-          isRTL
-            ? 'يرجى تسجيل الدخول أولاً'
-            : 'Please sign in to submit a review',
-        );
-      } else {
-        setError(
-          apiErr?.detail ||
-            (isRTL
-              ? 'حدث خطأ أثناء إرسال التقييم'
-              : 'An error occurred while submitting your review'),
-        );
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          setIsSuccess(true);
+          onSuccess?.();
+        },
+      },
+    );
   };
 
   // ── Derived values ─────────────────────────────────────────────
@@ -227,7 +215,7 @@ export function WriteReviewDialog({
                         type="button"
                         onClick={() => {
                           setRating(star);
-                          if (error) setError('');
+                          if (error) setLocalError('');
                         }}
                         onMouseEnter={() => setHoveredStar(star)}
                         onMouseLeave={() => setHoveredStar(0)}

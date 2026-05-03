@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -32,7 +31,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { catalogService, bookingService, paymentsService } from '@/lib/api';
+import { useListing, useCreateBooking, useCreatePaymentIntent } from '@/hooks/useApi';
 import type { ListingResponse } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -183,11 +182,7 @@ export function BookingFlow() {
   const {
     data: listing,
     isLoading: listingLoading,
-  } = useQuery<ListingResponse>({
-    queryKey: ['listing', listingId],
-    queryFn: () => catalogService.byId(listingId),
-    enabled: !!listingId,
-  });
+  } = useListing(listingId);
 
   // ── Price calculations ────────────────────────────────────────
   const tierMultiplier = useMemo(
@@ -285,26 +280,33 @@ export function BookingFlow() {
   );
 
   // ── Mutations ─────────────────────────────────────────────────
-  const createBookingMutation = useMutation({
-    mutationFn: () =>
-      bookingService.create({
-        listingId,
-        notes: specialRequests || undefined,
-      }),
-    onSuccess: (data) => {
-      setBookingId(data.id);
-      setBookingRef(generateBookingRef());
-      setCurrentStep('confirmation');
-    },
-  });
+  const createBookingMutation = useCreateBooking();
+  const createPaymentMutation = useCreatePaymentIntent();
 
-  const createPaymentMutation = useMutation({
-    mutationFn: () => paymentsService.createIntent({ bookingId }),
-    onSuccess: () => {
-      // Simulate payment processing for cash/card/bank
-      createBookingMutation.mutate();
-    },
-  });
+  // Override onSuccess for booking mutation
+  const handleCreateBooking = useCallback(() => {
+    createBookingMutation.mutate(
+      { listingId, notes: specialRequests || undefined },
+      {
+        onSuccess: (data) => {
+          setBookingId(data.id);
+          setBookingRef(generateBookingRef());
+          setCurrentStep('confirmation');
+        },
+      },
+    );
+  }, [createBookingMutation, listingId, specialRequests]);
+
+  const handleCreatePayment = useCallback(() => {
+    createPaymentMutation.mutate(
+      { bookingId },
+      {
+        onSuccess: () => {
+          handleCreateBooking();
+        },
+      },
+    );
+  }, [createPaymentMutation, bookingId, handleCreateBooking]);
 
   const handleApplyPromo = useCallback(() => {
     if (promoCode.trim().length >= 3) {
@@ -333,11 +335,11 @@ export function BookingFlow() {
 
   const handleFinalSubmit = useCallback(() => {
     if (paymentMethod === 'card') {
-      createPaymentMutation.mutate();
+      handleCreatePayment();
     } else {
-      createBookingMutation.mutate();
+      handleCreateBooking();
     }
-  }, [paymentMethod, createPaymentMutation, createBookingMutation]);
+  }, [paymentMethod, handleCreatePayment, handleCreateBooking]);
 
   // ── Loading ───────────────────────────────────────────────────
   if (listingLoading) {

@@ -6,9 +6,8 @@ import { useAuth } from '@/store/use-auth';
 import { useLanguage } from '@/store/use-language';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useFavorites } from '@/store/use-favorites';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { catalogService } from '@/lib/api';
+import { useListings, useCreateListing } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';
 import { Hero } from '@/components/ui';
 import { InteractiveMarketSection } from '@/components/sections/InteractiveMarketSection';
@@ -289,11 +288,7 @@ function TrendingListingsSection() {
   const { t, isRTL } = useLanguage();
   const { navigate } = useNavigationStore();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['listings', 'trending', 0, 8],
-    queryFn: () => catalogService.list(0, 8),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data, isLoading } = useListings({ page: 0, size: 8 });
 
   const listings = data?.content ?? [];
   const ForwardArrow = isRTL ? ArrowLeft : ArrowRight;
@@ -1107,6 +1102,8 @@ function CreateListingForm() {
     setIsSubmitting(true);
 
     try {
+      const { useCreateListing: createListingHook } = await import('@/hooks/useApi');
+      // We can't call hooks inside a callback, so use the service directly as fallback
       const { catalogService } = await import('@/lib/api');
       await catalogService.create({
         title,

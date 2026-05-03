@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -37,7 +37,8 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { catalogService, ApiError } from '@/lib/api';
+import { ApiError } from '@/lib/api';
+import { useListing, useUpdateListing, useActivateListing, usePauseListing, useDeleteListing } from '@/hooks/useApi';
 import type { ListingResponse, UpdateListingRequest, ListingStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -248,11 +249,7 @@ export function EditListingForm() {
     isLoading,
     isError,
     error: fetchError,
-  } = useQuery<ListingResponse>({
-    queryKey: ['listing', listingId],
-    queryFn: () => catalogService.byId(listingId),
-    enabled: !!listingId,
-  });
+  } = useListing(listingId);
 
   // ── Pre-populate form when listing data arrives ───────────────
   const [prevListingId, setPrevListingId] = useState<string | null>(null);
@@ -284,45 +281,49 @@ export function EditListingForm() {
   );
 
   // ── Update mutation ────────────────────────────────────────────
-  const updateMutation = useMutation({
-    mutationFn: (data: UpdateListingRequest) =>
-      catalogService.update(listingId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
-      queryClient.invalidateQueries({ queryKey: ['provider-listings'] });
-      setHasChanges(false);
-      toast({
-        title: isRTL ? 'تم تحديث الإعلان' : 'Listing Updated',
-        description: isRTL
-          ? 'تم حفظ التغييرات بنجاح'
-          : 'Your changes have been saved successfully',
-      });
-    },
-    onError: (err: Error) => {
-      const apiErr = err as ApiError;
-      const message = apiErr?.detail
-        ? apiErr.detail
-        : isRTL
-          ? 'فشل تحديث الإعلان. يرجى المحاولة مرة أخرى.'
-          : 'Failed to update listing. Please try again.';
-      setFormError(message);
-      toast({
-        variant: 'destructive',
-        title: isRTL ? 'خطأ' : 'Error',
-        description: message,
-      });
-    },
-  });
+  const updateMutation = useUpdateListing();
+
+  // Wrap the mutation to add custom onSuccess/onError
+  const handleUpdateListing = useCallback((data: UpdateListingRequest) => {
+    updateMutation.mutate({ id: listingId, data }, {
+      onSuccess: () => {
+        setHasChanges(false);
+        toast({
+          title: isRTL ? 'تم تحديث الإعلان' : 'Listing Updated',
+          description: isRTL
+            ? 'تم حفظ التغييرات بنجاح'
+            : 'Your changes have been saved successfully',
+        });
+      },
+      onError: (err: Error) => {
+        const apiErr = err as ApiError;
+        const message = apiErr?.detail
+          ? apiErr.detail
+          : isRTL
+            ? 'فشل تحديث الإعلان. يرجى المحاولة مرة أخرى.'
+            : 'Failed to update listing. Please try again.';
+        setFormError(message);
+        toast({
+          variant: 'destructive',
+          title: isRTL ? 'خطأ' : 'Error',
+          description: message,
+        });
+      },
+    });
+  }, [updateMutation, listingId, isRTL]);
 
   // ── Status change mutations ────────────────────────────────────
+  const activateListingMutation = useActivateListing();
+  const pauseListingMutation = usePauseListing();
+  const archiveListingMutation = useDeleteListing();
+
   const statusMutation = useMutation({
     mutationFn: ({ action }: { action: 'activate' | 'pause' | 'archive' }) => {
-      if (action === 'activate') return catalogService.activate(listingId);
-      if (action === 'pause') return catalogService.pause(listingId);
-      return catalogService.archive(listingId);
+      if (action === 'activate') return activateListingMutation.mutateAsync(listingId);
+      if (action === 'pause') return pauseListingMutation.mutateAsync(listingId);
+      return archiveListingMutation.mutateAsync(listingId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
       toast({
         title: isRTL ? 'تم تحديث الحالة' : 'Status Updated',
         description: isRTL ? 'تم تغيير حالة الإعلان بنجاح' : 'Listing status changed successfully',
@@ -338,10 +339,11 @@ export function EditListingForm() {
   });
 
   // ── Delete mutation ────────────────────────────────────────────
+  const deleteListingMutation = useDeleteListing();
+
   const deleteMutation = useMutation({
-    mutationFn: () => catalogService.archive(listingId),
+    mutationFn: () => deleteListingMutation.mutateAsync(listingId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['provider-listings'] });
       toast({
         title: isRTL ? 'تم حذف الإعلان' : 'Listing Deleted',
         description: isRTL ? 'تم أرشفة الإعلان بنجاح' : 'The listing has been archived',
@@ -390,7 +392,7 @@ export function EditListingForm() {
       priceCents: displayToCents(priceDisplay),
     };
 
-    updateMutation.mutate(data);
+    handleUpdateListing(data);
   };
 
   // ── Current status display ─────────────────────────────────────

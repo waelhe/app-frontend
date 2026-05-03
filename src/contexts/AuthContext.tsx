@@ -228,7 +228,7 @@ interface AuthContextType {
   accessToken: string | null;
   role: UserRole;
   signIn: () => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
   /** Whether we're using a cached/offline session */
   isOfflineSession: boolean;
 }
@@ -332,17 +332,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = authUrl;
   }, []);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    const currentToken = accessToken;
+
+    // 1. Attempt to revoke the token at the authorization server
+    //    This invalidates the token server-side so it can't be reused.
+    if (currentToken) {
+      try {
+        await fetch(`${BACKEND_BASE}/oauth2/revoke`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            token: currentToken,
+            token_type_hint: 'access_token',
+          }),
+        });
+      } catch {
+        // Revocation may fail (network error, server down) — still clear locally
+      }
+    }
+
+    // 2. Clear local state
     removeToken();
     setAccessToken(null);
     setUser(null);
     setRole('CONSUMER');
     setIsOfflineSession(false);
     fetchedForToken.current = null;
-    // Redirect to backend's logout endpoint
+
+    // 3. Redirect to backend's logout endpoint to clear server session
     const logoutUrl = `${AUTH_BASE}/logout?client_id=${CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`;
     window.location.href = logoutUrl;
-  }, []);
+  }, [accessToken]);
 
   const isAuthenticated = useMemo(() => !!user && !!accessToken, [user, accessToken]);
 

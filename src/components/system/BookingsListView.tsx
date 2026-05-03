@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -38,7 +37,7 @@ import { useLanguage as useCtxLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuth as useAuthStore } from '@/store/use-auth';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { bookingService } from '@/lib/api';
+import { useBookings, useProviderBookings, useConfirmBooking, useCompleteBooking, useCancelBooking } from '@/hooks/useApi';
 import { WriteReviewDialog } from '@/components/system/WriteReviewDialog';
 import type { BookingSummary, BookingStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -183,7 +182,6 @@ export function BookingsListView() {
   const { user, role, isAuthenticated, accessToken } = useAuth();
   const { user: storeUser } = useAuthStore();
   const { goBack, navigate } = useNavigationStore();
-  const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
@@ -202,23 +200,13 @@ export function BookingsListView() {
   ];
 
   // ── Fetch bookings ──────────────────────────────────────────
-  const {
-    data: bookingsData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['bookings-list', user?.id, role],
-    queryFn: () => {
-      if (!user?.id) throw new Error('Not authenticated');
-      if (isProvider) {
-        return bookingService.providerBookings(user.id);
-      }
-      return bookingService.consumerBookings(user.id);
-    },
-    enabled: isAuthenticated && !!user?.id,
-    staleTime: 10_000,
-  });
+  const bookingsQueryConsumer = useBookings(user?.id, { page: 0, size: 50 });
+  const bookingsQueryProvider = useProviderBookings(user?.id ?? '', { page: 0, size: 50 });
+
+  const bookingsData = isProvider ? bookingsQueryProvider.data : bookingsQueryConsumer.data;
+  const isLoading = isProvider ? bookingsQueryProvider.isLoading : bookingsQueryConsumer.isLoading;
+  const error = isProvider ? bookingsQueryProvider.error : bookingsQueryConsumer.error;
+  const refetch = isProvider ? bookingsQueryProvider.refetch : bookingsQueryConsumer.refetch;
 
   const allBookings = bookingsData?.content ?? [];
 
@@ -239,34 +227,18 @@ export function BookingsListView() {
   }, [bookingsData]);
 
   // ── Confirm booking mutation (Provider) ──────────────────────
-  const confirmMutation = useMutation({
-    mutationFn: (bookingId: string) => bookingService.confirm(bookingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings-list'] });
-    },
-  });
+  const confirmMutation = useConfirmBooking();
 
   // ── Complete booking mutation (Provider) ─────────────────────
-  const completeMutation = useMutation({
-    mutationFn: (bookingId: string) => bookingService.complete(bookingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings-list'] });
-    },
-  });
+  const completeMutation = useCompleteBooking();
 
   // ── Cancel booking mutation ──────────────────────────────────
-  const cancelMutation = useMutation({
-    mutationFn: (bookingId: string) => bookingService.cancel(bookingId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings-list'] });
-    },
-  });
+  const cancelMutation = useCancelBooking();
 
   const isMutating = (bookingId: string) =>
     confirmMutation.isPending && confirmMutation.variables === bookingId ||
     completeMutation.isPending && completeMutation.variables === bookingId ||
     cancelMutation.isPending && cancelMutation.variables === bookingId;
-
   const toggleNotes = (id: string) => {
     setExpandedNotes((prev) => {
       const next = new Set(prev);
@@ -704,7 +676,6 @@ export function BookingsListView() {
         bookingId={reviewBookingId ?? ''}
         onSuccess={() => {
           setReviewBookingId(null);
-          queryClient.invalidateQueries({ queryKey: ['bookings-list'] });
         }}
       />
     </motion.div>
