@@ -43,10 +43,16 @@ import type {
 // ── Configuration ─────────────────────────────────────────────────
 
 /** Relative path — requests are proxied through Next.js API routes.
- *  XTransformPort=3000 ensures Caddy routes to Next.js instead of
- *  proxying directly to the Railway backend (which fails through CDN). */
+ *
+ *  On Z.ai Sandbox: XTransformPort=3000 ensures Caddy routes to Next.js
+ *  instead of proxying directly to the Railway backend (which fails via CDN).
+ *
+ *  On Railway: Not needed — Next.js IS the server, no Caddy in between.
+ *  Controlled by NEXT_PUBLIC_USE_XTRANSFORM env var (default: true for sandbox).
+ */
 const BACKEND_URL = '';
-const PROXY_PORT_PARAM = 'XTransformPort=3000';
+const USE_XTRANSFORM = process.env.NEXT_PUBLIC_USE_XTRANSFORM !== 'false';
+const PROXY_PORT_PARAM = USE_XTRANSFORM ? 'XTransformPort=3000' : '';
 
 /** Maximum number of retry attempts for transient errors */
 const MAX_RETRIES = 2;
@@ -258,10 +264,9 @@ async function apiFetch<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Route through Next.js API proxy by adding XTransformPort=3000
-  // This ensures Caddy forwards the request to Next.js (port 3000)
-  // instead of proxying directly to the Railway backend (which fails via CDN).
-  const separator = path.includes('?') ? '&' : '?';
+  // Route through Next.js API proxy by adding XTransformPort=3000 (sandbox only)
+  // On Railway, Next.js IS the server — no Caddy, no XTransformPort needed.
+  const separator = PROXY_PORT_PARAM && path.includes('?') ? '&' : PROXY_PORT_PARAM ? '?' : '';
   const url = `${BACKEND_URL}${path}${separator}${PROXY_PORT_PARAM}`;
   const isGetRequest = !options.method || options.method === 'GET';
 

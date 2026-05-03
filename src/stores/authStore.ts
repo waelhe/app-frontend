@@ -233,24 +233,21 @@ export const useAuthStore = create<AuthState>()(
         window.location.href = authUrl;
       },
 
-      // ── OAuth2 Sign Out ─────────────────────────────────────────
+      // ── OAuth2 Sign Out (BFF) ──────────────────────────────────
 
       signOut: async () => {
         const currentToken = get().accessToken;
 
-        // 1. Attempt to revoke the token at the authorization server
+        // 1. Call BFF logout endpoint — revokes token server-side + clears httpOnly cookies
         if (currentToken) {
           try {
-            await fetch(`${BACKEND_BASE}/oauth2/revoke`, {
+            await fetch('/api/auth/logout', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({
-                token: currentToken,
-                token_type_hint: 'access_token',
-              }),
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: currentToken }),
             });
           } catch {
-            // Revocation may fail (network error, server down) — still clear locally
+            // Logout endpoint may fail — still clear locally
           }
         }
 
@@ -265,9 +262,10 @@ export const useAuthStore = create<AuthState>()(
           isOfflineSession: false,
         });
 
-        // 3. Redirect to backend's logout endpoint to clear server session
-        const logoutUrl = `${AUTH_BASE}/logout?client_id=${CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`;
-        window.location.href = logoutUrl;
+        // 3. Reload to reset all state cleanly
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
       },
 
       // ── Initialize from JWT Token ───────────────────────────────

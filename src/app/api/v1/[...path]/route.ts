@@ -63,7 +63,7 @@ async function proxyRequest(
   const targetUrl = `${BACKEND_URL}/api/v1/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
 
   try {
-    // Build headers — forward auth and content-type
+    // Build headers — forward auth, content-type, and correlation ID
     const headers: Record<string, string> = {};
     const authHeader = request.headers.get('authorization');
     if (authHeader) headers['Authorization'] = authHeader;
@@ -71,6 +71,8 @@ async function proxyRequest(
     if (contentType) headers['Content-Type'] = contentType;
     const accept = request.headers.get('accept');
     if (accept) headers['Accept'] = accept;
+    const correlationId = request.headers.get('x-correlation-id');
+    if (correlationId) headers['X-Correlation-ID'] = correlationId;
 
     // Build body for non-GET requests
     let body: string | undefined;

@@ -16,7 +16,11 @@ import { generatePKCE } from './pkce';
 
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8080';
 const CLIENT_ID = 'marketplace-web-client';
+// This redirect URI is for the server-side PKCE flow (login/register)
+// It must match a registered redirect URI in the Spring Authorization Server config.
+// On Railway, this should be updated to match the production URL.
 const REGISTERED_REDIRECT_URI =
+  process.env.AUTH_SERVER_REDIRECT_URI ??
   'http://127.0.0.1:8080/login/oauth2/code/marketplace-web-client';
 
 // ── Types ──────────────────────────────────────────────────────────

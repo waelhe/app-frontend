@@ -75,6 +75,8 @@ async function proxyAuthRequest(
     if (contentType) headers['Content-Type'] = contentType;
     const accept = request.headers.get('accept');
     if (accept) headers['Accept'] = accept;
+    const correlationId = request.headers.get('x-correlation-id');
+    if (correlationId) headers['X-Correlation-ID'] = correlationId;
 
     let body: string | undefined;
     if (request.method !== 'GET' && request.method !== 'HEAD') {

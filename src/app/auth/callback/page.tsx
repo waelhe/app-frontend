@@ -12,11 +12,11 @@ type CallbackStatus = 'loading' | 'success' | 'error';
  * OAuth2 Callback Page
  *
  * Handles two flows:
- * 1. Client-side PKCE flow (default): Exchanges the authorization code
+ * 1. Server-side BFF flow (server_auth=true): The server at /api/auth/callback
+ *    already exchanged the code and set httpOnly cookies. We fetch the token
+ *    from the session endpoint and store it in localStorage for API calls.
+ * 2. Client-side PKCE flow (default): Exchanges the authorization code
  *    using the PKCE verifier stored in sessionStorage.
- * 2. Server-side BFF flow (server_auth=true): The server has already
- *    exchanged the code and set httpOnly cookies. We fetch the token
- *    from the session endpoint and store it in localStorage.
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -61,6 +61,8 @@ export default function AuthCallbackPage() {
           if (!data.access_token) {
             throw new Error('No access token in server session.');
           }
+          // Store token in localStorage for client-side API calls
+          // The httpOnly cookie is also set for server-side proxy routes
           setToken(data.access_token);
           startTransition(() => {
             setStatus('success');
@@ -88,6 +90,8 @@ export default function AuthCallbackPage() {
         startTransition(() => {
           setStatus('success');
         });
+        // Clean up URL params
+        window.history.replaceState({}, '', '/');
         setTimeout(() => {
           router.replace('/');
         }, 1500);

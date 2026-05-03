@@ -26,6 +26,8 @@ export async function GET(
     };
     const authHeader = request.headers.get('authorization');
     if (authHeader) headers['Authorization'] = authHeader;
+    const correlationId = request.headers.get('x-correlation-id');
+    if (correlationId) headers['X-Correlation-ID'] = correlationId;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
