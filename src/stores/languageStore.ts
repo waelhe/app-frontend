@@ -1,35 +1,37 @@
 /**
- * LanguageContext — Bilingual (Arabic / English) context with full translations.
- * Persists language preference to localStorage.
- * Updates document dir and lang attributes for RTL/LTR support.
+ * LanguageStore — Merged bilingual (Arabic / English) Zustand store.
+ *
+ * Combines functionality from:
+ *   - LanguageContext.tsx  (key-based translations, document dir/lang sync, RTL support)
+ *   - use-language.ts      (inline bilingual t(ar, en), Zustand persist middleware)
+ *
+ * Supports TWO translation patterns:
+ *   1. t(key)    — key-based lookup from the translations dictionary
+ *   2. tAr(ar, en) — inline bilingual translation
+ *
+ * Persists language preference via Zustand persist middleware (key: 'nabd-language').
+ * setLanguage() updates document.documentElement.lang and dir attributes as a side effect.
  */
 
-'use client';
-
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 // ── Types ─────────────────────────────────────────────────────────
 
 export type Language = 'ar' | 'en';
 
-interface LanguageContextType {
+export interface LanguageState {
   language: Language;
+  isRTL: boolean;
+  dir: 'rtl' | 'ltr';
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
-  dir: 'rtl' | 'ltr';
-  isRTL: boolean;
+  tAr: (ar: string, en: string) => string;
 }
 
 // ── Translations ──────────────────────────────────────────────────
 
-const translations: Record<Language, Record<string, string>> = {
+export const translations: Record<Language, Record<string, string>> = {
   en: {
     // Navigation
     'nav.home': 'Home',
@@ -369,83 +371,51 @@ const translations: Record<Language, Record<string, string>> = {
   },
 };
 
-// ── Context ───────────────────────────────────────────────────────
+// ── Store ─────────────────────────────────────────────────────────
 
-const LANGUAGE_KEY = 'marketplace_language';
+export const useLanguageStore = create<LanguageState>()(
+  persist(
+    (set, get) => ({
+      language: 'ar' as Language,
+      isRTL: true,
+      dir: 'rtl' as const,
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+      setLanguage: (language: Language) => {
+        const isRTL = language === 'ar';
+        const dir = isRTL ? 'rtl' as const : 'ltr' as const;
+        set({ language, isRTL, dir });
 
-function getInitialLanguage(): Language {
-  if (typeof window === 'undefined') return 'ar';
-  const stored = localStorage.getItem(LANGUAGE_KEY) as Language | null;
-  if (stored && (stored === 'ar' || stored === 'en')) return stored;
-  return 'ar';
-}
-
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
-
-  const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LANGUAGE_KEY, lang);
-      // Also update the Zustand language store so both systems stay in sync
-      // We use dynamic import to avoid circular dependencies
-      import('@/store/use-language').then(({ useLanguage: useZustandLanguage }) => {
-        useZustandLanguage.getState().setLanguage(lang);
-      }).catch(() => {
-        // Zustand store not available
-      });
-    }
-  }, []);
-
-  // Sync from Zustand store to Context via custom event
-  useEffect(() => {
-    const handleLanguageChange = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.language && detail.language !== language) {
-        setLanguageState(detail.language as Language);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(LANGUAGE_KEY, detail.language);
+        // Update document attributes as a side effect
+        if (typeof document !== 'undefined') {
+          document.documentElement.lang = language;
+          document.documentElement.dir = dir;
         }
-      }
-    };
-    window.addEventListener('language-change', handleLanguageChange);
-    return () => window.removeEventListener('language-change', handleLanguageChange);
-  }, [language]);
 
-  // Update document attributes when language changes
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.lang = language;
-      document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+        // Dispatch custom event for any legacy listeners
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('language-change', { detail: { language } }));
+        }
+      },
+
+      /** Key-based translation lookup (e.g. t('nav.home'), t('hero.title')) */
+      t: (key: string): string => {
+        const lang = get().language;
+        return translations[lang][key] ?? key;
+      },
+
+      /** Inline bilingual translation — returns Arabic or English based on current language */
+      tAr: (ar: string, en: string): string => {
+        const lang = get().language;
+        return lang === 'ar' ? ar : en;
+      },
+    }),
+    {
+      name: 'nabd-language',
     }
-  }, [language]);
+  )
+);
 
-  const t = useCallback(
-    (key: string): string => {
-      return translations[language][key] ?? key;
-    },
-    [language],
-  );
+// ── Convenience alias ─────────────────────────────────────────────
 
-  const dir = language === 'ar' ? 'rtl' as const : 'ltr' as const;
-  const isRTL = language === 'ar';
-
-  const value = useMemo(
-    () => ({ language, setLanguage, t, dir, isRTL }),
-    [language, setLanguage, t, dir, isRTL],
-  );
-
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
-}
-
-// ── Hook ──────────────────────────────────────────────────────────
-
-export function useLanguage(): LanguageContextType {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-}
+/** Alias for useLanguageStore — matches the original hook name from use-language.ts */
+export const useLanguage = useLanguageStore;

@@ -1,7 +1,7 @@
 'use client';
 
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useRegion } from '@/contexts/RegionContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useRegion } from '@/stores/regionStore';
 import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

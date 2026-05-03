@@ -1,6 +1,6 @@
 'use client';
 
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { Card, CardContent } from '@/components/ui/card';
 import {

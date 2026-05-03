@@ -22,7 +22,7 @@ import {
   HeartPulse,
   Phone,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 
 interface DirectoryItem {

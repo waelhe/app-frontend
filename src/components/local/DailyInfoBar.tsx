@@ -1,6 +1,6 @@
 'use client';
 
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { Calendar, CloudSun, Thermometer } from 'lucide-react';
 
 export default function DailyInfoBar() {

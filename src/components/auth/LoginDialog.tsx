@@ -19,11 +19,10 @@ import {
   ShieldCheck,
   Store,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { setToken, getBackendStatus, type ApiError } from '@/lib/api';
-import { useAuth as useAuthStore } from '@/store/use-auth';
-import { useLocalUsers } from '@/store/use-local-users';
+import { useLocalUsers } from '@/stores/localUsersStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,8 +65,7 @@ function getPasswordStrength(password: string): { level: number; label: string; 
 
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   const { isRTL } = useLanguage();
-  const { signIn } = useAuth();
-  const { login: zustandLogin } = useAuthStore();
+  const { signIn, login: zustandLogin } = useAuth();
   const { registerUser, authenticateUser, findByEmail } = useLocalUsers();
 
   const [mode, setMode] = useState<AuthMode>('login');

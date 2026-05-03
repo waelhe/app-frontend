@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, ChevronLeft, ChevronRight, Star, MapPin, Award } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { Badge } from '@/components/ui/badge';
 

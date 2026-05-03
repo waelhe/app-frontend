@@ -22,8 +22,8 @@ import {
   ChevronLeft,
   AlertCircle,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useListingsByProvider, useProviderBookings, useReviews, useActivateListing, usePauseListing, useConfirmBooking, useCompleteBooking, useCancelBooking } from '@/hooks/useApi';
 import type { ProviderListingSummary, BookingSummary, ReviewResponse } from '@/lib/types';

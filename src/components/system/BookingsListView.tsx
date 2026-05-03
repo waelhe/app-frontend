@@ -32,10 +32,8 @@ import {
   GraduationCap,
   Sparkles,
 } from 'lucide-react';
-import { useLanguage } from '@/store/use-language';
-import { useLanguage as useCtxLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuth as useAuthStore } from '@/store/use-auth';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useBookings, useProviderBookings, useConfirmBooking, useCompleteBooking, useCancelBooking } from '@/hooks/useApi';
 import { WriteReviewDialog } from '@/components/system/WriteReviewDialog';
@@ -178,9 +176,7 @@ const fadeInUp = {
 
 export function BookingsListView() {
   const { t, isRTL } = useLanguage();
-  const { t: tCtx } = useCtxLanguage();
   const { user, role, isAuthenticated, accessToken } = useAuth();
-  const { user: storeUser } = useAuthStore();
   const { goBack, navigate } = useNavigationStore();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');

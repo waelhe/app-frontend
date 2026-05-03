@@ -250,6 +250,7 @@ async function apiFetch<T>(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-Correlation-ID': typeof crypto !== 'undefined' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     ...(options.headers as Record<string, string> | undefined),
   };
 

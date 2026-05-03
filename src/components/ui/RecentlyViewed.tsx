@@ -3,9 +3,9 @@
 import { useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ArrowLeft, ArrowRight, Trash2, Eye } from 'lucide-react';
-import { useLanguage } from '@/store/use-language';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { useRecentlyViewed, type RecentlyViewedItem } from '@/store/use-recently-viewed';
+import { useRecentlyViewed, type RecentlyViewedItem } from '@/stores/recentlyViewedStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

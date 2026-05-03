@@ -2,7 +2,7 @@
 
 import { useEffect, useState, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { exchangeAuthCode } from '@/contexts/AuthContext';
+import { exchangeAuthCode } from '@/stores/authStore';
 import { setToken } from '@/lib/api';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 

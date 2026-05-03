@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Shield, Headphones, Globe, Cpu } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 
 interface Feature {
   id: string;

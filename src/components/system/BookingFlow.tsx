@@ -28,8 +28,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useListing, useCreateBooking, useCreatePaymentIntent } from '@/hooks/useApi';
 import type { ListingResponse } from '@/lib/types';

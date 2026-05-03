@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useLanguage } from '@/store/use-language'
+import { useLanguage } from '@/stores/languageStore'
 import { useNavigationStore } from '@/stores/navigationStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

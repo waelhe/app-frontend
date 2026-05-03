@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { QueryProvider } from "@/providers/QueryProvider";
-import { LanguageProvider } from "@/providers/language-provider";
-import { AuthProvider } from "@/providers/auth-provider";
-import { CartProvider } from "@/providers/cart-provider";
-import { RegionProvider } from "@/providers/region-provider";
+import { QueryProvider } from "@/stores/QueryProvider";
+import { AuthInitializer } from "@/components/system/AuthInitializer";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -54,23 +51,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <CartProvider>
-                <RegionProvider>
-                  <div className="flex min-h-screen flex-col">
-                    <Header />
-                    <BackendStatusBanner />
-                    <main className="flex-1 pt-16 pb-20 md:pb-0">
-                      {children}
-                    </main>
-                    <Footer />
-                    <BottomNav />
-                  </div>
-                </RegionProvider>
-              </CartProvider>
-            </AuthProvider>
-          </LanguageProvider>
+          <AuthInitializer>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <BackendStatusBanner />
+              <main className="flex-1 pt-16 pb-20 md:pb-0">
+                {children}
+              </main>
+              <Footer />
+              <BottomNav />
+            </div>
+          </AuthInitializer>
         </QueryProvider>
         <Toaster />
       </body>

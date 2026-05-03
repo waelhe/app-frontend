@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useLanguage } from '@/store/use-language';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { useAuth } from '@/store/use-auth';
-import { useFavorites, type FavoriteItem } from '@/store/use-favorites';
+import { useAuth } from '@/stores/authStore';
+import { useFavorites, type FavoriteItem } from '@/stores/favoritesStore';
 import {
   Heart,
   ArrowRight,

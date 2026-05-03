@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useAuth } from '@/store/use-auth'
-import { useLanguage } from '@/store/use-language'
+import { useAuth } from '@/stores/authStore'
+import { useLanguage } from '@/stores/languageStore'
 import { useNavigationStore } from '@/stores/navigationStore'
-import { useRegion, REGIONS } from '@/store/use-region'
+import { useRegion, REGIONS } from '@/stores/regionStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -37,7 +37,7 @@ import {
 } from 'lucide-react'
 
 export function Header() {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, signOut } = useAuth()
   const { t, language, setLanguage, isRTL } = useLanguage()
   const { navigate } = useNavigationStore()
   const { selectedRegion, setRegion } = useRegion()
@@ -358,7 +358,7 @@ export function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => logout()}
+                    onClick={() => signOut()}
                     className="flex items-center gap-2 text-red-600 focus:text-red-600"
                   >
                     <LogOut className="h-4 w-4" />
@@ -468,7 +468,7 @@ export function Header() {
                     <span>{t('الإعدادات', 'Settings')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => logout()} className="flex items-center gap-2 text-red-600 focus:text-red-600">
+                  <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 text-red-600 focus:text-red-600">
                     <LogOut className="h-4 w-4" />
                     <span>{t('تسجيل الخروج', 'Sign Out')}</span>
                   </DropdownMenuItem>

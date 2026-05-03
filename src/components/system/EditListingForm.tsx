@@ -34,8 +34,8 @@ import {
   Tag,
   Shield,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { ApiError } from '@/lib/api';
 import { useListing, useUpdateListing, useActivateListing, usePauseListing, useDeleteListing } from '@/hooks/useApi';

@@ -21,9 +21,8 @@ import {
   Sparkles,
   ChevronDown,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuth as useAuthStore } from '@/store/use-auth';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useMessages, useListing, useBooking, useCreateConversation, useSendMessage, useMarkRead } from '@/hooks/useApi';
 import type { MessageResponse, ConversationResponse, ListingResponse, BookingSummary } from '@/lib/types';
@@ -104,7 +103,7 @@ function isSystemMessage(content: string): boolean {
 export function MessagingView() {
   const { t, isRTL } = useLanguage();
   const { user, accessToken } = useAuth();
-  const authStore = useAuthStore();
+  const authStore = useAuth();
   const { viewParams, goBack } = useNavigationStore();
 
   const conversationId = viewParams.conversationId;

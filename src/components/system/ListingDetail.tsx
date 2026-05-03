@@ -41,12 +41,11 @@ import {
   HelpCircle,
   AlertTriangle,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { useFavorites } from '@/store/use-favorites';
-import { useAuth as useAuthStore } from '@/store/use-auth';
-import { useRecentlyViewed } from '@/store/use-recently-viewed';
+import { useFavorites } from '@/stores/favoritesStore';
+import { useRecentlyViewed } from '@/stores/recentlyViewedStore';
 import { useListing, useReviews, useListingsByCategory } from '@/hooks/useApi';
 import type { ListingResponse, ReviewResponse, ListingSummary } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -320,7 +319,7 @@ function timeAgo(dateStr: string, isRTL: boolean): string {
 export function ListingDetail() {
   const { t, isRTL } = useLanguage();
   const { isAuthenticated } = useAuth();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const { viewParams, navigate, goBack } = useNavigationStore();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { addViewed } = useRecentlyViewed();

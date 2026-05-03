@@ -12,7 +12,7 @@ import {
   ImageIcon,
   UserCircle,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useListings, useListingsByCategory } from '@/hooks/useApi';
 import { ApiError } from '@/lib/api';

@@ -26,7 +26,7 @@ import {
   Eye,
   Loader2,
 } from 'lucide-react';
-import { useLanguage } from '@/store/use-language';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useSearch, useListingsByCategory } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';

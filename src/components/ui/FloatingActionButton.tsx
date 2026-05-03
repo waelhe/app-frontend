@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, PenLine, UserPlus, Search } from 'lucide-react';
-import { useLanguage } from '@/store/use-language';
-import { useAuth } from '@/store/use-auth';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 
 export function FloatingActionButton() {

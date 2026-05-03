@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/store/use-auth';
-import { useLanguage } from '@/store/use-language';
+import { useAuth } from '@/stores/authStore';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
-import { useFavorites } from '@/store/use-favorites';
+import { useFavorites } from '@/stores/favoritesStore';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useListings, useCreateListing } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';

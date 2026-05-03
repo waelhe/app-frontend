@@ -2,9 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useLanguage as useZustandLanguage } from '@/store/use-language';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import {
   ArrowRight,
@@ -148,7 +147,7 @@ function ToggleSwitch({
 
 export function SettingsView() {
   const { t, isRTL } = useLanguage();
-  const { language, setLanguage } = useZustandLanguage();
+  const { language, setLanguage } = useLanguage();
   const { user, isAuthenticated, role, signOut } = useAuth();
   const { goBack, navigate } = useNavigationStore();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;

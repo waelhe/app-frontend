@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { Store, AlertCircle, ArrowLeft, ArrowRight, PackageOpen } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useListingsByCategory } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';

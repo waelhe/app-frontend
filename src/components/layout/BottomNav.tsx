@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '@/store/use-auth'
-import { useLanguage } from '@/store/use-language'
+import { useAuth } from '@/stores/authStore'
+import { useLanguage } from '@/stores/languageStore'
 import { useNavigationStore } from '@/stores/navigationStore'
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import {

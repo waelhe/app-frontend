@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Send, CheckCircle2, Loader2 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { useCreateReview } from '@/hooks/useApi';
 import type { ApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';

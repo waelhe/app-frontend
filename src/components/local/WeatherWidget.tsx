@@ -1,6 +1,6 @@
 'use client';
 
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/stores/languageStore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sun, Cloud, Droplets, Wind, Thermometer, Eye } from 'lucide-react';
 

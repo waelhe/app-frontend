@@ -20,7 +20,7 @@ import {
   Trash2,
   Loader2,
 } from 'lucide-react';
-import { useLanguage } from '@/store/use-language';
+import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

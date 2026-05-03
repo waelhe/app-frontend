@@ -16,8 +16,8 @@ import {
   Filter,
   PenSquare,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/stores/languageStore';
+
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useBookings, useProviderBookings } from '@/hooks/useApi';
 import { messagingService } from '@/lib/api';

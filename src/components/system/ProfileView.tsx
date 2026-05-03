@@ -32,9 +32,8 @@ import {
   Image as ImageIcon,
   CheckCircle2,
 } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuth as useAuthStore } from '@/store/use-auth';
+import { useLanguage } from '@/stores/languageStore';
+import { useAuth } from '@/stores/authStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { identityService } from '@/lib/api';
 import { useListingsByProvider, useReviews, useBookings, useProviderBookings } from '@/hooks/useApi';
@@ -162,7 +161,7 @@ function StarRating({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'md
 export function ProfileView() {
   const { t, isRTL } = useLanguage();
   const { user, role, signOut, isAuthenticated, accessToken } = useAuth();
-  const authStore = useAuthStore();
+  const authStore = useAuth();
   const { navigate, goBack, viewParams } = useNavigationStore();
   const queryClient = useQueryClient();
 
