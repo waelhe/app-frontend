@@ -695,16 +695,6 @@ export function Header() {
 
           {/* Actions — Mobile */}
           <div className="flex items-center gap-0.5 md:hidden">
-            {/* Search icon */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSearchOpen(!isSearchOpen)}
-              className="h-9 w-9"
-            >
-              <Search className="h-5 w-5 text-gray-600" />
-            </Button>
-
             {/* Notification bell */}
             {renderNotificationBell(true)}
 
@@ -713,85 +703,103 @@ export function Header() {
           </div>
         </div>
 
-
-      </div>
-
-      {/* ── Mobile search bar (expandable) ─────────────────────────── */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-gray-100 md:hidden"
-          >
-            <div className="px-4 py-3">
-              <form onSubmit={handleSearch} className="flex items-center gap-2">
-                <div className="relative">
+        {/* ── Row 2: Category bar (Mobile) ────────────────────────── */}
+        <div className="border-t border-gray-100 md:hidden">
+          <div className="flex items-center justify-center gap-2 py-2">
+            {CATEGORIES.map((category) => {
+              const isSelected = hoveredCategory === category.id
+              return (
+                <div
+                  key={category.id}
+                  ref={(el) => {
+                    categoryRefs.current[category.id] = el
+                  }}
+                  className="relative shrink-0"
+                  onMouseEnter={() => {
+                    if (window.innerWidth >= 768) {
+                      setHoveredCategory(category.id)
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (window.innerWidth >= 768) {
+                      setHoveredCategory(null)
+                    }
+                  }}
+                >
                   <button
-                    type="button"
-                    onClick={() => setIsLocationOpen(!isLocationOpen)}
-                    className="flex h-10 items-center gap-1 rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm"
+                    data-category-button={category.id}
+                    onClick={() => setHoveredCategory(isSelected ? null : category.id)}
+                    className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all group"
                   >
-                    <MapPin className="h-4 w-4 text-red-500" />
-                    <span className="max-w-[80px] truncate text-gray-700">
-                      {language === 'ar' ? selectedRegion.nameAr : selectedRegion.nameEn}
+                    {/* Category icon — shrinks on scroll down (mobile) */}
+                    <div
+                      className={`transition-all duration-200 ${
+                        isScrollingDown ? 'h-0 overflow-hidden opacity-0' : 'h-10 opacity-100'
+                      }`}
+                    >
+                      <category.icon
+                        className={`h-10 w-10 transition-all duration-200 ${isSelected ? 'scale-110' : ''}`}
+                        style={{ color: category.color }}
+                      />
+                    </div>
+                    <span
+                      className={`whitespace-nowrap text-sm font-medium transition-colors ${
+                        isSelected
+                          ? 'font-semibold text-gray-900'
+                          : 'text-gray-600 group-hover:text-gray-900'
+                      }`}
+                    >
+                      {tr(category.name, category.nameEn)}
                     </span>
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={tr('ابحث...', 'Search...')}
-                  className="h-10 flex-1 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-gray-500"
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                  autoFocus
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="h-10 w-10 bg-red-500 hover:bg-red-600"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </form>
+              )
+            })}
+          </div>
+        </div>
 
-              {/* Mobile location dropdown */}
-              <AnimatePresence>
-                {isLocationOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    className="mt-2 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        {/* ── Row 2: Category bar (Desktop) — hides when scrolling down */}
+        {!isScrollingDown && (
+          <div className="hidden border-t border-gray-100 md:block">
+            <div className="flex items-center justify-center gap-4 py-2">
+              {CATEGORIES.map((category) => {
+                const isSelected = hoveredCategory === category.id
+                return (
+                  <div
+                    key={category.id}
+                    ref={(el) => {
+                      categoryRefs.current[category.id] = el
+                    }}
+                    className="relative shrink-0"
+                    onMouseEnter={() => setHoveredCategory(category.id)}
+                    onMouseLeave={() => setHoveredCategory(null)}
                   >
-                    {REGIONS.map((region) => (
-                      <button
-                        key={region.id}
-                        type="button"
-                        onClick={() => {
-                          setRegion(region)
-                          setIsLocationOpen(false)
-                        }}
-                        className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-gray-50 ${
-                          selectedRegion.id === region.id
-                            ? 'bg-red-50 font-medium text-red-600'
-                            : 'text-gray-700'
+                    <button
+                      data-category-button={category.id}
+                      onClick={() => setHoveredCategory(isSelected ? null : category.id)}
+                      className="flex flex-col items-center gap-1.5 rounded-xl px-4 py-2 transition-all group"
+                    >
+                      <category.icon
+                        className={`h-12 w-12 transition-all duration-200 ${isSelected ? 'scale-110' : ''}`}
+                        style={{ color: category.color }}
+                      />
+                      <span
+                        className={`whitespace-nowrap text-sm font-medium transition-colors ${
+                          isSelected
+                            ? 'font-semibold text-gray-900'
+                            : 'text-gray-600 group-hover:text-gray-900'
                         }`}
                       >
-                        <MapPin className="h-3.5 w-3.5" />
-                        <span>{language === 'ar' ? region.nameAr : region.nameEn}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                        {tr(category.name, category.nameEn)}
+                      </span>
+                    </button>
+                  </div>
+                )
+              })}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
 
       {/* ── Category mega-menu dropdown ────────────────────────────── */}
       {hoveredCategory && currentCategory && (
