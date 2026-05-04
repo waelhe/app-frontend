@@ -44,10 +44,11 @@ export default function RootLayout({
 
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        style={{ overflowAnchor: 'none' }}
       >
         <QueryProvider>
           <AuthInitializer>
-            <div className="flex min-h-screen flex-col">
+            <div className="flex min-h-screen flex-col overflow-x-hidden">
               <Header />
               <BackendStatusBanner />
               <main className="flex-1 pb-20 md:pb-0">

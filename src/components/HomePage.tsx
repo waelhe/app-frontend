@@ -674,6 +674,11 @@ export function HomePage() {
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentView]);
+
   // Listen for 'open-login' events from Header
   useEffect(() => {
     const handleOpenLogin = (e: Event) => { void (e as CustomEvent).detail; setLoginDialogOpen(true); };
