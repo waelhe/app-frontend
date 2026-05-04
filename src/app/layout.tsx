@@ -50,7 +50,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <AuthInitializer>
-            <div className="flex min-h-screen flex-col overflow-x-hidden">
+            <div className="flex min-h-screen flex-col">
               <Header />
               <BackendStatusBanner />
               <main className="flex-1 pb-20 md:pb-0">

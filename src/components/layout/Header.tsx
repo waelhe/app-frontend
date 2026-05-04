@@ -508,7 +508,7 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 bg-white transition-all duration-300 ${
+      className={`sticky top-0 z-50 bg-white transition-all duration-300 relative ${
         isScrolled ? 'shadow-md' : 'shadow-sm'
       }`}
     >
@@ -892,11 +892,11 @@ export function Header() {
       {hoveredCategory && currentCategory && (
         <div
           id="category-dropdown"
-          className="fixed z-[60]"
+          className="absolute z-[60]"
           style={{
             left: '50%',
             transform: 'translateX(-50%)',
-            top: isScrollingDown ? '62px' : '130px',
+            top: '100%',
           }}
           onMouseEnter={() => {
             if (window.innerWidth >= 768) {
