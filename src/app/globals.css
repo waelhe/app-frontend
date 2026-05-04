@@ -117,6 +117,11 @@
   --sidebar-ring: oklch(0.637 0.237 25.331);
 }
 
+/* Prevent scroll anchoring - stops browser from maintaining scroll position on content changes */
+*, *::before, *::after {
+  overflow-anchor: none;
+}
+
 /* Hide scrollbar globally - clean mobile feel */
 *::-webkit-scrollbar {
   display: none;

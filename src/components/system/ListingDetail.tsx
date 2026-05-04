@@ -537,12 +537,29 @@ export function ListingDetail() {
 
   // ── Scroll to top on mount ────────────────────────────────────────────
   useEffect(() => {
-    // Use requestAnimationFrame to ensure DOM is rendered before scrolling
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    // Aggressive scroll-to-top: run multiple times to beat async content loading
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-    });
+      document.scrollingElement && (document.scrollingElement.scrollTop = 0);
+    };
+    
+    // Immediate
+    scrollToTop();
+    
+    // After paint
+    requestAnimationFrame(scrollToTop);
+    
+    // After potential dynamic content loads
+    const timers = [
+      setTimeout(scrollToTop, 50),
+      setTimeout(scrollToTop, 150),
+      setTimeout(scrollToTop, 300),
+      setTimeout(scrollToTop, 500),
+    ];
+    
+    return () => timers.forEach(clearTimeout);
   }, [listingId]);
 
   // ── Scroll detection ────────────────────────────────────────────────

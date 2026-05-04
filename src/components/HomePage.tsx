@@ -676,11 +676,17 @@ export function HomePage() {
 
   // Scroll to top when view changes
   useEffect(() => {
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-    });
+    };
+    scrollToTop();
+    requestAnimationFrame(scrollToTop);
+    const t1 = setTimeout(scrollToTop, 50);
+    const t2 = setTimeout(scrollToTop, 150);
+    const t3 = setTimeout(scrollToTop, 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [currentView]);
 
   // Listen for 'open-login' events from Header

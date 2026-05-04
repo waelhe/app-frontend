@@ -40,11 +40,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" suppressHydrationWarning style={{ overflowAnchor: 'none' }}>
 
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `if('scrollRestoration' in window.history){window.history.scrollRestoration='manual';}` }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-        style={{ overflowAnchor: 'none' }}
       >
         <QueryProvider>
           <AuthInitializer>
