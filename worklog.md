@@ -469,3 +469,55 @@ Stage Summary:
 - Card features: square image, heart favorite, category badge, secondary badge, image carousel, rating, features row, horizontal scroll
 - 20 AI-generated images saved to /public/images/listings/
 - Shared ListingCard exported from /src/components/ui/index.ts
+
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: Complete rewrite of ListingDetail component to match Airbnb property detail page design
+
+Work Log:
+- Read all related files: types (ListingResponse, ReviewResponse, ListingSummary, AppView), stores (languageStore, authStore, navigationStore, favoritesStore, recentlyViewedStore), hooks (useApi.ts), ListingCard component
+- Completely rewrote /src/components/system/ListingDetail.tsx (~1000 lines) with Airbnb-style two-column layout
+- Desktop layout: Left column (2/3) with all content sections + Right column (1/3) with sticky booking sidebar
+- Mobile layout: Full-width sections with sticky bottom action bar that appears on scroll
+
+Sections implemented (13 total):
+1. **Sticky Navigation Header** — Back button, breadcrumb (Home > Category > Title), title appears on scroll (Airbnb-style), favorite/share/report buttons, transparent→solid transition
+2. **Image Gallery** — Desktop: 1 large main (2-row span) + 4 smaller (2×2 grid) Airbnb layout with "Show all photos" button; Mobile: Full-width carousel with swipe, dots, "Show all" overlay; Lightbox with navigation arrows, counter, close button
+3. **Title Section** — Large bold title, location with MapPin, rating + review count, views counter, quick specs row for real-estate, verified badge, category badge, time-ago badge, share/save buttons row
+4. **Host Information Card** — Avatar with initials, host name (simulated by listing ID hash), "Superhost"/"مضيف مميز" badge, identity/phone verification badges, response rate + response time, member since, "Contact Host" button
+5. **Highlights / Key Features** — 2-column grid of icon+title+description cards, category-specific (6 for real-estate, 6 for cars, 4 for electronics, 4 for services, 4 for jobs, 4 default)
+6. **Description Section** — Expandable text (4-line clamp), "Show more"/"عرض المزيد" button, rich paragraph formatting
+7. **Detailed Specifications Table** — Expanded category-specific specs in bordered key-value table (10 for real-estate, 9 for cars, 6 for electronics, 5 for services, 5 for jobs), includes generic specs
+8. **Amenities Grid** — 2-col mobile / 3-col desktop grid with icon+label, category-specific amenities (12 for real-estate, 8 for cars, 6 for electronics, 6 default), "Show all amenities" expand button
+9. **Location Section** — Map placeholder with animated MapPin, grid lines, "Approximate location"/"الموقع التقريبي" label, neighborhood highlights (city center, restaurants, shops with distances), "Get Directions" button
+10. **Reviews Section** — Large rating number + stars, 5→1 star rating breakdown bars (clickable to filter), total review count, individual review cards with avatar+name+date+rating+text, simulated review data fallback, filter chip with X to clear
+11. **Related Listings** — Horizontal scroll of ListingCard components, "Similar properties"/"عقارات مشابهة" header, uses existing ListingCard from @/components/ui/ListingCard
+12. **Safety/Tips Section** — Collapsible section with 5 safety tips, report listing link with dialog
+13. **Sticky Booking Sidebar (Desktop)** — Price with /month for real-estate, date picker placeholder (check-in/checkout), guests selector, "Reserve"/"احجز" button (rose-500), "You won't be charged yet" text, price breakdown (nightly×nights=total+service fee), quick host info card below; For non-real-estate: "Contact Seller" button, message + share buttons
+14. **Mobile Bottom Action Bar** — Fixed bottom bar (appears after scrolling past title), price on left, "Book Now"/"Contact" button on right, spring animation entrance, hidden on desktop (lg:)
+
+Technical details:
+- All data enrichment is frontend-only (backend only provides id, title, description, category, price, currency, createdAt, updatedAt)
+- Category-specific specs, highlights, amenities, host info all generated on frontend
+- Uses simulated review data as fallback when API returns empty
+- Rating distribution calculated dynamically from reviews
+- RTL support throughout (isRTL from languageStore)
+- Framer Motion animations: fadeInUp, stagger, spring bottom bar, scale on tap
+- Color scheme: rose-500/600 for primary actions (Airbnb red), emerald for verified, amber for ratings
+- Responsive: mobile-first, lg breakpoint for two-column layout
+- Component still exports as `export function ListingDetail()`
+- Lint: 0 errors
+- Dev server: compiles successfully
+
+Stage Summary:
+- ListingDetail.tsx fully rewritten with Airbnb property detail page design
+- 13 sections implemented in proper order with two-column desktop layout
+- Sticky header with breadcrumb + title-on-scroll behavior
+- Airbnb-style image grid (1 large + 4 small on desktop, carousel on mobile)
+- Full lightbox with navigation
+- Category-rich data enrichment (specs, highlights, amenities) all frontend-simulated
+- Booking sidebar with date placeholders, price breakdown, and rose-colored CTA
+- Mobile bottom action bar with spring animation
+- All existing store integrations preserved (useLanguage, useAuth, useNavigationStore, useFavorites, useRecentlyViewed)
+- Related listings use the shared ListingCard component
