@@ -234,7 +234,7 @@ export default function QuickServices() {
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -120 : 120,
+        left: direction === 'left' ? -200 : 200,
         behavior: 'smooth'
       });
     }
@@ -252,7 +252,7 @@ export default function QuickServices() {
       {/* Airbnb Style Categories */}
       <section className="bg-white z-40 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="relative flex items-center py-3">
+          <div className="relative flex items-center py-4">
             {/* Left scroll button */}
             {canScrollLeft && (
               <button
@@ -268,7 +268,7 @@ export default function QuickServices() {
             <div
               ref={scrollContainerRef}
               onScroll={checkScroll}
-              className="flex gap-3 sm:gap-4 overflow-x-auto px-8 py-1"
+              className="flex gap-5 sm:gap-6 overflow-x-auto px-8 py-2"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {categories.map((category) => {
@@ -277,16 +277,16 @@ export default function QuickServices() {
                   return (
                     <div
                       key={category.id}
-                      className="flex flex-col items-center justify-center min-w-[50px] sm:min-w-[60px] flex-shrink-0 px-1"
+                      className="flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] flex-shrink-0 px-2"
                     >
                       {/* خط ملون */}
                       <div
-                        className="w-1 h-12 rounded-full mb-1"
+                        className="w-1.5 h-14 rounded-full mb-2"
                         style={{ backgroundColor: category.color }}
                       />
                       {/* اسم الجزء */}
                       <span
-                        className="text-[11px] font-bold whitespace-nowrap"
+                        className="text-xs font-bold whitespace-nowrap"
                         style={{ color: category.color }}
                       >
                         {isArabic ? category.title : category.titleEn}
@@ -303,7 +303,7 @@ export default function QuickServices() {
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(isSelected ? null : category.id)}
-                    className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[66px] group flex-shrink-0"
+                    className="flex flex-col items-center gap-2 min-w-[68px] sm:min-w-[80px] group flex-shrink-0"
                   >
                     {/* Image or Icon */}
                     <div className="relative">
@@ -316,7 +316,7 @@ export default function QuickServices() {
 
                       {/* Image from local folder */}
                       {category.imageIcon && (
-                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden transition-all duration-200 relative ${isSelected ? 'ring-2 ring-gray-900 ring-offset-1' : 'opacity-90 group-hover:opacity-100 shadow-sm'}`}>
+                        <div className={`w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl overflow-hidden transition-all duration-200 relative ${isSelected ? 'ring-2 ring-gray-900 ring-offset-2' : 'opacity-90 group-hover:opacity-100 shadow-md'}`}>
                           <Image
                             src={category.imageIcon}
                             alt={isArabic ? category.title : category.titleEn}
@@ -327,7 +327,7 @@ export default function QuickServices() {
                           {/* اسم المجموعة على الصورة */}
                           {category.groupTitle && (
                             <div
-                              className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white"
+                              className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold text-white"
                               style={{ backgroundColor: category.groupColor }}
                             >
                               {isArabic ? category.groupTitle : category.groupTitleEn}
@@ -355,15 +355,15 @@ export default function QuickServices() {
               {/* View All Card */}
               <button
                 onClick={() => setShowAllSheet(true)}
-                className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[66px] group flex-shrink-0"
+                className="flex flex-col items-center gap-2 min-w-[68px] sm:min-w-[80px] group flex-shrink-0"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                  <Grid3X3 className="w-6 h-6 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                  <Grid3X3 className="w-7 h-7 text-gray-400 group-hover:text-gray-600 transition-colors" />
                 </div>
                 <span className="text-xs font-medium text-gray-500 group-hover:text-gray-900 transition-colors">
                   {isArabic ? 'الكل' : 'All'}
                 </span>
-                <div className="h-0.5 w-4 rounded-full bg-transparent" />
+                <div className="h-0.5 w-6 rounded-full bg-transparent" />
               </button>
             </div>
 
