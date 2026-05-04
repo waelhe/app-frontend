@@ -1,10 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Briefcase, Scale, Calculator, Phone, Star, MapPin } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Briefcase, Scale, Calculator, MapPin, Phone } from 'lucide-react';
 
 const professionalTypes = [
   { id: 'lawyer', labelEn: 'Lawyers', labelAr: 'محامون', icon: Scale },
@@ -64,63 +64,55 @@ const professionals = [
 
 export default function Professionals() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
+      {/* Section Header */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Briefcase className="w-5 h-5 text-red-500" />
-        {isRTL ? 'المحترفون' : 'Professionals'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-sm">
+          <Briefcase className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'المحترفون' : 'Professionals'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({professionals.length})</span>
       </h2>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {professionalTypes.map((pt) => {
-          const Icon = pt.icon;
-          return (
-            <div key={pt.id} className="flex flex-col items-center gap-1 p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors">
-              <Icon className="w-6 h-6 text-red-500" />
-              <span className="text-xs font-medium">{isRTL ? pt.labelAr : pt.labelEn}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="space-y-3">
-        {professionals.map((pro) => {
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {professionals.map((pro, idx) => {
           const pt = professionalTypes.find((p) => p.id === pro.type);
           const ProIcon = pt?.icon ?? Briefcase;
           return (
-            <Card key={pro.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                    <ProIcon className="w-5 h-5 text-red-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm">{isRTL ? pro.nameAr : pro.nameEn}</h3>
-                    <p className="text-xs text-red-500 font-medium">{isRTL ? pro.specialtyAr : pro.specialtyEn}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        {pro.rating}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {isRTL ? pro.locationAr : pro.locationEn}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0"
-                    onClick={() => window.open(`tel:${pro.phone}`, '_self')}
-                  >
-                    <Phone className="w-3 h-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ListingCard
+              key={pro.id}
+              id={pro.id}
+              title={isArabic ? pro.nameAr : pro.nameEn}
+              category="services"
+              price={0}
+              subtitle={isArabic ? pro.specialtyAr : pro.specialtyEn}
+              rating={pro.rating}
+              badgeText={isArabic ? pt?.labelAr : pt?.labelEn}
+              badgeColor="bg-red-600/90 text-white"
+              features={[
+                { icon: MapPin, label: isArabic ? pro.locationAr : pro.locationEn },
+              ]}
+              imageIndex={idx}
+              isFavorite={favorites.includes(pro.id)}
+              onToggleFavorite={toggleFavorite}
+              onClick={() => navigate('listing-detail', { id: pro.id })}
+              isScrollCard={true}
+            />
           );
         })}
       </div>

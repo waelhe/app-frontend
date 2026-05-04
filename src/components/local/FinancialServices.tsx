@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Banknote, MapPin, Phone, Clock } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Banknote, Clock, Phone } from 'lucide-react';
 
 const financialServices = [
   {
@@ -58,48 +59,50 @@ const financialServices = [
 
 export default function FinancialServices() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Banknote className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الخدمات المالية' : 'Financial Services'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
+          <Banknote className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'الخدمات المالية' : 'Financial Services'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({financialServices.length})</span>
       </h2>
-      <div className="space-y-3">
-        {financialServices.map((service) => (
-          <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                  <Banknote className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm">{isRTL ? service.nameAr : service.nameEn}</h3>
-                  <Badge variant="secondary" className="text-xs mt-0.5">
-                    {isRTL ? service.typeAr : service.typeEn}
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 ms-13 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? service.locationAr : service.locationEn}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  {isRTL ? service.hoursAr : service.hoursEn}
-                </span>
-                <span
-                  className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${service.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {service.phone}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {financialServices.map((service, idx) => (
+          <ListingCard
+            key={service.id}
+            id={service.id}
+            title={isArabic ? service.nameAr : service.nameEn}
+            category="services"
+            price={0}
+            subtitle={isArabic ? service.locationAr : service.locationEn}
+            rating={4.0 + Math.random() * 1.0}
+            badgeText={isArabic ? service.typeAr : service.typeEn}
+            badgeColor="bg-emerald-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? service.hoursAr : service.hoursEn },
+              { icon: Phone, label: service.phone },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(service.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: service.id })}
+          />
         ))}
       </div>
     </section>

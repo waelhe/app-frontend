@@ -12,11 +12,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Heart,
   ArrowLeft,
   ArrowRight,
   Grid3X3,
-  Star,
   Bed,
   Bath,
   Maximize,
@@ -37,6 +35,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  ListingCard,
+  ViewAllCard,
+  getListingImages,
+} from '@/components/ui/ListingCard';
 
 // ════════════════════════════════════════════════════════════════════
 // Property Type Definitions
@@ -107,18 +110,6 @@ const PROPERTY_TYPES: PropertyType[] = [
     color: '#767676',
     keywords: ['أرض', 'أراضي', 'land', 'plot', 'قطعة', 'مزرعة', 'farm', 'مخطط'],
   },
-];
-
-// Placeholder gradients for cards without images
-const placeholderGradients = [
-  'from-amber-400 to-orange-300',
-  'from-emerald-400 to-teal-300',
-  'from-sky-400 to-cyan-300',
-  'from-violet-400 to-purple-300',
-  'from-rose-400 to-pink-300',
-  'from-teal-400 to-green-300',
-  'from-orange-400 to-amber-300',
-  'from-indigo-400 to-blue-300',
 ];
 
 // ════════════════════════════════════════════════════════════════════
@@ -274,269 +265,6 @@ function RealEstateCategoryBar({
 }
 
 // ════════════════════════════════════════════════════════════════════
-// Airbnb-Style Property Card (Square image, horizontal scroll)
-// ════════════════════════════════════════════════════════════════════
-
-function PropertyCard({
-  listing,
-  index,
-  isFavorite,
-  onToggleFavorite,
-}: {
-  listing: ListingSummary;
-  index: number;
-  isFavorite: boolean;
-  onToggleFavorite: (id: string) => void;
-}) {
-  const { language, isRTL } = useLanguage();
-  const isArabic = language === 'ar';
-  const navigate = useNavigationStore((s) => s.navigate);
-  const gradientIndex = index % placeholderGradients.length;
-
-  // Determine if listing title suggests For Sale or For Rent
-  const titleLower = listing.title.toLowerCase();
-  const isForRent = /للإيجار|إيجار|rent|للأجرة/.test(titleLower);
-
-  const priceFormatted =
-    language === 'ar'
-      ? `${listing.price.toLocaleString('ar-SA')} ل.س`
-      : `${listing.price.toLocaleString('en-US')} SYP`;
-
-  return (
-    <div className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px] group cursor-pointer">
-      {/* ── Image Container (Square — Airbnb Style) ── */}
-      <div className="relative aspect-square rounded-xl overflow-hidden mb-2">
-        {/* Gradient placeholder */}
-        <div className={`w-full h-full bg-gradient-to-br ${placeholderGradients[gradientIndex]} flex items-center justify-center`}>
-          <Building2 className="w-10 h-10 text-white/40" />
-        </div>
-        {/* Hover zoom */}
-        <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-300" />
-
-        {/* Favorite Button (top-right) */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(listing.id); }}
-          className="absolute top-2 end-2 p-1.5 transition-transform hover:scale-110 z-10"
-        >
-          <Heart
-            className={`w-5 h-5 ${
-              isFavorite
-                ? 'fill-rose-500 text-rose-500'
-                : 'text-white drop-shadow-lg'
-            }`}
-          />
-        </button>
-
-        {/* Type Badge: For Sale / For Rent (top-left) */}
-        <div className="absolute top-2 start-2">
-          <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full backdrop-blur-sm ${
-            isForRent
-              ? 'bg-amber-500/90 text-white'
-              : 'bg-teal-600/90 text-white'
-          }`}>
-            {isForRent
-              ? (isArabic ? 'للإيجار' : 'For Rent')
-              : (isArabic ? 'للبيع' : 'For Sale')
-            }
-          </span>
-        </div>
-
-        {/* Featured Badge (bottom-left) */}
-        <div className="absolute bottom-2 start-2">
-          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-white/90 text-gray-900 backdrop-blur-sm">
-            ⭐ {isArabic ? 'مميز' : 'Featured'}
-          </span>
-        </div>
-      </div>
-
-      {/* ── Property Info (Airbnb Style) ── */}
-      <div onClick={() => navigate('listing-detail', { id: listing.id })}>
-        {/* Location */}
-        <p className="text-xs text-gray-500 font-medium mb-0.5">
-          {listing.providerName}
-        </p>
-
-        {/* Title */}
-        <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-1">
-          {listing.title}
-        </h3>
-
-        {/* Property Specs */}
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-          <span className="flex items-center gap-0.5">
-            <Bed className="w-3 h-3" />
-            3
-          </span>
-          <span className="flex items-center gap-0.5">
-            <Bath className="w-3 h-3" />
-            2
-          </span>
-          <span className="flex items-center gap-0.5">
-            <Maximize className="w-3 h-3" />
-            150م²
-          </span>
-        </div>
-
-        {/* Price & Rating Row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-sm font-bold text-gray-900">{priceFormatted}</span>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <Star className="w-3 h-3 fill-gray-900 text-gray-900" />
-            <span className="text-xs font-medium">4.8</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════
-// View All Card (2×2 Photo Grid — Airbnb Style)
-// ════════════════════════════════════════════════════════════════════
-
-function ViewAllCard({
-  listings,
-  onClick,
-}: {
-  listings: ListingSummary[];
-  onClick: () => void;
-}) {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px] group cursor-pointer"
-    >
-      <div className="aspect-square rounded-xl overflow-hidden relative bg-gray-100">
-        {/* 2×2 Photo Grid */}
-        <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5">
-          {listings.slice(0, 4).map((_, i) => (
-            <div key={i} className={`overflow-hidden bg-gradient-to-br ${placeholderGradients[i % placeholderGradients.length]}`} />
-          ))}
-        </div>
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
-        {/* Text overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-          <span className="text-base font-semibold">{isArabic ? 'عرض الكل' : 'Show all'}</span>
-          <span className="text-xs text-white/80 mt-0.5">
-            {listings.length} {isArabic ? 'عقار' : 'properties'}
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════
-// All Properties Drawer (Sheet)
-// ════════════════════════════════════════════════════════════════════
-
-function AllPropertiesDrawer({
-  open,
-  onOpenChange,
-  listings,
-  favorites,
-  onToggleFavorite,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  listings: ListingSummary[];
-  favorites: string[];
-  onToggleFavorite: (id: string) => void;
-}) {
-  const { language, isRTL } = useLanguage();
-  const isArabic = language === 'ar';
-  const navigate = useNavigationStore((s) => s.navigate);
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl px-4 pt-4">
-        {/* Handle */}
-        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-3" />
-
-        {/* Header */}
-        <div className="pb-3 border-b border-gray-100 mb-4">
-          <h2 className="text-lg font-bold">
-            {isArabic ? 'جميع العقارات' : 'All Properties'}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {listings.length} {isArabic ? 'عقار متاح' : 'properties available'}
-          </p>
-        </div>
-
-        {/* Grid */}
-        <div className="overflow-y-auto pb-8" style={{ maxHeight: 'calc(90vh - 100px)' }}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {listings.map((listing, idx) => {
-              const isFavorite = favorites.includes(listing.id);
-              const titleLower = listing.title.toLowerCase();
-              const isForRent = /للإيجار|إيجار|rent|للأجرة/.test(titleLower);
-              const gradientIndex = idx % placeholderGradients.length;
-
-              return (
-                <div
-                  key={listing.id}
-                  className="group cursor-pointer"
-                  onClick={() => {
-                    onOpenChange(false);
-                    navigate('listing-detail', { id: listing.id });
-                  }}
-                >
-                  {/* Image */}
-                  <div className="relative aspect-square rounded-xl overflow-hidden mb-2">
-                    <div className={`w-full h-full bg-gradient-to-br ${placeholderGradients[gradientIndex]} flex items-center justify-center group-hover:scale-105 transition-transform duration-300`}>
-                      <Building2 className="w-8 h-8 text-white/40" />
-                    </div>
-                    {/* Favorite */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onToggleFavorite(listing.id); }}
-                      className="absolute top-2 end-2 p-1.5 z-10"
-                    >
-                      <Heart className={`w-5 h-5 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white drop-shadow-lg'}`} />
-                    </button>
-                    {/* Type badge */}
-                    <span className={`absolute top-2 start-2 px-2 py-0.5 text-[10px] font-semibold rounded-full backdrop-blur-sm ${
-                      isForRent ? 'bg-amber-500/90 text-white' : 'bg-teal-600/90 text-white'
-                    }`}>
-                      {isForRent ? (isArabic ? 'للإيجار' : 'For Rent') : (isArabic ? 'للبيع' : 'For Sale')}
-                    </span>
-                  </div>
-
-                  {/* Info */}
-                  <p className="text-xs text-gray-500 font-medium">{listing.providerName}</p>
-                  <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{listing.title}</h3>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                    <span className="flex items-center gap-0.5"><Bed className="w-3 h-3" />3</span>
-                    <span className="flex items-center gap-0.5"><Bath className="w-3 h-3" />2</span>
-                    <span className="flex items-center gap-0.5"><Maximize className="w-3 h-3" />150م²</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-sm font-bold text-gray-900">
-                      {isArabic
-                        ? `${listing.price.toLocaleString('ar-SA')} ل.س`
-                        : `${listing.price.toLocaleString('en-US')} SYP`}
-                    </span>
-                    <div className="flex items-center gap-0.5">
-                      <Star className="w-3 h-3 fill-gray-900 text-gray-900" />
-                      <span className="text-xs font-medium">4.8</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════
 // Loading Skeleton (Horizontal Scroll Style)
 // ════════════════════════════════════════════════════════════════════
 
@@ -577,6 +305,71 @@ function filterByPropertyType(listings: ListingSummary[], typeId: string): Listi
     const titleLower = listing.title.toLowerCase();
     return propertyType.keywords.some((kw) => titleLower.includes(kw.toLowerCase()));
   });
+}
+
+/** Determine property features based on title keywords */
+function getPropertyFeatures(title: string, isArabic: boolean): { icon: React.ElementType; label: string }[] {
+  const titleLower = title.toLowerCase();
+  const features: { icon: React.ElementType; label: string }[] = [];
+
+  // Try to extract room count from title
+  const roomMatch = titleLower.match(/(\d+)\s*(غرف|غرفة|room|bedroom|bed)/i);
+  if (roomMatch) {
+    features.push({ icon: Bed, label: roomMatch[1] });
+  } else {
+    // Default based on property type
+    if (/شقة|شقق|apartment|دوبلكس|duplex|استوديو|studio/.test(titleLower)) {
+      features.push({ icon: Bed, label: isArabic ? '2' : '2' });
+    } else if (/فيلا|فلل|villa|منزل|house/.test(titleLower)) {
+      features.push({ icon: Bed, label: isArabic ? '4' : '4' });
+    } else if (/مكتب|مكاتب|office/.test(titleLower)) {
+      features.push({ icon: Bed, label: isArabic ? '1' : '1' });
+    }
+  }
+
+  // Add bath count
+  if (features.length > 0) {
+    features.push({ icon: Bath, label: isArabic ? '2' : '2' });
+  }
+
+  // Add area
+  const areaMatch = titleLower.match(/(\d+)\s*(م2|m2|متر|sqm|meter)/i);
+  if (areaMatch) {
+    features.push({ icon: Maximize, label: `${areaMatch[1]}م²` });
+  } else {
+    // Default area based on property type
+    if (/شقة|شقق|apartment/.test(titleLower)) {
+      features.push({ icon: Maximize, label: isArabic ? '120م²' : '120m²' });
+    } else if (/فيلا|فلل|villa/.test(titleLower)) {
+      features.push({ icon: Maximize, label: isArabic ? '280م²' : '280m²' });
+    } else if (/مكتب|مكاتب|office/.test(titleLower)) {
+      features.push({ icon: Maximize, label: isArabic ? '80م²' : '80m²' });
+    }
+  }
+
+  return features;
+}
+
+/** Determine badge text from listing title */
+function getListingBadge(title: string, isArabic: boolean): { text: string; color: string } | null {
+  const titleLower = title.toLowerCase();
+  if (/للإيجار|إيجار|rent|للأجرة/.test(titleLower)) {
+    return {
+      text: isArabic ? 'للإيجار' : 'For Rent',
+      color: 'bg-amber-500/90 text-white',
+    };
+  }
+  if (/للبيع|بيع|sale|sell/.test(titleLower)) {
+    return {
+      text: isArabic ? 'للبيع' : 'For Sale',
+      color: 'bg-teal-600/90 text-white',
+    };
+  }
+  // Default: For Sale
+  return {
+    text: isArabic ? 'للبيع' : 'For Sale',
+    color: 'bg-teal-600/90 text-white',
+  };
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -753,19 +546,48 @@ export default function RealEstate() {
                 className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {filteredListings.map((listing, idx) => (
-                  <PropertyCard
-                    key={listing.id}
-                    listing={listing}
-                    index={idx}
-                    isFavorite={favorites.includes(listing.id)}
-                    onToggleFavorite={toggleFavorite}
-                  />
-                ))}
+                {filteredListings.map((listing, idx) => {
+                  const badge = getListingBadge(listing.title, isArabic);
+                  const features = getPropertyFeatures(listing.title, isArabic);
+                  const listingImages = getListingImages('real-estate', idx);
+
+                  return (
+                    <ListingCard
+                      key={listing.id}
+                      id={listing.id}
+                      title={listing.title}
+                      category="real-estate"
+                      price={listing.price}
+                      providerName={listing.providerName}
+                      subtitle={listing.providerName}
+                      rating={4.5 + Math.random() * 0.5}
+                      reviewCount={Math.floor(Math.random() * 50) + 5}
+                      isFavorite={favorites.includes(listing.id)}
+                      onToggleFavorite={toggleFavorite}
+                      badgeText={badge?.text}
+                      badgeColor={badge?.color}
+                      secondaryBadge={idx < 3 ? (isArabic ? '⭐ مميز' : '⭐ Featured') : undefined}
+                      features={features}
+                      images={listingImages}
+                      imageIndex={idx}
+                      isScrollCard={true}
+                    />
+                  );
+                })}
 
                 {/* View All Card (2×2 Photo Grid) */}
                 {filteredListings.length > 4 && (
-                  <ViewAllCard listings={filteredListings} onClick={() => setShowAll(true)} />
+                  <ViewAllCard
+                    count={filteredListings.length}
+                    labelAr="عرض الكل"
+                    labelEn="Show all"
+                    images={getListingImages('real-estate', 0).concat(
+                      getListingImages('real-estate', 1),
+                      getListingImages('real-estate', 2),
+                      getListingImages('real-estate', 3)
+                    )}
+                    onClick={() => setShowAll(true)}
+                  />
                 )}
               </motion.div>
             </AnimatePresence>
@@ -794,13 +616,60 @@ export default function RealEstate() {
       </div>
 
       {/* ── All Properties Drawer ── */}
-      <AllPropertiesDrawer
-        open={showAll}
-        onOpenChange={setShowAll}
-        listings={filteredListings}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-      />
+      <Sheet open={showAll} onOpenChange={setShowAll}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl px-4 pt-4">
+          {/* Handle */}
+          <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-3" />
+
+          {/* Header */}
+          <div className="pb-3 border-b border-gray-100 mb-4">
+            <h2 className="text-lg font-bold">
+              {isArabic ? 'جميع العقارات' : 'All Properties'}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {filteredListings.length} {isArabic ? 'عقار متاح' : 'properties available'}
+            </p>
+          </div>
+
+          {/* Grid */}
+          <div className="overflow-y-auto pb-8" style={{ maxHeight: 'calc(90vh - 100px)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {filteredListings.map((listing, idx) => {
+                const badge = getListingBadge(listing.title, isArabic);
+                const features = getPropertyFeatures(listing.title, isArabic);
+                const listingImages = getListingImages('real-estate', idx);
+
+                return (
+                  <ListingCard
+                    key={listing.id}
+                    id={listing.id}
+                    title={listing.title}
+                    category="real-estate"
+                    price={listing.price}
+                    providerName={listing.providerName}
+                    subtitle={listing.providerName}
+                    rating={4.5 + Math.random() * 0.5}
+                    reviewCount={Math.floor(Math.random() * 50) + 5}
+                    isFavorite={favorites.includes(listing.id)}
+                    onToggleFavorite={toggleFavorite}
+                    badgeText={badge?.text}
+                    badgeColor={badge?.color}
+                    secondaryBadge={idx < 3 ? (isArabic ? '⭐ مميز' : '⭐ Featured') : undefined}
+                    features={features}
+                    images={listingImages}
+                    imageIndex={idx}
+                    isScrollCard={false}
+                    onClick={() => {
+                      setShowAll(false);
+                      navigate('listing-detail', { id: listing.id });
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }

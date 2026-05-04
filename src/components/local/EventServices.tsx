@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
 import { PartyPopper, MapPin, Phone, Star } from 'lucide-react';
 
 const eventServices = [
@@ -54,46 +55,51 @@ const eventServices = [
 
 export default function EventServices() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <PartyPopper className="w-5 h-5 text-red-500" />
-        {isRTL ? 'خدمات الفعاليات' : 'Event Services'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-sm">
+          <PartyPopper className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'خدمات الفعاليات' : 'Event Services'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({eventServices.length})</span>
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {eventServices.map((service) => (
-          <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="w-full h-20 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg flex items-center justify-center mb-3">
-                <PartyPopper className="w-8 h-8 text-purple-300" />
-              </div>
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="font-semibold text-sm">{isRTL ? service.nameAr : service.nameEn}</h3>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium">{service.rating}</span>
-                </div>
-              </div>
-              <Badge variant="outline" className="text-xs mb-2">
-                {isRTL ? service.typeAr : service.typeEn}
-              </Badge>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? service.locationAr : service.locationEn}
-                </div>
-                <div
-                  className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${service.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {service.phone}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {eventServices.map((service, idx) => (
+          <ListingCard
+            key={service.id}
+            id={service.id}
+            title={isArabic ? service.nameAr : service.nameEn}
+            category="experiences"
+            price={0}
+            subtitle={isArabic ? service.locationAr : service.locationEn}
+            rating={service.rating}
+            badgeText={isArabic ? service.typeAr : service.typeEn}
+            badgeColor="bg-pink-600/90 text-white"
+            secondaryBadge={service.rating >= 4.7 ? (isArabic ? 'مميز' : 'Featured') : undefined}
+            features={[
+              { icon: MapPin, label: isArabic ? service.locationAr : service.locationEn },
+              { icon: Phone, label: service.phone },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(service.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: service.id })}
+          />
         ))}
       </div>
     </section>

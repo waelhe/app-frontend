@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Star, Clock } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { MapPin, Clock, Star } from 'lucide-react';
 
 const places = [
   {
@@ -52,46 +53,59 @@ const places = [
 
 export default function Places() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <MapPin className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الأماكن السياحية' : 'Places to Visit'}
-      </h2>
-      <div className="space-y-3">
-        {places.map((place) => (
-          <Card key={place.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="w-full h-32 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg flex items-center justify-center mb-3">
-                <MapPin className="w-10 h-10 text-teal-300" />
-              </div>
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="font-semibold text-sm">{isRTL ? place.nameAr : place.nameEn}</h3>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium">{place.rating}</span>
-                </div>
-              </div>
-              <Badge variant="secondary" className="text-xs mb-1">
-                {isRTL ? place.categoryAr : place.categoryEn}
-              </Badge>
-              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                {isRTL ? place.descAr : place.descEn}
-              </p>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? place.locationAr : place.locationEn}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {isRTL ? place.hoursAr : place.hoursEn}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
+          <MapPin className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            {isArabic ? 'الأماكن السياحية' : 'Places to Visit'}
+          </h2>
+          <span className="text-xs text-gray-500">
+            {places.length} {isArabic ? 'مكان' : 'places'}
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {places.map((place, index) => (
+          <ListingCard
+            key={place.id}
+            id={place.id}
+            title={isArabic ? place.nameAr : place.nameEn}
+            category="tourism"
+            price={0}
+            subtitle={isArabic ? place.descAr : place.descEn}
+            rating={place.rating}
+            badgeText={isArabic ? place.categoryAr : place.categoryEn}
+            badgeColor="bg-teal-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? place.hoursAr : place.hoursEn },
+              { icon: MapPin, label: isArabic ? place.locationAr : place.locationEn },
+            ]}
+            imageIndex={index}
+            isFavorite={favorites.includes(place.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: place.id })}
+          />
         ))}
       </div>
     </section>

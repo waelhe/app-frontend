@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Users, MapPin } from 'lucide-react';
 
 const communityPosts = [
   {
@@ -43,49 +44,47 @@ const communityPosts = [
 
 export default function Community() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Users className="w-5 h-5 text-red-500" />
-        {isRTL ? 'المجتمع' : 'Community'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-sm">
+          <Users className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'المجتمع' : 'Community'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({communityPosts.length})</span>
       </h2>
-      <div className="space-y-3">
-        {communityPosts.map((post) => (
-          <Card key={post.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-base">
-                  {isRTL ? post.titleAr : post.titleEn}
-                </h3>
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  <Users className="w-3 h-3 mr-1" />
-                  {isRTL ? post.authorAr : post.authorEn}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {isRTL ? post.descAr : post.descEn}
-              </p>
-              <div className="w-full h-32 bg-muted rounded-lg mt-3 flex items-center justify-center">
-                <Users className="w-8 h-8 text-muted-foreground/40" />
-              </div>
-            </CardContent>
-            <CardFooter className="px-4 pb-4 pt-0 gap-4">
-              <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-red-500 transition-colors">
-                <Heart className="w-4 h-4" />
-                {post.likes}
-              </button>
-              <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-blue-500 transition-colors">
-                <MessageCircle className="w-4 h-4" />
-                {post.comments}
-              </button>
-              <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-green-500 transition-colors ms-auto">
-                <Share2 className="w-4 h-4" />
-                {isRTL ? 'مشاركة' : 'Share'}
-              </button>
-            </CardFooter>
-          </Card>
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {communityPosts.map((post, idx) => (
+          <ListingCard
+            key={post.id}
+            id={post.id}
+            title={isArabic ? post.titleAr : post.titleEn}
+            category="experiences"
+            price={0}
+            subtitle={isArabic ? post.authorAr : post.authorEn}
+            rating={4.3 + idx * 0.2}
+            badgeText={isArabic ? 'مجتمع' : 'Community'}
+            badgeColor="bg-purple-600/90 text-white"
+            secondaryBadge={post.likes > 50 ? (isArabic ? 'رائج' : 'Trending') : undefined}
+            imageIndex={idx}
+            isFavorite={favorites.includes(post.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: post.id })}
+          />
         ))}
       </div>
     </section>

@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Scissors, Star, MapPin, Clock } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Scissors, Clock } from 'lucide-react';
 
 const beautySalons = [
   {
@@ -17,6 +18,7 @@ const beautySalons = [
     hoursAr: '9 ص - 9 م',
     servicesEn: 'Hair, Nails, Makeup',
     servicesAr: 'شعر، أظافر، مكياج',
+    price: 0,
   },
   {
     id: '2',
@@ -29,6 +31,7 @@ const beautySalons = [
     hoursAr: '10 ص - 10 م',
     servicesEn: 'Spa, Massage, Facials',
     servicesAr: 'سبا، مساج، بشرة',
+    price: 0,
   },
   {
     id: '3',
@@ -41,46 +44,58 @@ const beautySalons = [
     hoursAr: '8 ص - 8 م',
     servicesEn: 'Haircuts, Styling',
     servicesAr: 'قص، تسريحات',
+    price: 0,
   },
 ];
 
 export default function Beauty() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
+      {/* Section Header */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Scissors className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الجمال والعناية' : 'Beauty & Wellness'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-sm">
+          <Scissors className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'الجمال والعناية' : 'Beauty & Wellness'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({beautySalons.length})</span>
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {beautySalons.map((salon) => (
-          <Card key={salon.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="w-full h-24 bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg flex items-center justify-center mb-3">
-                <Scissors className="w-8 h-8 text-pink-300" />
-              </div>
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="font-semibold text-sm">{isRTL ? salon.nameAr : salon.nameEn}</h3>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium">{salon.rating}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                <MapPin className="w-3 h-3" />
-                {isRTL ? salon.locationAr : salon.locationEn}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                <Clock className="w-3 h-3" />
-                {isRTL ? salon.hoursAr : salon.hoursEn}
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {isRTL ? salon.servicesAr : salon.servicesEn}
-              </Badge>
-            </CardContent>
-          </Card>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {beautySalons.map((salon, idx) => (
+          <ListingCard
+            key={salon.id}
+            id={salon.id}
+            title={isArabic ? salon.nameAr : salon.nameEn}
+            category="beauty"
+            price={salon.price}
+            subtitle={isArabic ? salon.locationAr : salon.locationEn}
+            rating={salon.rating}
+            badgeText={isArabic ? salon.servicesAr : salon.servicesEn}
+            badgeColor="bg-pink-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? salon.hoursAr : salon.hoursEn },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(salon.id)}
+            onToggleFavorite={toggleFavorite}
+            onClick={() => navigate('listing-detail', { id: salon.id })}
+            isScrollCard={true}
+          />
         ))}
       </div>
     </section>

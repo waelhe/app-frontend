@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, MapPin, Clock, Phone } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { ShoppingCart, Clock, Phone, MapPin } from 'lucide-react';
 
 const markets = [
   {
@@ -58,48 +59,60 @@ const markets = [
 
 export default function Markets() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <ShoppingCart className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الأسواق' : 'Markets'}
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {markets.map((market) => (
-          <Card key={market.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                  <ShoppingCart className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">{isRTL ? market.nameAr : market.nameEn}</h3>
-                  <Badge variant="secondary" className="text-xs mt-0.5">
-                    {isRTL ? market.typeAr : market.typeEn}
-                  </Badge>
-                </div>
-              </div>
-              <div className="space-y-1 ms-13 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? market.locationAr : market.locationEn}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  {isRTL ? market.hoursAr : market.hoursEn}
-                </div>
-                <div
-                  className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${market.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {market.phone}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
+          <ShoppingCart className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            {isArabic ? 'الأسواق' : 'Markets'}
+          </h2>
+          <span className="text-xs text-gray-500">
+            {markets.length} {isArabic ? 'سوق' : 'markets'}
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {markets.map((market, index) => (
+          <ListingCard
+            key={market.id}
+            id={market.id}
+            title={isArabic ? market.nameAr : market.nameEn}
+            category="markets"
+            price={0}
+            subtitle={isArabic ? market.locationAr : market.locationEn}
+            rating={4.0 + Math.random() * 1.0}
+            badgeText={isArabic ? market.typeAr : market.typeEn}
+            badgeColor="bg-emerald-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? market.hoursAr : market.hoursEn },
+              { icon: Phone, label: market.phone },
+              { icon: MapPin, label: isArabic ? market.locationAr : market.locationEn },
+            ]}
+            imageIndex={index}
+            isFavorite={favorites.includes(market.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: market.id })}
+          />
         ))}
       </div>
     </section>

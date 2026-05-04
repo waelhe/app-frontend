@@ -1,9 +1,15 @@
 'use client';
 
+import { useState } from 'react';
+import { BedDouble, Star, MapPin, Phone, Wifi, Car as CarIcon, UtensilsCrossed, Coffee } from 'lucide-react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { BedDouble, Star, MapPin, Phone } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import {
+  ListingCard,
+  ViewAllCard,
+  getListingImages,
+  formatPrice,
+} from '@/components/ui/ListingCard';
 
 const hotels = [
   {
@@ -11,88 +17,123 @@ const hotels = [
     nameEn: 'Qudsaya Grand Hotel',
     nameAr: 'فندق قدسيا الكبير',
     rating: 4.5,
-    priceFrom: '25,000',
+    priceFrom: 25000,
     locationEn: 'Main Street',
     locationAr: 'الشارع الرئيسي',
     phone: '011-1112233',
     amenitiesEn: ['WiFi', 'Parking', 'Restaurant'],
     amenitiesAr: ['واي فاي', 'موقف سيارات', 'مطعم'],
+    features: [
+      { icon: Wifi, label: 'WiFi' },
+      { icon: CarIcon, label: 'Parking' },
+    ],
   },
   {
     id: '2',
     nameEn: 'Riverside Inn',
     nameAr: 'نزل ريفرسايد',
     rating: 4.2,
-    priceFrom: '15,000',
+    priceFrom: 15000,
     locationEn: 'Riverside Road',
     locationAr: 'طريق النهر',
     phone: '011-2223344',
     amenitiesEn: ['WiFi', 'AC'],
     amenitiesAr: ['واي فاي', 'تكييف'],
+    features: [
+      { icon: Wifi, label: 'WiFi' },
+      { icon: Coffee, label: 'Breakfast' },
+    ],
   },
   {
     id: '3',
     nameEn: 'Al-Raeda Suites',
     nameAr: 'أجنحة الرائدة',
     rating: 4.8,
-    priceFrom: '40,000',
+    priceFrom: 40000,
     locationEn: 'Qudsaya Center',
     locationAr: 'مركز قدسيا',
     phone: '011-3334455',
     amenitiesEn: ['WiFi', 'Pool', 'Gym', 'Spa'],
     amenitiesAr: ['واي فاي', 'مسبح', 'صالة رياضية', 'سبا'],
+    features: [
+      { icon: Wifi, label: 'WiFi' },
+      { icon: CarIcon, label: 'Parking' },
+      { icon: UtensilsCrossed, label: 'Restaurant' },
+    ],
+  },
+  {
+    id: '4',
+    nameEn: 'Dahia Plaza Hotel',
+    nameAr: 'فندق ضاحية بلازا',
+    rating: 4.1,
+    priceFrom: 18000,
+    locationEn: 'Dahia District',
+    locationAr: 'حي الضاحية',
+    phone: '011-4445566',
+    amenitiesEn: ['WiFi', 'AC', 'Parking'],
+    amenitiesAr: ['واي فاي', 'تكييف', 'موقف سيارات'],
+    features: [
+      { icon: Wifi, label: 'WiFi' },
+      { icon: CarIcon, label: 'Parking' },
+    ],
   },
 ];
 
 export default function Hotels() {
-  const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const { language, isRTL } = useLanguage();
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <BedDouble className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الفنادق' : 'Hotels'}
-      </h2>
-      <div className="space-y-3">
-        {hotels.map((hotel) => (
-          <Card key={hotel.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="w-full h-28 bg-muted rounded-lg flex items-center justify-center mb-3">
-                <BedDouble className="w-8 h-8 text-muted-foreground/30" />
-              </div>
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-sm">{isRTL ? hotel.nameAr : hotel.nameEn}</h3>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium">{hotel.rating}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                <MapPin className="w-3 h-3" />
-                {isRTL ? hotel.locationAr : hotel.locationEn}
-              </div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {(isRTL ? hotel.amenitiesAr : hotel.amenitiesEn).map((amenity, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    {amenity}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-red-600 font-bold text-sm">
-                  {isRTL ? 'من' : 'From'} {hotel.priceFrom} SYP
-                </span>
-                <span
-                  className="flex items-center gap-1 text-xs text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${hotel.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {hotel.phone}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-sm">
+          <BedDouble className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            {isArabic ? 'الفنادق' : 'Hotels'}
+          </h2>
+          <p className="text-xs text-gray-400">
+            {hotels.length} {isArabic ? 'فندق' : 'hotels'}
+          </p>
+        </div>
+      </div>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {hotels.map((hotel, idx) => (
+          <ListingCard
+            key={hotel.id}
+            id={hotel.id}
+            title={isArabic ? hotel.nameAr : hotel.nameEn}
+            category="hotels"
+            price={hotel.priceFrom}
+            subtitle={isArabic ? hotel.locationAr : hotel.locationEn}
+            rating={hotel.rating}
+            reviewCount={Math.floor(Math.random() * 200) + 20}
+            isFavorite={favorites.includes(hotel.id)}
+            onToggleFavorite={toggleFavorite}
+            badgeText={isArabic ? 'فندق' : 'Hotel'}
+            badgeColor="bg-purple-600/90 text-white"
+            secondaryBadge={hotel.rating >= 4.5 ? (isArabic ? '⭐ مميز' : '⭐ Featured') : undefined}
+            features={hotel.features.map((f) => ({ icon: f.icon, label: f.label }))}
+            images={getListingImages('hotels', idx)}
+            imageIndex={idx}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: hotel.id })}
+          />
         ))}
       </div>
     </section>

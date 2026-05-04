@@ -245,3 +245,227 @@ Stage Summary:
 - QuickServices, DailyInfoBar, FeaturedOffers imported from ported local components
 - All navigation uses Zustand navigationStore.navigate() instead of Link href
 - File is ~900 lines (down from ~2500 of original local HomePage)
+
+---
+Task ID: 7-a
+Agent: local-sections-listingcard-agent
+Task: Update 6 local section components to use Airbnb-style ListingCard with horizontal scrolling
+
+Work Log:
+- Read ListingCard component from @/components/ui/ListingCard (exports: ListingCard, getListingImages, formatPrice, ListingCardScroll, ViewAllCard)
+- Read all 6 target files to understand data structures and current Card/CardContent rendering
+- Read navigationStore to confirm navigate() API signature
+- Updated Cafes.tsx:
+  - Replaced Card/CardContent grid with horizontal scroll ListingCard
+  - Section header: amber-to-orange gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped cafe data: title (bilingual), category='dining', price=0, subtitle=location, rating, badgeText=specialty, features=[Clock hours]
+  - badgeColor='bg-amber-600/90 text-white', isScrollCard=true
+- Updated Beauty.tsx:
+  - Replaced Card/CardContent grid with horizontal scroll ListingCard
+  - Section header: pink-to-rose gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped salon data: title (bilingual), category='beauty', price=0, subtitle=location, rating, badgeText=services, features=[Clock hours]
+  - badgeColor='bg-pink-600/90 text-white', isScrollCard=true
+- Updated Education.tsx:
+  - Replaced Card/CardContent vertical list with horizontal scroll ListingCard
+  - Section header: indigo-to-blue gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped center data: title (bilingual), category='education', price=0, subtitle=location, rating=random 4.0-5.0, badgeText=type
+  - badgeColor='bg-indigo-600/90 text-white', isScrollCard=true
+- Updated Jobs.tsx:
+  - Replaced Card/CardContent vertical list with horizontal scroll ListingCard
+  - Section header: violet-to-purple gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped job data: title (bilingual), category='jobs', price=0, subtitle=company, rating=random 4.0-5.0, badgeText=type, features=[MapPin location, Clock posted]
+  - badgeColor='bg-violet-600/90 text-white', isScrollCard=true
+- Updated Professionals.tsx:
+  - Replaced Card/CardContent vertical list + type filter grid with horizontal scroll ListingCard
+  - Section header: red-to-rose gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped pro data: title (bilingual), category='services', price=0, subtitle=specialty, rating, badgeText=professional type label, features=[MapPin location]
+  - badgeColor='bg-red-600/90 text-white', isScrollCard=true
+  - Removed professionalTypes filter grid (trade filter cards)
+- Updated Craftsmen.tsx:
+  - Replaced Card/CardContent vertical list + trade filter grid with horizontal scroll ListingCard
+  - Section header: emerald-to-teal gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped craftsman data: title (bilingual), category='services', price=0, subtitle=trade label, rating, badgeText=trade label, features=[TradeIcon + years exp]
+  - badgeColor='bg-emerald-600/90 text-white', isScrollCard=true
+  - Removed trades filter grid (trade icon cards)
+- All 6 files: removed imports for Card, CardContent, Badge, Button; added imports for ListingCard, getListingImages, formatPrice, useState, useNavigationStore
+- All 6 files use scrollable div with scrollbarWidth:'none' and msOverflowStyle:'none'
+- Lint: 0 errors, dev server compiles successfully
+
+Stage Summary:
+- 6 local section components converted from old Card/CardContent style to Airbnb-style ListingCard
+- All sections now use horizontal scrolling layout instead of vertical grid/list
+- Section headers upgraded with gradient icon badges and item count
+- Each component has favorite state management and navigation via useNavigationStore
+- Professional category-specific badge colors applied (amber, pink, indigo, violet, red, emerald)
+- Bilingual support maintained via useLanguage hook throughout
+
+---
+Task ID: 7-c
+Agent: local-sections-listingcard-agent-c
+Task: Update 9 local section components to use Airbnb-style ListingCard with horizontal scrolling
+
+Work Log:
+- Read ListingCard component from @/components/ui/ListingCard (exports: ListingCard, getListingImages, formatPrice, ListingCardScroll, ViewAllCard)
+- Read all 9 target files to understand data structures and current Card/CardContent rendering
+- Read navigationStore to confirm navigate() API signature
+- Updated FinancialServices.tsx:
+  - Replaced Card/CardContent vertical list with horizontal scroll ListingCard
+  - Section header: emerald-to-teal gradient icon badge (Banknote) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped service data: title (bilingual), category='services', price=0, subtitle=location, rating=random 4.0-5.0, badgeText=type, features=[Clock hours, Phone]
+  - badgeColor='bg-emerald-600/90 text-white', isScrollCard=true
+- Updated Charity.tsx:
+  - Replaced Card/CardContent vertical list + CardFooter with horizontal scroll ListingCard
+  - Section header: rose-to-red gradient icon badge (Heart) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped charity data: title (bilingual), category='services', price=0, subtitle=location, rating=4.2-4.8, badgeText='خيري/Charity', features=[MapPin, Phone]
+  - badgeColor='bg-rose-600/90 text-white', isScrollCard=true
+- Updated GasStations.tsx:
+  - Replaced Card/CardContent vertical list with horizontal scroll ListingCard
+  - Section header: green-to-emerald gradient icon badge (Fuel) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped station data: title (bilingual), category='car-services', price=0, subtitle=location, rating=3.8-4.8, badgeText=fuel type, secondaryBadge=Shop, features=[Clock hours, Phone]
+  - badgeColor='bg-green-600/90 text-white', isScrollCard=true
+- Updated GovernmentServices.tsx:
+  - Replaced Card/CardContent grid with horizontal scroll ListingCard
+  - Section header: slate-to-gray gradient icon badge (Landmark) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped service data: title (bilingual), category='services', price=0, subtitle=location, rating=4.0-4.6, badgeText=type, features=[Clock hours, Phone]
+  - badgeColor='bg-slate-600/90 text-white', isScrollCard=true
+- Updated Offices.tsx:
+  - Replaced Card/CardContent grid with horizontal scroll ListingCard
+  - Section header: orange-to-amber gradient icon badge (Building2) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped office data: title (bilingual), category='business', price=0, subtitle=location, rating=4.1-4.7, badgeText=type, features=[MapPin, Phone]
+  - badgeColor='bg-orange-600/90 text-white', isScrollCard=true
+- Updated Transport.tsx:
+  - Replaced Card/CardContent grid with horizontal scroll ListingCard
+  - Section header: sky-to-blue gradient icon badge (Bus) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped service data: title (bilingual), category='transport', price=0, subtitle=location, rating=4.0-4.75, badgeText=type, features=[Clock hours, Phone]
+  - badgeColor='bg-sky-600/90 text-white', isScrollCard=true
+- Updated LaundryServices.tsx:
+  - Replaced Card/CardContent grid with horizontal scroll ListingCard
+  - Section header: cyan-to-sky gradient icon badge (WashingMachine) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped laundry data: title (bilingual), category='services', price=0, subtitle=location, rating=4.1-4.7, badgeText=service type, secondaryBadge=Delivery, features=[Clock hours, Phone]
+  - badgeColor='bg-cyan-600/90 text-white', isScrollCard=true
+- Updated Community.tsx:
+  - Replaced Card/CardContent vertical list + CardFooter with horizontal scroll ListingCard
+  - Section header: purple-to-violet gradient icon badge (Users) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped post data: title (bilingual), category='experiences', price=0, subtitle=author, rating=4.3-4.7, badgeText='مجتمع/Community', secondaryBadge=Trending for 50+ likes
+  - badgeColor='bg-purple-600/90 text-white', isScrollCard=true
+- Updated EventServices.tsx:
+  - Replaced Card/CardContent grid with gradient placeholder + horizontal scroll ListingCard
+  - Section header: pink-to-rose gradient icon badge (PartyPopper) + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped service data: title (bilingual), category='experiences', price=0, subtitle=location, rating=actual data, badgeText=type, secondaryBadge=Featured for 4.7+ rating, features=[MapPin, Phone]
+  - badgeColor='bg-pink-600/90 text-white', isScrollCard=true
+- All 9 files: removed imports for Card, CardContent, CardFooter, Badge, Button; added imports for ListingCard, getListingImages, formatPrice, useState, useNavigationStore
+- All 9 files use scrollable div with scrollbarWidth:'none' and msOverflowStyle:'none'
+- Lint: 0 errors, dev server compiles successfully
+
+Stage Summary:
+- 9 local section components converted from old Card/CardContent style to Airbnb-style ListingCard
+- All sections now use horizontal scrolling layout instead of vertical grid/list
+- Section headers upgraded with gradient icon badges and item count
+- Each component has favorite state management and navigation via useNavigationStore
+- Category-specific badge colors applied (emerald, rose, green, slate, orange, sky, cyan, purple, pink)
+- Bilingual support maintained via useLanguage hook throughout
+
+---
+Task ID: 7-b
+Agent: local-sections-listingcard-agent-b
+Task: Update remaining 6 local section components to use Airbnb-style ListingCard with horizontal scrolling
+
+Work Log:
+- Read ListingCard component from @/components/ui/ListingCard (exports: ListingCard, getListingImages, formatPrice, ListingCardScroll, ViewAllCard)
+- Read all 6 target files to understand data structures and current Card/CardContent rendering
+- Read navigationStore to confirm navigate() API signature
+- Added missing category images to ListingCard.tsx CATEGORY_IMAGES: 'markets', 'sports', 'tourism', 'events', 'shopping'
+- Updated Markets.tsx:
+  - Replaced Card/CardContent grid (2-col) with horizontal scroll ListingCard
+  - Section header: emerald-to-teal gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped market data: title (bilingual), category='markets', price=0, subtitle=location, rating=random 4.0-5.0, badgeText=type, features=[Clock hours, Phone, MapPin]
+  - badgeColor='bg-emerald-600/90 text-white', isScrollCard=true
+- Updated MedicalCenters.tsx:
+  - Replaced Card/CardContent vertical list with horizontal scroll ListingCard
+  - Section header: red-to-rose gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped center data: title (bilingual), category='medical', price=0, subtitle=location, rating (4.8 for ER, random for others), badgeText=type/ER, secondaryBadge for 24/7 emergency
+  - badgeColor='bg-red-600/90 text-white' (ER) / 'bg-red-500/90 text-white' (others), isScrollCard=true
+- Updated Sports.tsx:
+  - Replaced Card/CardContent grid + gradient placeholder with horizontal scroll ListingCard
+  - Section header: orange-to-amber gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped center data: title (bilingual), category='sports', price=0, subtitle=location, rating=random 4.0-5.0, badgeText=type, features=[Clock hours, Phone, MapPin]
+  - badgeColor='bg-orange-600/90 text-white', isScrollCard=true
+- Updated Places.tsx:
+  - Replaced Card/CardContent vertical list + gradient placeholder with horizontal scroll ListingCard
+  - Section header: teal-to-cyan gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped place data: title (bilingual), category='tourism', price=0, subtitle=description, rating=actual rating (4.4-4.7), badgeText=category, features=[Clock hours, MapPin]
+  - badgeColor='bg-teal-600/90 text-white', isScrollCard=true
+- Updated Events.tsx:
+  - Replaced Card/CardContent grid + date badge with horizontal scroll ListingCard
+  - Section header: violet-to-purple gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped event data: title (bilingual), category='events', price=0, subtitle=date+location, rating=random 4.0-5.0, badgeText=category, secondaryBadge=formatted date, features=[Clock time, MapPin location]
+  - badgeColor='bg-violet-600/90 text-white', isScrollCard=true
+- Updated RetailShops.tsx:
+  - Replaced Card/CardContent grid + muted placeholder with horizontal scroll ListingCard
+  - Section header: pink-to-rose gradient icon badge + title + count
+  - Added useState for favorites, useNavigationStore for click navigation
+  - Mapped shop data: title (bilingual), category='shopping', price=0, subtitle=location, rating=random 4.0-5.0, badgeText=shop category, features=[Clock hours, Phone, MapPin]
+  - badgeColor='bg-pink-600/90 text-white', isScrollCard=true
+- All 6 files: removed imports for Card, CardContent, Badge; added imports for ListingCard, getListingImages, formatPrice, useState, useNavigationStore
+- All 6 files use scrollable div with scrollbarWidth:'none' and msOverflowStyle:'none'
+- Lint: 0 errors, dev server compiles successfully
+
+Stage Summary:
+- 6 remaining local section components converted from old Card/CardContent style to Airbnb-style ListingCard
+- All sections now use horizontal scrolling layout instead of vertical grid/list
+- Section headers upgraded with gradient icon badges (10×10 rounded-xl) and item count
+- Each component has favorite state management (useState) and navigation via useNavigationStore
+- Section-specific gradient colors: emerald/teal (Markets), red/rose (Medical), orange/amber (Sports), teal/cyan (Places), violet/purple (Events), pink/rose (RetailShops)
+- Added 5 new category image mappings to ListingCard: markets, sports, tourism, events, shopping
+- Bilingual support maintained via useLanguage hook throughout
+
+---
+Task ID: 3-8
+Agent: Main Agent
+Task: Add real images to listing cards and apply Airbnb-style card model across all sections
+
+Work Log:
+- Generated 20 real AI images for listing categories (apartments, villas, offices, shops, land, cars, electronics, restaurants, hotels, medical, beauty, services, education, furniture, cafes, pharmacy)
+- Created shared ListingCard component at /src/components/ui/ListingCard.tsx with:
+  - Airbnb-style square image with hover zoom
+  - Heart/favorite button (top-right)
+  - Category badge (top-left) with color mapping per category
+  - Secondary badge support (Featured, Verified, Urgent)
+  - Image carousel with prev/next arrows and dot indicators
+  - Title + rating row, subtitle, features row, price display
+  - Horizontal scroll and grid layout support
+  - ViewAllCard component (2x2 photo grid overlay)
+- Updated RealEstate.tsx to use new ListingCard with real images and property-type features
+- Updated CategoryListingSection.tsx to use Airbnb-style cards with horizontal scrolling and "Show All" drawer
+- Updated Hotels.tsx, Classifieds.tsx, UsedItems.tsx to use ListingCard
+- Delegated batch updates for 22 remaining section components via 3 subagents
+- Fixed regex syntax error in RealEstate.tsx (broken /i flag)
+- Cleaned up unused imports across all modified files
+- Lint: 0 errors
+
+Stage Summary:
+- All listing sections now use consistent Airbnb-style cards with real AI-generated images
+- Category image mapping covers: real-estate, cars, car-services, electronics, restaurants, dining, hotels, medical, pharmacies, beauty, education, furniture, services, markets, sports, tourism, events, shopping, transport, business, experiences
+- Card features: square image, heart favorite, category badge, secondary badge, image carousel, rating, features row, horizontal scroll
+- 20 AI-generated images saved to /public/images/listings/
+- Shared ListingCard exported from /src/components/ui/index.ts

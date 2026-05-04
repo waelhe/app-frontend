@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
 import { Briefcase, MapPin, Clock, DollarSign } from 'lucide-react';
 
 const jobs = [
@@ -66,43 +67,53 @@ const jobs = [
 
 export default function Jobs() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
+      {/* Section Header */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Briefcase className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الوظائف' : 'Jobs'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+          <Briefcase className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'الوظائف' : 'Jobs'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({jobs.length})</span>
       </h2>
-      <div className="space-y-3">
-        {jobs.map((job) => (
-          <Card key={job.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-sm">{isRTL ? job.titleAr : job.titleEn}</h3>
-                  <p className="text-xs text-muted-foreground">{isRTL ? job.companyAr : job.companyEn}</p>
-                </div>
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  {isRTL ? job.typeAr : job.typeEn}
-                </Badge>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? job.locationAr : job.locationEn}
-                </span>
-                <span className="flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" />
-                  {isRTL ? job.salaryAr : job.salaryEn}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {job.posted}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {jobs.map((job, idx) => (
+          <ListingCard
+            key={job.id}
+            id={job.id}
+            title={isArabic ? job.titleAr : job.titleEn}
+            category="jobs"
+            price={0}
+            subtitle={isArabic ? job.companyAr : job.companyEn}
+            rating={4.0 + Math.random() * 1.0}
+            badgeText={isArabic ? job.typeAr : job.typeEn}
+            badgeColor="bg-violet-600/90 text-white"
+            features={[
+              { icon: MapPin, label: isArabic ? job.locationAr : job.locationEn },
+              { icon: Clock, label: job.posted },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(job.id)}
+            onToggleFavorite={toggleFavorite}
+            onClick={() => navigate('listing-detail', { id: job.id })}
+            isScrollCard={true}
+          />
         ))}
       </div>
     </section>

@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { WashingMachine, MapPin, Phone, Clock } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { WashingMachine, Clock, Phone, MapPin } from 'lucide-react';
 
 const laundryServices = [
   {
@@ -49,55 +50,51 @@ const laundryServices = [
 
 export default function LaundryServices() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <WashingMachine className="w-5 h-5 text-red-500" />
-        {isRTL ? 'خدمات الغسيل' : 'Laundry Services'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-sm">
+          <WashingMachine className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'خدمات الغسيل' : 'Laundry Services'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({laundryServices.length})</span>
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {laundryServices.map((laundry) => (
-          <Card key={laundry.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <WashingMachine className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">{isRTL ? laundry.nameAr : laundry.nameEn}</h3>
-                  <Badge variant="outline" className="text-xs mt-0.5">
-                    {isRTL ? laundry.serviceAr : laundry.serviceEn}
-                  </Badge>
-                </div>
-              </div>
-              <div className="space-y-1 ms-13 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? laundry.locationAr : laundry.locationEn}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  {isRTL ? laundry.hoursAr : laundry.hoursEn}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                    onClick={() => window.open(`tel:${laundry.phone}`, '_self')}
-                  >
-                    <Phone className="w-3 h-3" />
-                    {laundry.phone}
-                  </span>
-                  {laundry.delivery && (
-                    <Badge variant="secondary" className="text-xs">
-                      {isRTL ? 'توصيل' : 'Delivery'}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {laundryServices.map((laundry, idx) => (
+          <ListingCard
+            key={laundry.id}
+            id={laundry.id}
+            title={isArabic ? laundry.nameAr : laundry.nameEn}
+            category="services"
+            price={0}
+            subtitle={isArabic ? laundry.locationAr : laundry.locationEn}
+            rating={4.1 + idx * 0.3}
+            badgeText={isArabic ? laundry.serviceAr : laundry.serviceEn}
+            badgeColor="bg-cyan-600/90 text-white"
+            secondaryBadge={laundry.delivery ? (isArabic ? 'توصيل' : 'Delivery') : undefined}
+            features={[
+              { icon: Clock, label: isArabic ? laundry.hoursAr : laundry.hoursEn },
+              { icon: Phone, label: laundry.phone },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(laundry.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: laundry.id })}
+          />
         ))}
       </div>
     </section>

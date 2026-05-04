@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Fuel, Clock, MapPin, Phone } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Fuel, Clock, Phone, MapPin } from 'lucide-react';
 
 const gasStations = [
   {
@@ -49,57 +50,51 @@ const gasStations = [
 
 export default function GasStations() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Fuel className="w-5 h-5 text-red-500" />
-        {isRTL ? 'محطات الوقود' : 'Gas Stations'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+          <Fuel className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'محطات الوقود' : 'Gas Stations'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({gasStations.length})</span>
       </h2>
-      <div className="space-y-3">
-        {gasStations.map((station) => (
-          <Card key={station.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                  <Fuel className="w-5 h-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-sm">{isRTL ? station.nameAr : station.nameEn}</h3>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <MapPin className="w-3 h-3" />
-                    {isRTL ? station.locationAr : station.locationEn}
-                  </div>
-                </div>
-                {station.hasShop && (
-                  <Badge variant="secondary" className="text-xs">
-                    {isRTL ? 'سوق' : 'Shop'}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1 mb-2 ms-13">
-                {(isRTL ? station.fuelTypesAr : station.fuelTypes).map((ft, i) => (
-                  <Badge key={i} variant="outline" className="text-xs">
-                    {ft}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground ms-13">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {isRTL ? station.hoursAr : station.hoursEn}
-                </span>
-                <span
-                  className="flex items-center gap-1 text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${station.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {station.phone}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {gasStations.map((station, idx) => (
+          <ListingCard
+            key={station.id}
+            id={station.id}
+            title={isArabic ? station.nameAr : station.nameEn}
+            category="car-services"
+            price={0}
+            subtitle={isArabic ? station.locationAr : station.locationEn}
+            rating={3.8 + idx * 0.5}
+            badgeText={isArabic ? station.fuelTypesAr[0] : station.fuelTypes[0]}
+            badgeColor="bg-green-600/90 text-white"
+            secondaryBadge={station.hasShop ? (isArabic ? 'سوق' : 'Shop') : undefined}
+            features={[
+              { icon: Clock, label: isArabic ? station.hoursAr : station.hoursEn },
+              { icon: Phone, label: station.phone },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(station.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: station.id })}
+          />
         ))}
       </div>
     </section>

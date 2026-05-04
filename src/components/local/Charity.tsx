@@ -1,10 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Heart, Phone, MapPin } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Heart, MapPin, Phone } from 'lucide-react';
 
 const charities = [
   {
@@ -44,50 +44,50 @@ const charities = [
 
 export default function Charity() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Heart className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الجمعيات الخيرية' : 'Charities'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-sm">
+          <Heart className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'الجمعيات الخيرية' : 'Charities'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({charities.length})</span>
       </h2>
-      <div className="space-y-3">
-        {charities.map((charity) => (
-          <Card key={charity.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-base">
-                  {isRTL ? charity.nameAr : charity.nameEn}
-                </h3>
-                <Badge variant="outline" className="text-xs shrink-0 border-red-300 text-red-600">
-                  <Heart className="w-3 h-3 mr-1" />
-                  {isRTL ? 'خيري' : 'Charity'}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                {isRTL ? charity.descAr : charity.descEn}
-              </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                <MapPin className="w-3.5 h-3.5" />
-                {isRTL ? charity.locationAr : charity.locationEn}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="w-3.5 h-3.5" />
-                {charity.phone}
-              </div>
-            </CardContent>
-            <CardFooter className="px-4 pb-4 pt-0">
-              <Button
-                size="sm"
-                className="w-full bg-red-500 hover:bg-red-600 text-white"
-                onClick={() => window.open(`tel:${charity.phone}`, '_self')}
-              >
-                <Phone className="w-4 h-4 me-2" />
-                {isRTL ? 'اتصل الآن' : 'Call Now'}
-              </Button>
-            </CardFooter>
-          </Card>
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {charities.map((charity, idx) => (
+          <ListingCard
+            key={charity.id}
+            id={charity.id}
+            title={isArabic ? charity.nameAr : charity.nameEn}
+            category="services"
+            price={0}
+            subtitle={isArabic ? charity.locationAr : charity.locationEn}
+            rating={4.2 + idx * 0.3}
+            badgeText={isArabic ? 'خيري' : 'Charity'}
+            badgeColor="bg-rose-600/90 text-white"
+            features={[
+              { icon: MapPin, label: isArabic ? charity.locationAr : charity.locationEn },
+              { icon: Phone, label: charity.phone },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(charity.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: charity.id })}
+          />
         ))}
       </div>
     </section>

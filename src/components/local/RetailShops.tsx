@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Store, MapPin, Clock, Phone } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Store, Clock, Phone, MapPin } from 'lucide-react';
 
 const retailShops = [
   {
@@ -58,46 +59,60 @@ const retailShops = [
 
 export default function RetailShops() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Store className="w-5 h-5 text-red-500" />
-        {isRTL ? 'المتاجر التجارية' : 'Retail Shops'}
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {retailShops.map((shop) => (
-          <Card key={shop.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="w-full h-24 bg-muted rounded-lg flex items-center justify-center mb-3">
-                <Store className="w-8 h-8 text-muted-foreground/30" />
-              </div>
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="font-semibold text-sm">{isRTL ? shop.nameAr : shop.nameEn}</h3>
-                <Badge variant="outline" className="text-xs shrink-0 ms-1">
-                  {isRTL ? shop.categoryAr : shop.categoryEn}
-                </Badge>
-              </div>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? shop.locationAr : shop.locationEn}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  {isRTL ? shop.hoursAr : shop.hoursEn}
-                </div>
-                <div
-                  className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${shop.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {shop.phone}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-sm">
+          <Store className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            {isArabic ? 'المتاجر التجارية' : 'Retail Shops'}
+          </h2>
+          <span className="text-xs text-gray-500">
+            {retailShops.length} {isArabic ? 'متجر' : 'shops'}
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {retailShops.map((shop, index) => (
+          <ListingCard
+            key={shop.id}
+            id={shop.id}
+            title={isArabic ? shop.nameAr : shop.nameEn}
+            category="shopping"
+            price={0}
+            subtitle={isArabic ? shop.locationAr : shop.locationEn}
+            rating={4.0 + Math.random() * 1.0}
+            badgeText={isArabic ? shop.categoryAr : shop.categoryEn}
+            badgeColor="bg-pink-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? shop.hoursAr : shop.hoursEn },
+              { icon: Phone, label: shop.phone },
+              { icon: MapPin, label: isArabic ? shop.locationAr : shop.locationEn },
+            ]}
+            imageIndex={index}
+            isFavorite={favorites.includes(shop.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: shop.id })}
+          />
         ))}
       </div>
     </section>

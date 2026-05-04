@@ -1,16 +1,31 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Store, AlertCircle, ArrowLeft, ArrowRight, PackageOpen } from 'lucide-react';
+import {
+  Store,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  PackageOpen,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useListingsByCategory } from '@/hooks/useApi';
-import type { ListingSummary } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+} from '@/components/ui/sheet';
+import {
+  ListingCard,
+  ViewAllCard,
+  getListingImages,
+} from '@/components/ui/ListingCard';
 
 // ── Props ──────────────────────────────────────────────────────────
 
@@ -30,137 +45,38 @@ export interface CategoryListingSectionProps {
   pageSize?: number;
 }
 
-// ── Animation Variants ─────────────────────────────────────────────
-
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.06 },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
-};
-
-// ── Gradient Palette for Placeholder Images ────────────────────────
-
-const placeholderGradients = [
-  'from-rose-400 to-orange-300',
-  'from-violet-400 to-purple-300',
-  'from-emerald-400 to-teal-300',
-  'from-amber-400 to-yellow-300',
-  'from-sky-400 to-cyan-300',
-  'from-pink-400 to-fuchsia-300',
-  'from-lime-400 to-green-300',
-  'from-teal-400 to-emerald-300',
-];
-
-// ── Helper: Category display names ─────────────────────────────────
-
-const categoryLabels: Record<string, { ar: string; en: string }> = {
-  'real-estate': { ar: 'عقارات', en: 'Real Estate' },
-  medical: { ar: 'طبية', en: 'Medical' },
-  pharmacies: { ar: 'صيدليات', en: 'Pharmacies' },
-  restaurants: { ar: 'مطاعم', en: 'Restaurants' },
-  'car-services': { ar: 'خدمات سيارات', en: 'Car Services' },
-  tourism: { ar: 'سياحة', en: 'Tourism' },
-  education: { ar: 'تعليم', en: 'Education' },
-  business: { ar: 'أعمال', en: 'Business' },
-  experiences: { ar: 'تجارب', en: 'Experiences' },
-  dining: { ar: 'مطاعم', en: 'Dining' },
-  arts: { ar: 'فنون', en: 'Arts' },
-  shopping: { ar: 'تسوق', en: 'Shopping' },
-  food: { ar: 'طعام', en: 'Food' },
-  health: { ar: 'صحة', en: 'Health' },
-  services: { ar: 'خدمات', en: 'Services' },
-  beauty: { ar: 'جمال', en: 'Beauty' },
-  hotels: { ar: 'فنادق', en: 'Hotels' },
-  transport: { ar: 'نقل', en: 'Transport' },
-  sports: { ar: 'رياضة', en: 'Sports' },
-};
-
-function getCategoryLabel(category: string, language: 'ar' | 'en'): string {
-  const info = categoryLabels[category];
-  return info ? (language === 'ar' ? info.ar : info.en) : category;
-}
-
 // ── Helper: Format price ───────────────────────────────────────────
 
-function formatPrice(price: number, language: 'ar' | 'en'): string {
+function formatPriceLocal(price: number, language: 'ar' | 'en'): string {
   const formatted = price.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US');
   return language === 'ar' ? `${formatted} ل.س` : `${formatted} SYP`;
 }
 
 // ── Sub-Components ─────────────────────────────────────────────────
 
-function ListingCard({
-  listing,
-  index,
-}: {
-  listing: ListingSummary;
-  index: number;
-}) {
-  const { language } = useLanguage();
-  const navigate = useNavigationStore((s) => s.navigate);
-  const gradientIndex = index % placeholderGradients.length;
-  const categoryLabel = getCategoryLabel(listing.category, language);
-
-  return (
-    <motion.div
-      variants={cardVariants}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="group cursor-pointer"
-      onClick={() => navigate('listing-detail', { id: listing.id })}
-    >
-      <Card className="overflow-hidden border-gray-100 shadow-sm hover:shadow-md transition-shadow py-0 gap-0">
-        {/* Gradient Placeholder Image */}
-        <div
-          className={`aspect-[4/3] bg-gradient-to-br ${placeholderGradients[gradientIndex]} flex items-center justify-center relative`}
-        >
-          <span className="text-white/50 text-4xl font-bold select-none">
-            {listing.title.charAt(0)}
-          </span>
-          {/* Category Badge Overlay */}
-          <div className="absolute top-2.5 start-2.5">
-            <Badge className="bg-white/90 text-gray-700 border-0 text-[10px] shadow-sm backdrop-blur-sm px-1.5 py-0">
-              {categoryLabel}
-            </Badge>
+function LoadingSkeleton({ count = 4, isScrollMode = false }: { count?: number; isScrollMode?: boolean }) {
+  if (isScrollMode) {
+    return (
+      <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="flex-shrink-0 w-[200px] sm:w-[220px] md:w-[240px]">
+            <Skeleton className="aspect-square rounded-xl w-full" />
+            <div className="mt-2 space-y-1.5">
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-16" />
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
+    );
+  }
 
-        {/* Card Content */}
-        <CardContent className="p-3.5 space-y-1">
-          <h3 className="font-semibold text-sm text-gray-900 line-clamp-1 group-hover:text-red-500 transition-colors">
-            {listing.title}
-          </h3>
-          <p className="text-xs text-gray-500 line-clamp-1">
-            {listing.providerName}
-          </p>
-          <div className="flex items-center justify-between pt-1">
-            <Badge
-              variant="outline"
-              className="text-[10px] px-1.5 py-0 border-gray-200 text-gray-400"
-            >
-              {categoryLabel}
-            </Badge>
-            <span className="font-bold text-sm text-gray-900">
-              {formatPrice(listing.price, language)}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
-function LoadingSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-xl overflow-hidden border border-gray-100">
-          <Skeleton className="aspect-[4/3] w-full" />
+          <Skeleton className="aspect-square w-full" />
           <div className="p-3.5 space-y-2">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-3 w-1/2" />
@@ -176,13 +92,9 @@ function LoadingSkeleton({ count = 4 }: { count?: number }) {
 }
 
 function ErrorState({
-  messageAr,
-  messageEn,
   onRetry,
   language,
 }: {
-  messageAr?: string;
-  messageEn?: string;
   onRetry: () => void;
   language: 'ar' | 'en';
 }) {
@@ -191,10 +103,11 @@ function ErrorState({
       <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
       <p className="text-gray-600 mb-4">
         {language === 'ar'
-          ? (messageAr ?? 'حدث خطأ أثناء تحميل البيانات')
-          : (messageEn ?? 'An error occurred while loading data')}
+          ? 'حدث خطأ أثناء تحميل البيانات'
+          : 'An error occurred while loading data'}
       </p>
-      <Button variant="outline" onClick={onRetry}>
+      <Button variant="outline" onClick={onRetry} className="gap-1.5">
+        <RefreshCw className="w-3.5 h-3.5" />
         {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
       </Button>
     </div>
@@ -242,6 +155,11 @@ export function CategoryListingSection({
 }: CategoryListingSectionProps) {
   const { language, isRTL } = useLanguage();
   const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const { data, isLoading, isError, refetch } = useListingsByCategory(category, {
     page: 0,
@@ -253,10 +171,44 @@ export function CategoryListingSection({
   const sectionTitle = isRTL ? titleAr : titleEn;
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
+  // ── Horizontal Scroll Controls ──
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (el) {
+      el.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+      return () => {
+        el.removeEventListener('scroll', checkScroll);
+        window.removeEventListener('resize', checkScroll);
+      };
+    }
+  }, [checkScroll, listings]);
+
+  const scrollCards = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction === 'left' ? -280 : 280, behavior: 'smooth' });
+    setTimeout(checkScroll, 350);
+  };
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
+
   return (
-    <section className="py-6 sm:py-8">
+    <section className="py-4 sm:py-6">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           {/* Gradient Icon Badge */}
           <div
@@ -291,28 +243,74 @@ export function CategoryListingSection({
       </div>
 
       {/* Loading State */}
-      {isLoading && <LoadingSkeleton count={4} />}
+      {isLoading && <LoadingSkeleton count={5} isScrollMode />}
 
       {/* Error State */}
-      {isError && (
-        <ErrorState
-          onRetry={() => refetch()}
-          language={language}
-        />
-      )}
+      {isError && <ErrorState onRetry={() => refetch()} language={language} />}
 
-      {/* Listings Grid */}
+      {/* Horizontal Scrolling Cards (Airbnb Style) */}
       {!isLoading && !isError && listings.length > 0 && (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
-        >
-          {listings.map((listing, idx) => (
-            <ListingCard key={listing.id} listing={listing} index={idx} />
-          ))}
-        </motion.div>
+        <div className="relative">
+          {/* Left Nav Button */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scrollCards(isRTL ? 'right' : 'left')}
+              className="absolute start-0 top-[120px] -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200 hover:scale-105 transition-transform"
+            >
+              <ChevronRight className="w-4 h-4 text-gray-700" />
+            </button>
+          )}
+
+          {/* Right Nav Button */}
+          {canScrollRight && (
+            <button
+              onClick={() => scrollCards(isRTL ? 'left' : 'right')}
+              className="absolute end-0 top-[120px] -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200 hover:scale-105 transition-transform"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-700" />
+            </button>
+          )}
+
+          {/* Scrollable Cards Container */}
+          <div
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {listings.map((listing, idx) => (
+              <ListingCard
+                key={listing.id}
+                id={listing.id}
+                title={listing.title}
+                category={category}
+                price={listing.price}
+                providerName={listing.providerName}
+                rating={4.0 + Math.random() * 1.0}
+                reviewCount={Math.floor(Math.random() * 80) + 3}
+                isFavorite={favorites.includes(listing.id)}
+                onToggleFavorite={toggleFavorite}
+                secondaryBadge={idx < 2 ? (isRTL ? '⭐ مميز' : '⭐ Featured') : undefined}
+                imageIndex={idx}
+                isScrollCard={true}
+              />
+            ))}
+
+            {/* View All Card */}
+            {listings.length > 4 && (
+              <ViewAllCard
+                count={totalElements}
+                labelAr="عرض الكل"
+                labelEn="Show all"
+                images={getListingImages(category, 0).concat(
+                  getListingImages(category, 1),
+                  getListingImages(category, 2),
+                  getListingImages(category, 3)
+                )}
+                onClick={() => setShowAll(true)}
+              />
+            )}
+          </div>
+        </div>
       )}
 
       {/* Empty State */}
@@ -325,19 +323,50 @@ export function CategoryListingSection({
         />
       )}
 
-      {/* Bottom View All (when many items) */}
-      {!isLoading && !isError && totalElements > pageSize && (
-        <div className="mt-5 text-center">
-          <Button
-            variant="outline"
-            className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
-            onClick={() => navigate('market', { category })}
-          >
-            {isRTL ? 'عرض الكل' : 'View All'} ({totalElements})
-            <ArrowIcon className="w-4 h-4 ms-1" />
-          </Button>
-        </div>
-      )}
+      {/* ── All Listings Drawer ── */}
+      <Sheet open={showAll} onOpenChange={setShowAll}>
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl px-4 pt-4">
+          {/* Handle */}
+          <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-3" />
+
+          {/* Header */}
+          <div className="pb-3 border-b border-gray-100 mb-4">
+            <h2 className="text-lg font-bold">
+              {sectionTitle}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {totalElements} {isRTL ? 'إعلان متاح' : 'listings available'}
+            </p>
+          </div>
+
+          {/* Grid */}
+          <div className="overflow-y-auto pb-8" style={{ maxHeight: 'calc(90vh - 100px)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {listings.map((listing, idx) => (
+                <ListingCard
+                  key={listing.id}
+                  id={listing.id}
+                  title={listing.title}
+                  category={category}
+                  price={listing.price}
+                  providerName={listing.providerName}
+                  rating={4.0 + Math.random() * 1.0}
+                  reviewCount={Math.floor(Math.random() * 80) + 3}
+                  isFavorite={favorites.includes(listing.id)}
+                  onToggleFavorite={toggleFavorite}
+                  secondaryBadge={idx < 2 ? (isRTL ? '⭐ مميز' : '⭐ Featured') : undefined}
+                  imageIndex={idx}
+                  isScrollCard={false}
+                  onClick={() => {
+                    setShowAll(false);
+                    navigate('listing-detail', { id: listing.id });
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }

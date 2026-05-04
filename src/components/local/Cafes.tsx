@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Coffee, Star, MapPin, Clock } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Coffee, Clock } from 'lucide-react';
 
 const cafes = [
   {
@@ -17,6 +18,7 @@ const cafes = [
     hoursAr: '7 ص - 12 م',
     specialtyEn: 'Specialty Coffee',
     specialtyAr: 'قهوة مختصة',
+    price: 0,
   },
   {
     id: '2',
@@ -29,6 +31,7 @@ const cafes = [
     hoursAr: '8 ص - 11 م',
     specialtyEn: 'Herbal Tea',
     specialtyAr: 'شاي أعشاب',
+    price: 0,
   },
   {
     id: '3',
@@ -41,6 +44,7 @@ const cafes = [
     hoursAr: '6 ص - 1 م',
     specialtyEn: 'Cold Brew',
     specialtyAr: 'كولد برو',
+    price: 0,
   },
   {
     id: '4',
@@ -53,46 +57,58 @@ const cafes = [
     hoursAr: '9 ص - 10 م',
     specialtyEn: 'Arabic Coffee',
     specialtyAr: 'قهوة عربية',
+    price: 0,
   },
 ];
 
 export default function Cafes() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
+      {/* Section Header */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Coffee className="w-5 h-5 text-red-500" />
-        {isRTL ? 'المقاهي' : 'Cafes'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-sm">
+          <Coffee className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'المقاهي' : 'Cafes'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({cafes.length})</span>
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {cafes.map((cafe) => (
-          <Card key={cafe.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="w-full h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg flex items-center justify-center mb-3">
-                <Coffee className="w-8 h-8 text-amber-300" />
-              </div>
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="font-semibold text-sm">{isRTL ? cafe.nameAr : cafe.nameEn}</h3>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium">{cafe.rating}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                <MapPin className="w-3 h-3" />
-                {isRTL ? cafe.locationAr : cafe.locationEn}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                <Clock className="w-3 h-3" />
-                {isRTL ? cafe.hoursAr : cafe.hoursEn}
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {isRTL ? cafe.specialtyAr : cafe.specialtyEn}
-              </Badge>
-            </CardContent>
-          </Card>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {cafes.map((cafe, idx) => (
+          <ListingCard
+            key={cafe.id}
+            id={cafe.id}
+            title={isArabic ? cafe.nameAr : cafe.nameEn}
+            category="dining"
+            price={cafe.price}
+            subtitle={isArabic ? cafe.locationAr : cafe.locationEn}
+            rating={cafe.rating}
+            badgeText={isArabic ? cafe.specialtyAr : cafe.specialtyEn}
+            badgeColor="bg-amber-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? cafe.hoursAr : cafe.hoursEn },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(cafe.id)}
+            onToggleFavorite={toggleFavorite}
+            onClick={() => navigate('listing-detail', { id: cafe.id })}
+            isScrollCard={true}
+          />
         ))}
       </div>
     </section>

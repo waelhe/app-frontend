@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Bus, Car, Phone, MapPin, Clock } from 'lucide-react';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
+import { Bus, Clock, Phone, MapPin } from 'lucide-react';
 
 const transportServices = [
   {
@@ -17,7 +18,6 @@ const transportServices = [
     phone: '011-4455667',
     hoursEn: '5 AM - 11 PM',
     hoursAr: '5 ص - 11 م',
-    icon: Bus,
   },
   {
     id: '2',
@@ -30,7 +30,6 @@ const transportServices = [
     phone: '011-5566778',
     hoursEn: '24 Hours',
     hoursAr: '24 ساعة',
-    icon: Car,
   },
   {
     id: '3',
@@ -43,7 +42,6 @@ const transportServices = [
     phone: '011-6677889',
     hoursEn: '24 Hours',
     hoursAr: '24 ساعة',
-    icon: Car,
   },
   {
     id: '4',
@@ -56,58 +54,56 @@ const transportServices = [
     phone: '011-7788990',
     hoursEn: '6 AM - 10 PM',
     hoursAr: '6 ص - 10 م',
-    icon: Bus,
   },
 ];
 
 export default function Transport() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Bus className="w-5 h-5 text-red-500" />
-        {isRTL ? 'النقل والمواصلات' : 'Transport'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-sm">
+          <Bus className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'النقل والمواصلات' : 'Transport'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({transportServices.length})</span>
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {transportServices.map((service) => {
-          const Icon = service.icon;
-          return (
-            <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                    <Icon className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">{isRTL ? service.nameAr : service.nameEn}</h3>
-                    <Badge variant="outline" className="text-xs mt-0.5">
-                      {isRTL ? service.typeAr : service.typeEn}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-1 text-xs text-muted-foreground ms-13">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3" />
-                    {isRTL ? service.locationAr : service.locationEn}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3 h-3" />
-                    {isRTL ? service.hoursAr : service.hoursEn}
-                  </div>
-                  <div
-                    className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                    onClick={() => window.open(`tel:${service.phone}`, '_self')}
-                  >
-                    <Phone className="w-3 h-3" />
-                    {service.phone}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {transportServices.map((service, idx) => (
+          <ListingCard
+            key={service.id}
+            id={service.id}
+            title={isArabic ? service.nameAr : service.nameEn}
+            category="transport"
+            price={0}
+            subtitle={isArabic ? service.locationAr : service.locationEn}
+            rating={4.0 + idx * 0.25}
+            badgeText={isArabic ? service.typeAr : service.typeEn}
+            badgeColor="bg-sky-600/90 text-white"
+            features={[
+              { icon: Clock, label: isArabic ? service.hoursAr : service.hoursEn },
+              { icon: Phone, label: service.phone },
+            ]}
+            imageIndex={idx}
+            isFavorite={favorites.includes(service.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: service.id })}
+          />
+        ))}
       </div>
     </section>
   );

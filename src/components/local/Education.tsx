@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
 import { GraduationCap, MapPin, Phone } from 'lucide-react';
 
 const educationCenters = [
@@ -60,44 +61,49 @@ const educationCenters = [
 
 export default function Education() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   return (
     <section className="py-4">
+      {/* Section Header */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <GraduationCap className="w-5 h-5 text-red-500" />
-        {isRTL ? 'التعليم' : 'Education'}
+        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-sm">
+          <GraduationCap className="w-5 h-5 text-white" />
+        </span>
+        <span>{isArabic ? 'التعليم' : 'Education'}</span>
+        <span className="text-sm font-normal text-muted-foreground">({educationCenters.length})</span>
       </h2>
-      <div className="space-y-3">
-        {educationCenters.map((center) => (
-          <Card key={center.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm">{isRTL ? center.nameAr : center.nameEn}</h3>
-                  <Badge variant="secondary" className="text-xs mt-0.5">
-                    {isRTL ? center.typeAr : center.typeEn}
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 mt-2 ms-13 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" />
-                  {isRTL ? center.locationAr : center.locationEn}
-                </span>
-                <span
-                  className="flex items-center gap-1.5 text-red-500 cursor-pointer"
-                  onClick={() => window.open(`tel:${center.phone}`, '_self')}
-                >
-                  <Phone className="w-3 h-3" />
-                  {center.phone}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {educationCenters.map((center, idx) => (
+          <ListingCard
+            key={center.id}
+            id={center.id}
+            title={isArabic ? center.nameAr : center.nameEn}
+            category="education"
+            price={0}
+            subtitle={isArabic ? center.locationAr : center.locationEn}
+            rating={4.0 + Math.random() * 1.0}
+            badgeText={isArabic ? center.typeAr : center.typeEn}
+            badgeColor="bg-indigo-600/90 text-white"
+            imageIndex={idx}
+            isFavorite={favorites.includes(center.id)}
+            onToggleFavorite={toggleFavorite}
+            onClick={() => navigate('listing-detail', { id: center.id })}
+            isScrollCard={true}
+          />
         ))}
       </div>
     </section>

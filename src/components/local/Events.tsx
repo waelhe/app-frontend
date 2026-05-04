@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useLanguage } from '@/stores/languageStore';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useNavigationStore } from '@/stores/navigationStore';
+import { ListingCard, getListingImages, formatPrice } from '@/components/ui/ListingCard';
 import { Calendar, MapPin, Clock } from 'lucide-react';
 
 const events = [
@@ -58,58 +59,68 @@ const events = [
 
 export default function Events() {
   const { language } = useLanguage();
-  const isRTL = language === 'ar';
+  const isArabic = language === 'ar';
+  const navigate = useNavigationStore((s) => s.navigate);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+    );
+  };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    return {
-      day: d.getDate().toString(),
-      month: isRTL
-        ? d.toLocaleDateString('ar-SA', { month: 'short' })
-        : d.toLocaleDateString('en-US', { month: 'short' }),
-    };
+    return isArabic
+      ? d.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' })
+      : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
     <section className="py-4">
-      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <Calendar className="w-5 h-5 text-red-500" />
-        {isRTL ? 'الفعاليات' : 'Events'}
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {events.map((event) => {
-          const { day, month } = formatDate(event.date);
-          return (
-            <Card key={event.id} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="flex gap-3">
-                  <div className="shrink-0 w-14 h-14 bg-red-50 rounded-xl flex flex-col items-center justify-center border border-red-200">
-                    <span className="text-xl font-bold text-red-600 leading-none">{day}</span>
-                    <span className="text-xs text-red-500 font-medium">{month}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-semibold text-sm truncate">
-                        {isRTL ? event.titleAr : event.titleEn}
-                      </h3>
-                      <Badge variant="secondary" className="text-xs shrink-0 ms-2">
-                        {isRTL ? event.categoryAr : event.categoryEn}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                      <Clock className="w-3 h-3" />
-                      {isRTL ? event.timeAr : event.timeEn}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3" />
-                      {isRTL ? event.locationAr : event.locationEn}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+          <Calendar className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            {isArabic ? 'الفعاليات' : 'Events'}
+          </h2>
+          <span className="text-xs text-gray-500">
+            {events.length} {isArabic ? 'فعالية' : 'events'}
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal Scrolling Cards */}
+      <div
+        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {events.map((event, index) => (
+          <ListingCard
+            key={event.id}
+            id={event.id}
+            title={isArabic ? event.titleAr : event.titleEn}
+            category="events"
+            price={0}
+            subtitle={`${formatDate(event.date)} · ${isArabic ? event.locationAr : event.locationEn}`}
+            rating={4.0 + Math.random() * 1.0}
+            badgeText={isArabic ? event.categoryAr : event.categoryEn}
+            badgeColor="bg-violet-600/90 text-white"
+            secondaryBadge={formatDate(event.date)}
+            features={[
+              { icon: Clock, label: isArabic ? event.timeAr : event.timeEn },
+              { icon: MapPin, label: isArabic ? event.locationAr : event.locationEn },
+            ]}
+            imageIndex={index}
+            isFavorite={favorites.includes(event.id)}
+            onToggleFavorite={toggleFavorite}
+            isScrollCard={true}
+            onClick={() => navigate('listing-detail', { id: event.id })}
+          />
+        ))}
       </div>
     </section>
   );
