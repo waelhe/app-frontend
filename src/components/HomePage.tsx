@@ -676,7 +676,11 @@ export function HomePage() {
 
   // Scroll to top when view changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
   }, [currentView]);
 
   // Listen for 'open-login' events from Header

@@ -535,6 +535,16 @@ export function ListingDetail() {
   const contentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
 
+  // ── Scroll to top on mount ────────────────────────────────────────────
+  useEffect(() => {
+    // Use requestAnimationFrame to ensure DOM is rendered before scrolling
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+  }, [listingId]);
+
   // ── Scroll detection ────────────────────────────────────────────────
 
   useEffect(() => {
