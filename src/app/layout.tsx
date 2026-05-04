@@ -41,21 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <QueryProvider>
           <AuthInitializer>
             <div className="flex min-h-screen flex-col">
               <Header />
               <BackendStatusBanner />
-              <main className="flex-1 pt-16 pb-20 md:pb-0">
+              <main className="flex-1 pb-20 md:pb-0">
                 {children}
               </main>
               <Footer />
