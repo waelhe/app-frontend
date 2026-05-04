@@ -782,9 +782,6 @@ export function HomePage() {
       {/* ⚡ QuickServices - Airbnb-style category bar */}
       <QuickServices />
 
-      {/* 🕌 DailyInfoBar - Prayer times + weather */}
-      <DailyInfoBar />
-
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* 🏠 الجزء الأول: السوق والإعلانات                                */}
       {/* ═══════════════════════════════════════════════════════════════ */}

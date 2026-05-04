@@ -36,7 +36,7 @@ const qudsayaCenterOffers: Offer[] = [
     endTime: 'ينتهي غداً',
     badge: 'محدود',
     badgeEn: 'Limited',
-    image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'q2',
@@ -50,7 +50,7 @@ const qudsayaCenterOffers: Offer[] = [
     endTime: '3 أيام متبقية',
     badge: 'حصري',
     badgeEn: 'Exclusive',
-    image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'q3',
@@ -62,7 +62,7 @@ const qudsayaCenterOffers: Offer[] = [
     oldPrice: '200,000',
     newPrice: '150,000',
     endTime: '5 أيام متبقية',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=400&q=80',
   },
 ];
 
@@ -79,7 +79,7 @@ const qudsayaDahiaOffers: Offer[] = [
     endTime: 'ينتهي بعد غد',
     badge: 'جديد',
     badgeEn: 'New',
-    image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'd2',
@@ -93,7 +93,7 @@ const qudsayaDahiaOffers: Offer[] = [
     endTime: '5 أيام متبقية',
     badge: 'حصري',
     badgeEn: 'Exclusive',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'd3',
@@ -105,7 +105,7 @@ const qudsayaDahiaOffers: Offer[] = [
     oldPrice: '30,000',
     newPrice: '24,000',
     endTime: 'أسبوع متبقي',
-    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80',
   },
 ];
 
@@ -122,7 +122,7 @@ const dimasOffers: Offer[] = [
     endTime: 'ينتهي غداً',
     badge: 'محدود',
     badgeEn: 'Limited',
-    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'dm2',
@@ -136,7 +136,7 @@ const dimasOffers: Offer[] = [
     endTime: '3 أيام متبقية',
     badge: 'حصري',
     badgeEn: 'Exclusive',
-    image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 'dm3',
@@ -148,7 +148,7 @@ const dimasOffers: Offer[] = [
     oldPrice: '300,000',
     newPrice: '180,000',
     endTime: 'أسبوع متبقي',
-    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=300&q=80',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=400&q=80',
   },
 ];
 
@@ -176,7 +176,7 @@ export default function FeaturedOffers() {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 200;
+      const scrollAmount = 280;
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
@@ -185,41 +185,41 @@ export default function FeaturedOffers() {
   };
 
   return (
-    <div className="mb-4 rounded-xl bg-gradient-to-r from-rose-500/10 via-orange-500/10 to-pink-500/10 border border-rose-200/50 p-3">
-      {/* Compact header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gradient-to-br from-rose-500 to-orange-500 rounded-lg">
-            <Flame className="w-4 h-4 text-white" />
+    <div className="mb-6 rounded-2xl bg-gradient-to-r from-rose-500/10 via-orange-500/10 to-pink-500/10 border border-rose-200/50 p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl">
+            <Flame className="w-5 h-5 text-white" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800">
+          <h3 className="text-lg font-bold text-gray-800">
             {isArabic ? '🔥 عروض حصرية' : '🔥 Exclusive Offers'}
           </h3>
-          <span className="px-1.5 py-0.5 bg-rose-100 text-rose-600 text-xs rounded-full">
+          <span className="px-2 py-0.5 bg-rose-100 text-rose-600 text-sm rounded-full font-medium">
             {offers.length}
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => scroll('right')}
-            className="p-1 hover:bg-gray-200/50 rounded-full transition-colors"
+            className="p-1.5 hover:bg-gray-200/50 rounded-full transition-colors"
           >
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+            <ChevronRight className="w-5 h-5 text-gray-500" />
           </button>
           <button
             onClick={() => scroll('left')}
-            className="p-1 hover:bg-gray-200/50 rounded-full transition-colors"
+            className="p-1.5 hover:bg-gray-200/50 rounded-full transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-gray-500" />
+            <ChevronLeft className="w-5 h-5 text-gray-500" />
           </button>
         </div>
       </div>
 
-      {/* Offers carousel — mini cards */}
+      {/* Offers carousel — larger cards */}
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide scroll-smooth"
+        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {offers.map((offer) => (
@@ -227,10 +227,10 @@ export default function FeaturedOffers() {
             key={offer.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex-shrink-0 w-36 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+            className="flex-shrink-0 w-52 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1"
           >
-            {/* Image — compact */}
-            <div className="relative h-16 overflow-hidden">
+            {/* Image — larger */}
+            <div className="relative h-32 overflow-hidden">
               <img
                 src={offer.image}
                 alt={isArabic ? offer.title : offer.titleEn}
@@ -239,42 +239,42 @@ export default function FeaturedOffers() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
               {/* Discount badge */}
-              <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-bold rounded flex items-center gap-0.5">
-                <Tag className="w-2.5 h-2.5" />
+              <div className="absolute top-2 right-2 px-2.5 py-1 bg-gradient-to-r from-rose-500 to-orange-500 text-white text-sm font-bold rounded-lg flex items-center gap-1">
+                <Tag className="w-3.5 h-3.5" />
                 {offer.discount}
               </div>
 
               {/* Yellow "محدود/حصري" badge */}
               {offer.badge && (
-                <div className="absolute top-1 left-1 px-1 py-0.5 bg-yellow-400 text-yellow-900 text-[10px] font-bold rounded">
+                <div className="absolute top-2 left-2 px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-lg">
                   {isArabic ? offer.badge : offer.badgeEn}
                 </div>
               )}
             </div>
 
-            {/* Content — brief */}
-            <div className="p-2">
-              <h4 className="text-xs font-semibold text-gray-800 line-clamp-1 mb-0.5">
+            {/* Content — expanded */}
+            <div className="p-3">
+              <h4 className="text-sm font-bold text-gray-800 line-clamp-1 mb-1">
                 {isArabic ? offer.title : offer.titleEn}
               </h4>
-              <p className="text-[10px] text-gray-400 flex items-center gap-0.5 mb-1">
-                <Store className="w-2.5 h-2.5" />
+              <p className="text-xs text-gray-400 flex items-center gap-1 mb-2">
+                <Store className="w-3 h-3" />
                 {isArabic ? offer.store : offer.storeEn}
               </p>
 
               {/* Full pricing — old strikethrough + new price */}
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-bold text-rose-600">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold text-rose-600">
                   {offer.newPrice}
                 </span>
-                <span className="text-[10px] text-gray-400 line-through">
+                <span className="text-xs text-gray-400 line-through">
                   {offer.oldPrice}
                 </span>
               </div>
 
               {/* Relative time */}
-              <div className="flex items-center gap-0.5 mt-1 text-[10px] text-amber-600">
-                <Clock className="w-2.5 h-2.5" />
+              <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
+                <Clock className="w-3 h-3" />
                 {offer.endTime}
               </div>
             </div>

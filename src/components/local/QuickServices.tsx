@@ -234,7 +234,7 @@ export default function QuickServices() {
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -200 : 200,
+        left: direction === 'left' ? -250 : 250,
         behavior: 'smooth'
       });
     }
@@ -252,7 +252,7 @@ export default function QuickServices() {
       {/* Airbnb Style Categories */}
       <section className="bg-white z-40 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="relative flex items-center py-4">
+          <div className="relative flex items-center py-5">
             {/* Left scroll button */}
             {canScrollLeft && (
               <button
@@ -268,7 +268,7 @@ export default function QuickServices() {
             <div
               ref={scrollContainerRef}
               onScroll={checkScroll}
-              className="flex gap-5 sm:gap-6 overflow-x-auto px-8 py-2"
+              className="flex gap-6 sm:gap-8 overflow-x-auto px-10 py-3"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {categories.map((category) => {
@@ -277,16 +277,16 @@ export default function QuickServices() {
                   return (
                     <div
                       key={category.id}
-                      className="flex flex-col items-center justify-center min-w-[72px] sm:min-w-[80px] flex-shrink-0 px-2"
+                      className="flex flex-col items-center justify-center min-w-[80px] sm:min-w-[90px] flex-shrink-0 px-2"
                     >
                       {/* خط ملون */}
                       <div
-                        className="w-1.5 h-14 rounded-full mb-2"
+                        className="w-2 h-16 rounded-full mb-2"
                         style={{ backgroundColor: category.color }}
                       />
                       {/* اسم الجزء */}
                       <span
-                        className="text-xs font-bold whitespace-nowrap"
+                        className="text-sm font-bold whitespace-nowrap"
                         style={{ color: category.color }}
                       >
                         {isArabic ? category.title : category.titleEn}
@@ -303,7 +303,7 @@ export default function QuickServices() {
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(isSelected ? null : category.id)}
-                    className="flex flex-col items-center gap-2 min-w-[68px] sm:min-w-[80px] group flex-shrink-0"
+                    className="flex flex-col items-center gap-2.5 min-w-[80px] sm:min-w-[92px] group flex-shrink-0"
                   >
                     {/* Image or Icon */}
                     <div className="relative">
@@ -316,7 +316,7 @@ export default function QuickServices() {
 
                       {/* Image from local folder */}
                       {category.imageIcon && (
-                        <div className={`w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl overflow-hidden transition-all duration-200 relative ${isSelected ? 'ring-2 ring-gray-900 ring-offset-2' : 'opacity-90 group-hover:opacity-100 shadow-md'}`}>
+                        <div className={`w-[76px] h-[76px] sm:w-[84px] sm:h-[84px] rounded-2xl overflow-hidden transition-all duration-200 relative ${isSelected ? 'ring-2 ring-gray-900 ring-offset-2' : 'opacity-90 group-hover:opacity-100 shadow-md'}`}>
                           <Image
                             src={category.imageIcon}
                             alt={isArabic ? category.title : category.titleEn}
@@ -327,7 +327,7 @@ export default function QuickServices() {
                           {/* اسم المجموعة على الصورة */}
                           {category.groupTitle && (
                             <div
-                              className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold text-white"
+                              className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
                               style={{ backgroundColor: category.groupColor }}
                             >
                               {isArabic ? category.groupTitle : category.groupTitleEn}
@@ -338,7 +338,7 @@ export default function QuickServices() {
                     </div>
 
                     {/* Label */}
-                    <span className={`text-xs font-medium whitespace-nowrap transition-colors ${
+                    <span className={`text-sm font-medium whitespace-nowrap transition-colors ${
                       isSelected ? 'text-gray-900 font-semibold' : 'text-gray-600 group-hover:text-gray-900'
                     }`}>
                       {isArabic ? category.title : category.titleEn}
@@ -355,12 +355,12 @@ export default function QuickServices() {
               {/* View All Card */}
               <button
                 onClick={() => setShowAllSheet(true)}
-                className="flex flex-col items-center gap-2 min-w-[68px] sm:min-w-[80px] group flex-shrink-0"
+                className="flex flex-col items-center gap-2.5 min-w-[80px] sm:min-w-[92px] group flex-shrink-0"
               >
-                <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                  <Grid3X3 className="w-7 h-7 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <div className="w-[76px] h-[76px] sm:w-[84px] sm:h-[84px] rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                  <Grid3X3 className="w-8 h-8 text-gray-400 group-hover:text-gray-600 transition-colors" />
                 </div>
-                <span className="text-xs font-medium text-gray-500 group-hover:text-gray-900 transition-colors">
+                <span className="text-sm font-medium text-gray-500 group-hover:text-gray-900 transition-colors">
                   {isArabic ? 'الكل' : 'All'}
                 </span>
                 <div className="h-0.5 w-6 rounded-full bg-transparent" />
