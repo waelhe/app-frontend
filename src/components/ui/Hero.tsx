@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
@@ -83,43 +84,70 @@ const slides: Slide[] = [
 
 export function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { language, t, isRTL } = useLanguage();
   const navigate = useNavigationStore((s) => s.navigate);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 6000);
+  }, []);
+
+  const resetTimer = useCallback(() => {
+    startTimer();
+  }, [startTimer]);
 
   const goToNext = useCallback(() => {
+    if (isTransitioning) return;
     setCurrentSlide((prev) => (prev + 1) % slides.length);
-  }, []);
+    resetTimer();
+  }, [isTransitioning, resetTimer]);
 
   const goToPrev = useCallback(() => {
+    if (isTransitioning) return;
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  }, []);
+    resetTimer();
+  }, [isTransitioning, resetTimer]);
 
-  // Auto-rotate every 5 seconds
   useEffect(() => {
-    const interval = setInterval(goToNext, 5000);
-    return () => clearInterval(interval);
-  }, [goToNext]);
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [startTimer]);
 
   const slide = slides[currentSlide];
+  const nextSlideIdx = (currentSlide + 1) % slides.length;
 
   return (
     <section className="relative w-full h-[350px] sm:h-[400px] md:h-[480px] lg:h-[550px] overflow-hidden">
-      {/* Background Image with AnimatePresence */}
+      {/* Current slide image */}
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.5 }}
           className="absolute inset-0"
+          onAnimationStart={() => setIsTransitioning(true)}
+          onAnimationComplete={() => setIsTransitioning(false)}
         >
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${slide.image})` }}
+          <Image
+            src={slide.image}
+            alt={language === 'ar' ? slide.titleAr : slide.titleEn}
+            fill
+            className="object-cover"
+            priority={currentSlide === 0}
+            sizes="100vw"
+            quality={75}
           />
         </motion.div>
       </AnimatePresence>
+
+      {/* Prefetch next slide image (hidden) */}
+      <link rel="prefetch" as="image" href={slides[nextSlideIdx].image} />
 
       {/* Dark Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
@@ -128,21 +156,16 @@ export function Hero() {
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.4 }}
           className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10"
         >
           {/* Category Badge */}
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-block bg-red-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-4"
-          >
+          <span className="inline-block bg-red-500 text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
             {language === 'ar' ? slide.categoryAr : slide.categoryEn}
-          </motion.span>
+          </span>
 
           {/* Title */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 max-w-3xl leading-tight">
@@ -198,7 +221,7 @@ export function Hero() {
         {slides.map((_, idx) => (
           <button
             key={idx}
-            onClick={() => setCurrentSlide(idx)}
+            onClick={() => { setCurrentSlide(idx); resetTimer(); }}
             className={`h-2 rounded-full transition-all duration-300 ${
               idx === currentSlide
                 ? 'w-8 bg-red-500'

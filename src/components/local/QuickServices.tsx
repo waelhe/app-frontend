@@ -107,9 +107,9 @@ const PARTS = [
         titleEn: 'Food & Hospitality',
         color: '#FF5A5F',
         sections: [
-          { id: 'restaurants', title: 'مطاعم', titleEn: 'Restaurants', icon: UtensilsCrossed, color: '#FF5A5F', imageIcon: '/images/categories/dining.png' },
-          { id: 'cafes', title: 'مقاهي', titleEn: 'Cafes', icon: Coffee, color: '#8B5A2B', imageIcon: '/images/categories/dining.png' },
-          { id: 'hotels', title: 'فنادق', titleEn: 'Hotels', icon: Building, color: '#9B59B6', imageIcon: '/images/categories/real-estate.png' },
+          { id: 'restaurants', title: 'مطاعم', titleEn: 'Restaurants', icon: UtensilsCrossed, color: '#FF5A5F', imageIcon: '/images/categories/dining.webp' },
+          { id: 'cafes', title: 'مقاهي', titleEn: 'Cafes', icon: Coffee, color: '#8B5A2B', imageIcon: '/images/categories/dining.webp' },
+          { id: 'hotels', title: 'فنادق', titleEn: 'Hotels', icon: Building, color: '#9B59B6', imageIcon: '/images/categories/real-estate.webp' },
         ]
       },
       {
@@ -118,9 +118,9 @@ const PARTS = [
         titleEn: 'Health & Beauty',
         color: '#E31C5F',
         sections: [
-          { id: 'doctors', title: 'أطباء', titleEn: 'Doctors', icon: Stethoscope, color: '#E31C5F', imageIcon: '/images/categories/services.png' },
-          { id: 'pharmacies', title: 'صيدليات', titleEn: 'Pharmacies', icon: Heart, color: '#00A699', imageIcon: '/images/categories/services.png' },
-          { id: 'beauty', title: 'تجميل', titleEn: 'Beauty', icon: Sparkles, color: '#D939A0', imageIcon: '/images/categories/beauty.png' },
+          { id: 'doctors', title: 'أطباء', titleEn: 'Doctors', icon: Stethoscope, color: '#E31C5F', imageIcon: '/images/categories/services.webp' },
+          { id: 'pharmacies', title: 'صيدليات', titleEn: 'Pharmacies', icon: Heart, color: '#00A699', imageIcon: '/images/categories/services.webp' },
+          { id: 'beauty', title: 'تجميل', titleEn: 'Beauty', icon: Sparkles, color: '#D939A0', imageIcon: '/images/categories/beauty.webp' },
         ]
       },
       {
@@ -129,10 +129,10 @@ const PARTS = [
         titleEn: 'Services',
         color: '#78716C',
         sections: [
-          { id: 'craftsmen', title: 'حرفيين', titleEn: 'Craftsmen', icon: Wrench, color: '#78716C', imageIcon: '/images/categories/services.png' },
-          { id: 'car-services', title: 'سيارات', titleEn: 'Cars', icon: Car, color: '#428BFF', imageIcon: '/images/categories/cars.png' },
-          { id: 'gas-stations', title: 'بنزين', titleEn: 'Gas', icon: Fuel, color: '#484848', imageIcon: '/images/categories/cars.png' },
-          { id: 'professionals', title: 'مهن حرة', titleEn: 'Professionals', icon: Scale, color: '#6366F1', isNew: true, imageIcon: '/images/categories/services.png' },
+          { id: 'craftsmen', title: 'حرفيين', titleEn: 'Craftsmen', icon: Wrench, color: '#78716C', imageIcon: '/images/categories/services.webp' },
+          { id: 'car-services', title: 'سيارات', titleEn: 'Cars', icon: Car, color: '#428BFF', imageIcon: '/images/categories/cars.webp' },
+          { id: 'gas-stations', title: 'بنزين', titleEn: 'Gas', icon: Fuel, color: '#484848', imageIcon: '/images/categories/cars.webp' },
+          { id: 'professionals', title: 'مهن حرة', titleEn: 'Professionals', icon: Scale, color: '#6366F1', isNew: true, imageIcon: '/images/categories/services.webp' },
         ]
       },
       {
@@ -141,8 +141,8 @@ const PARTS = [
         titleEn: 'Shopping',
         color: '#FC642D',
         sections: [
-          { id: 'markets', title: 'أسواق', titleEn: 'Markets', icon: ShoppingCart, color: '#00A699', imageIcon: '/images/categories/services.png' },
-          { id: 'retail-shops', title: 'محلات', titleEn: 'Shops', icon: ShoppingBag, color: '#FC642D', imageIcon: '/images/categories/services.png' },
+          { id: 'markets', title: 'أسواق', titleEn: 'Markets', icon: ShoppingCart, color: '#00A699', imageIcon: '/images/categories/services.webp' },
+          { id: 'retail-shops', title: 'محلات', titleEn: 'Shops', icon: ShoppingBag, color: '#FC642D', imageIcon: '/images/categories/services.webp' },
         ]
       },
       {
@@ -151,7 +151,7 @@ const PARTS = [
         titleEn: 'Tourism',
         color: '#00A699',
         sections: [
-          { id: 'places', title: 'سياحة', titleEn: 'Tourism', icon: MapPin, color: '#00A699', imageIcon: '/images/categories/real-estate.png' },
+          { id: 'places', title: 'سياحة', titleEn: 'Tourism', icon: MapPin, color: '#00A699', imageIcon: '/images/categories/real-estate.webp' },
         ]
       },
     ]

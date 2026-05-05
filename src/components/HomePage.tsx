@@ -22,7 +22,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/stores/authStore';
 import { useLanguage } from '@/stores/languageStore';
@@ -32,21 +32,37 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useListings } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';
 import { Hero } from '@/components/ui';
-import { ListingDetail } from '@/components/system/ListingDetail';
-import { SearchView } from '@/components/system/SearchView';
-import { BookingFlow } from '@/components/system/BookingFlow';
-import { MessagingView } from '@/components/system/MessagingView';
-import { ConversationListView } from '@/components/system/ConversationListView';
-import { ProfileView } from '@/components/system/ProfileView';
-import { BookingsListView } from '@/components/system/BookingsListView';
-import { EditListingForm } from '@/components/system/EditListingForm';
-import { FavoritesView } from '@/components/system/FavoritesView';
-import { SettingsView } from '@/components/system/SettingsView';
-import { NotificationCenter } from '@/components/system/NotificationCenter';
-import { ProviderDashboard } from '@/components/dashboard/ProviderDashboard';
-import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
-import { LoginDialog } from '@/components/auth/LoginDialog';
-import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+
+// ── Loading skeleton for lazy-loaded views ────────────────────────────
+function ViewSkeleton() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-gray-200" />
+        <div className="h-4 bg-gray-200 rounded w-48" />
+        <div className="h-3 bg-gray-200 rounded w-32" />
+      </div>
+    </div>
+  );
+}
+
+// ── Dynamic imports for system views (ONLY loaded when needed) ────────
+const ListingDetail = dynamic(() => import('@/components/system/ListingDetail').then(m => ({ default: m.ListingDetail })), { ssr: false, loading: () => <ViewSkeleton /> });
+const SearchView = dynamic(() => import('@/components/system/SearchView').then(m => ({ default: m.SearchView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const BookingFlow = dynamic(() => import('@/components/system/BookingFlow').then(m => ({ default: m.BookingFlow })), { ssr: false, loading: () => <ViewSkeleton /> });
+const MessagingView = dynamic(() => import('@/components/system/MessagingView').then(m => ({ default: m.MessagingView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const ConversationListView = dynamic(() => import('@/components/system/ConversationListView').then(m => ({ default: m.ConversationListView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const ProfileView = dynamic(() => import('@/components/system/ProfileView').then(m => ({ default: m.ProfileView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const BookingsListView = dynamic(() => import('@/components/system/BookingsListView').then(m => ({ default: m.BookingsListView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const EditListingForm = dynamic(() => import('@/components/system/EditListingForm').then(m => ({ default: m.EditListingForm })), { ssr: false, loading: () => <ViewSkeleton /> });
+const FavoritesView = dynamic(() => import('@/components/system/FavoritesView').then(m => ({ default: m.FavoritesView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const SettingsView = dynamic(() => import('@/components/system/SettingsView').then(m => ({ default: m.SettingsView })), { ssr: false, loading: () => <ViewSkeleton /> });
+const NotificationCenter = dynamic(() => import('@/components/system/NotificationCenter').then(m => ({ default: m.NotificationCenter })), { ssr: false, loading: () => <ViewSkeleton /> });
+const ProviderDashboard = dynamic(() => import('@/components/dashboard/ProviderDashboard').then(m => ({ default: m.ProviderDashboard })), { ssr: false, loading: () => <ViewSkeleton /> });
+const AdminDashboard = dynamic(() => import('@/components/dashboard/AdminDashboard').then(m => ({ default: m.AdminDashboard })), { ssr: false, loading: () => <ViewSkeleton /> });
+const LoginDialog = dynamic(() => import('@/components/auth/LoginDialog').then(m => ({ default: m.LoginDialog })), { ssr: false });
+const FloatingActionButton = dynamic(() => import('@/components/ui/FloatingActionButton').then(m => ({ default: m.FloatingActionButton })), { ssr: false });
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,10 +84,10 @@ import {
   Utensils, HeartPulse, Scissors, Landmark, Tent,
 } from 'lucide-react';
 
-// ── Direct imports for ported components ───────────────────────────
-import QuickServices from '@/components/local/QuickServices';
-import DailyInfoBar from '@/components/local/DailyInfoBar';
-import { FeaturedOffers } from '@/components/local';
+// ── Dynamic imports for ported components (lazy loaded) ────────────
+const QuickServices = dynamic(() => import('@/components/local/QuickServices'), { ssr: false });
+const DailyInfoBar = dynamic(() => import('@/components/local/DailyInfoBar'), { ssr: false });
+const FeaturedOffers = dynamic(() => import('@/components/local').then(m => ({ default: m.FeaturedOffers })), { ssr: false });
 
 // ── Dynamic imports for local components (export default) ──────────
 const UrgentServices = dynamic(() => import('@/components/local/UrgentServices'), { ssr: false });
@@ -105,6 +121,38 @@ const Offices = dynamic(() => import('@/components/local/Offices'), { ssr: false
 const FinancialServices = dynamic(() => import('@/components/local/FinancialServices'), { ssr: false });
 const Events = dynamic(() => import('@/components/local/Events'), { ssr: false });
 const LocalNews = dynamic(() => import('@/components/local/LocalNews'), { ssr: false });
+
+// ── LazySection: Only renders children when in viewport ──────────────
+function LazySection({ children, className = '', fallbackHeight = '200px' }: {
+  children: React.ReactNode;
+  className?: string;
+  fallbackHeight?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={className} style={{ minHeight: isVisible ? undefined : fallbackHeight }}>
+      {isVisible ? children : null}
+    </div>
+  );
+}
 
 // ── Category gradients for trending section ──────────────────────────
 const categoryGradients: Record<string, string> = {
@@ -189,23 +237,22 @@ function StatsBar() {
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5 }}
-          className="rounded-2xl bg-gradient-to-r from-red-500 to-red-600 p-6 sm:p-8 shadow-lg shadow-red-500/20 overflow-hidden relative">
+        <div
+          className="rounded-2xl bg-gradient-to-r from-red-500 to-red-600 p-6 sm:p-8 shadow-lg shadow-red-500/20 overflow-hidden relative animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 end-0 w-64 h-64 rounded-full bg-white/20 -translate-y-1/2 translate-x-1/4" />
             <div className="absolute bottom-0 start-0 w-48 h-48 rounded-full bg-white/20 translate-y-1/3 -translate-x-1/4" />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 relative z-10">
             {stats.map((stat, index) => { const Icon = stat.icon; return (
-              <motion.div key={index} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.4 }} className="text-center">
+              <div key={index} className="text-center">
                 <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mx-auto mb-3"><Icon className="h-6 w-6 text-white" /></div>
                 <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                 <p className="text-white/80 text-sm mt-1 font-medium">{t(stat.labelAr, stat.labelEn)}</p>
-              </motion.div>
+              </div>
             ); })}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -252,8 +299,7 @@ function TrendingListingsSection() {
               const gradient = categoryGradients[listing.category] ?? 'from-gray-400 to-gray-600';
               const catLabel = isRTL ? (categoryLabelsAr[listing.category] ?? listing.category) : (categoryLabelsEn[listing.category] ?? listing.category);
               return (
-                <motion.div key={listing.id} initial={{ opacity: 0, x: isRTL ? 20 : -20 }} whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }} transition={{ delay: index * 0.05, duration: 0.3 }} className="shrink-0 w-44">
+                <div key={listing.id} className="shrink-0 w-44 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${index * 50}ms` }}>
                   <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow border border-gray-100"
                     onClick={() => navigate('listing-detail', { id: listing.id })}>
                     <div className={`h-24 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
@@ -265,7 +311,7 @@ function TrendingListingsSection() {
                       <span className="text-xs font-bold text-red-500" dir="ltr">{listing.price.toLocaleString()} {t('ر.س', 'SAR')}</span>
                     </CardContent>
                   </Card>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -295,8 +341,8 @@ function PremiumBanner() {
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.5 }}
-          className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-600 to-red-500 shadow-lg shadow-red-500/20">
+        <div
+          className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-600 to-red-500 shadow-lg shadow-red-500/20 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="absolute inset-0 opacity-[0.07]">
             <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs>
               <pattern id="premium-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -317,7 +363,7 @@ function PremiumBanner() {
               {t('ابدأ الآن', 'Get Started')} <ArrowLeft className={`w-4 h-4 ${isRTL ? 'mr-1 rotate-180' : 'ml-1'}`} />
             </Button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -337,14 +383,13 @@ function TrustSafetySection() {
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.4 }} className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-5 animate-in fade-in slide-in-from-bottom-4 duration-400">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm"><Shield className="h-5 w-5 text-white" /></div>
           <div><h2 className="text-lg sm:text-xl font-bold text-gray-900">{t('الثقة والأمان', 'Trust & Safety')}</h2><p className="text-xs text-gray-400">{t('سوقك الآمن والموثوق', 'Your safe and trusted marketplace')}</p></div>
-        </motion.div>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {badges.map((badge, index) => { const Icon = badge.icon; return (
-            <motion.div key={index} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.4 }} whileHover={{ y: -4, transition: { duration: 0.2 } }} className="group">
+            <div key={index} className="group">
               <Card className="h-full border border-gray-100 hover:shadow-lg transition-all duration-300 hover:border-gray-200">
                 <CardContent className="p-4 sm:p-5 text-center space-y-3">
                   <div className={`w-12 h-12 rounded-xl ${badge.bgColor} flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300`}><Icon className={`h-6 w-6 ${badge.iconColor}`} /></div>
@@ -352,7 +397,7 @@ function TrustSafetySection() {
                   <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{t(badge.descAr, badge.descEn)}</p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ); })}
         </div>
       </div>
@@ -373,25 +418,23 @@ function WhyChooseUsSection() {
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.4 }} className="text-center mb-8">
+        <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-400">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{t('لماذا نبض؟', 'Why Nabd?')}</h2>
           <p className="text-sm text-gray-500 max-w-md mx-auto">{t('نقدم لك تجربة تسوق فريدة تجمع بين السهولة والأمان والتنوع', 'We offer a unique shopping experience combining ease, safety, and variety')}</p>
-        </motion.div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           {features.map((feature, index) => { const Icon = feature.icon; return (
-            <motion.div key={index} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              transition={{ delay: index * 0.15, duration: 0.5 }} whileHover={{ y: -6, transition: { duration: 0.2 } }}>
+            <div key={index} className="hover:-translate-y-1.5 transition-transform duration-200">
               <Card className="h-full border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden group">
                 <CardContent className="p-6 sm:p-8 text-center space-y-4">
-                  <motion.div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mx-auto shadow-lg`}
-                    whileHover={{ scale: 1.1, rotate: 5 }} transition={{ type: 'spring', stiffness: 300 }}>
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
                     <Icon className="h-8 w-8 text-white" />
-                  </motion.div>
+                  </div>
                   <h3 className="text-base sm:text-lg font-bold text-gray-900">{t(feature.titleAr, feature.titleEn)}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{t(feature.descAr, feature.descEn)}</p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ); })}
         </div>
       </div>
@@ -428,10 +471,10 @@ function TestimonialsCarousel() {
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }} transition={{ duration: 0.4 }} className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-5 animate-in fade-in slide-in-from-bottom-4 duration-400">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-sm"><Quote className="h-5 w-5 text-white" /></div>
           <div><h2 className="text-lg sm:text-xl font-bold text-gray-900">{t('ماذا يقول عملاؤنا', 'What Our Customers Say')}</h2><p className="text-xs text-gray-400">{t('آراء حقيقية من مستخدمين حقيقيين', 'Real reviews from real users')}</p></div>
-        </motion.div>
+        </div>
         <div className="relative">
           <Card className="border border-gray-100 shadow-sm overflow-hidden">
             <CardContent className="p-6 sm:p-8 lg:p-10 min-h-[220px] flex flex-col items-center text-center">
@@ -941,12 +984,12 @@ export function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* 🏆 Stats, Trending, Premium, Trust, Why, Testimonials           */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <StatsBar />
-      <TrendingListingsSection />
-      <PremiumBanner />
-      <TrustSafetySection />
-      <WhyChooseUsSection />
-      <TestimonialsCarousel />
+      <LazySection fallbackHeight="300px"><StatsBar /></LazySection>
+      <LazySection fallbackHeight="300px"><TrendingListingsSection /></LazySection>
+      <LazySection fallbackHeight="250px"><PremiumBanner /></LazySection>
+      <LazySection fallbackHeight="250px"><TrustSafetySection /></LazySection>
+      <LazySection fallbackHeight="300px"><WhyChooseUsSection /></LazySection>
+      <LazySection fallbackHeight="300px"><TestimonialsCarousel /></LazySection>
     </>
   );
 

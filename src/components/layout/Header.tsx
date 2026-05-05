@@ -247,16 +247,17 @@ export function Header() {
       try {
         const res = await fetch('/api/auth/health', {
           method: 'GET',
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(5000),
         })
         setBackendOnline(res.ok)
       } catch {
         setBackendOnline(false)
       }
     }
-    checkBackend()
-    const interval = setInterval(checkBackend, 60000)
-    return () => clearInterval(interval)
+    // Delay first health check to not block initial render
+    const timer = setTimeout(checkBackend, 3000)
+    const interval = setInterval(checkBackend, 120000)
+    return () => { clearTimeout(timer); clearInterval(interval); }
   }, [])
 
   // ── Click outside to close dropdowns ─────────────────────────────

@@ -521,3 +521,47 @@ Stage Summary:
 - Mobile bottom action bar with spring animation
 - All existing store integrations preserved (useLanguage, useAuth, useNavigationStore, useFavorites, useRecentlyViewed)
 - Related listings use the shared ListingCard component
+
+---
+Task ID: performance-optimization
+Agent: Main
+Task: Fix severe frontend loading slowness - comprehensive performance optimization
+
+Work Log:
+- Diagnosed root cause: 15 system views (ListingDetail, SearchView, BookingFlow, etc.) imported statically, bloating initial JS bundle
+- Diagnosed: Hero images using CSS background-image instead of Next.js Image (no lazy loading, no optimization)
+- Diagnosed: Category images using large PNGs (84-196KB each, total 1.4MB for 9 files)
+- Diagnosed: Below-fold sections rendering immediately instead of lazy loading
+- Diagnosed: Excessive Framer Motion animations on every element causing layout thrashing
+- Diagnosed: Backend health check in Header running immediately on mount with 10s timeout
+- Converted all 15 system views from static imports to dynamic imports with loading skeletons (ssr: false)
+- Converted QuickServices, DailyInfoBar, FeaturedOffers from static to dynamic imports
+- Converted FloatingActionButton and LoginDialog to dynamic imports
+- Added ViewSkeleton component for lazy-loaded views
+- Added LazySection component using IntersectionObserver (200px rootMargin) for below-fold sections
+- Wrapped StatsBar, TrendingListingsSection, PremiumBanner, TrustSafetySection, WhyChooseUsSection, TestimonialsCarousel in LazySection
+- Rewrote Hero.tsx to use Next.js Image component with fill, sizes, quality=75, priority for first slide
+- Added prefetch link for next slide image in Hero
+- Replaced 6 Framer Motion animations with CSS animations (animate-in, fade-in, slide-in-from-bottom)
+- StatsBar, PremiumBanner, TrustSafetySection, WhyChooseUsSection, TestimonialsCarousel, TrendingListingsSection all use CSS transitions now
+- Converted 9 category PNGs to WebP (96-98% size reduction: 1.4MB → 36KB)
+- Compressed hero JPEGs (quality 70, mozjpeg): e.g. restaurants.jpg 80KB→49KB
+- Resized and compressed 16 listing images (600x400, quality 70): e.g. villa2.jpg 244KB→50KB
+- Resized and compressed 5 real-estate images: e.g. land.jpg 244KB→57KB
+- Updated all category image references from .png to .webp in 3 files
+- Deleted original PNG category files
+- Total images: 5.3MB → 1.2MB (77% reduction)
+- Delayed Header backend health check by 3 seconds, reduced timeout from 10s to 5s, reduced interval from 60s to 120s
+- Added AVIF/WebP format preference in next.config.ts
+- Lint: 0 errors
+- Dev server: HTTP 200, all pages load correctly
+
+Stage Summary:
+- Initial JS bundle dramatically reduced (15 system views now lazy-loaded)
+- Total image payload: 5.3MB → 1.2MB (77% reduction)
+- Category images: 1.4MB → 36KB (97% reduction via WebP)
+- Hero images now use Next.js Image with automatic optimization
+- Below-fold sections lazy-loaded via IntersectionObserver
+- 6 sections converted from Framer Motion to CSS animations (smaller bundle, less layout thrashing)
+- Backend health check no longer blocks initial render
+- All pages render correctly with loading skeletons for lazy-loaded views

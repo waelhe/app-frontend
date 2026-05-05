@@ -95,7 +95,7 @@ const categoriesWithImages = new Set([
 
 function getCategoryImagePath(category: string): string | null {
   if (categoriesWithImages.has(category)) {
-    return `/images/categories/${category}.png`;
+    return `/images/categories/${category}.webp`;
   }
   return null;
 }
