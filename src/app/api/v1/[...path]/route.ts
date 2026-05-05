@@ -112,6 +112,14 @@ async function proxyRequest(
     // Add a custom header so the frontend knows the backend responded
     responseHeaders.set('X-Backend-Status', 'reachable');
 
+    // Add Cache-Control for GET responses to enable CDN/browser caching
+    if (request.method === 'GET' && backendResponse.ok) {
+      const existingCacheControl = responseHeaders.get('cache-control');
+      if (!existingCacheControl || existingCacheControl === 'no-cache' || existingCacheControl === 'no-store') {
+        responseHeaders.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+      }
+    }
+
     return new NextResponse(responseBody, {
       status: backendResponse.status,
       statusText: backendResponse.statusText,

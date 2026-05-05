@@ -245,17 +245,22 @@ export function Header() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const res = await fetch('/api/auth/health', {
+        const res = await fetch('/api/actuator/health/readiness?XTransformPort=3000', {
           method: 'GET',
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(8000),
         })
-        setBackendOnline(res.ok)
+        if (res.ok) {
+          const data = await res.json()
+          setBackendOnline(data.status === 'UP')
+        } else {
+          setBackendOnline(false)
+        }
       } catch {
         setBackendOnline(false)
       }
     }
     // Delay first health check to not block initial render
-    const timer = setTimeout(checkBackend, 3000)
+    const timer = setTimeout(checkBackend, 5000)
     const interval = setInterval(checkBackend, 120000)
     return () => { clearTimeout(timer); clearInterval(interval); }
   }, [])

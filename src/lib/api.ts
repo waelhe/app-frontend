@@ -55,13 +55,13 @@ const USE_XTRANSFORM = process.env.NEXT_PUBLIC_USE_XTRANSFORM !== 'false';
 const PROXY_PORT_PARAM = USE_XTRANSFORM ? 'XTransformPort=3000' : '';
 
 /** Maximum number of retry attempts for transient errors */
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 1;
 
 /** Base delay between retries (ms), doubled each attempt */
-const RETRY_BASE_DELAY = 1000;
+const RETRY_BASE_DELAY = 500;
 
 /** Default request timeout (ms) */
-const REQUEST_TIMEOUT = 15_000;
+const REQUEST_TIMEOUT = 8_000;
 
 /** Cache TTL in milliseconds (5 minutes) */
 const CACHE_TTL = 5 * 60 * 1000;
@@ -135,30 +135,10 @@ function getCacheKey(path: string): string {
 }
 
 function getCachedData<T>(path: string): T | null {
-  // Check memory cache first
+  // Check memory cache only (TanStack Query handles its own caching)
   const memEntry = memoryCache.get(path) as CacheEntry<T> | undefined;
   if (memEntry && Date.now() - memEntry.timestamp < CACHE_TTL) {
     return memEntry.data;
-  }
-
-  // Check localStorage cache
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem(getCacheKey(path));
-      if (stored) {
-        const entry = JSON.parse(stored) as CacheEntry<T>;
-        if (Date.now() - entry.timestamp < CACHE_TTL) {
-          // Restore to memory cache
-          memoryCache.set(path, entry);
-          return entry.data;
-        }
-        // Expired — clean up
-        localStorage.removeItem(getCacheKey(path));
-      }
-    } catch {
-      // Corrupted cache entry
-      try { localStorage.removeItem(getCacheKey(path)); } catch {}
-    }
   }
 
   return null;
@@ -167,23 +147,8 @@ function getCachedData<T>(path: string): T | null {
 function setCachedData<T>(path: string, data: T): void {
   const entry: CacheEntry<T> = { data, timestamp: Date.now() };
 
-  // Store in memory cache
+  // Store in memory cache only (TanStack Query handles its own caching)
   memoryCache.set(path, entry);
-
-  // Store in localStorage for persistence across page loads
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(getCacheKey(path), JSON.stringify(entry));
-    } catch {
-      // localStorage might be full — clear old cache entries
-      clearExpiredCache();
-      try {
-        localStorage.setItem(getCacheKey(path), JSON.stringify(entry));
-      } catch {
-        // Still can't store — memory cache only
-      }
-    }
-  }
 }
 
 function clearExpiredCache(): void {

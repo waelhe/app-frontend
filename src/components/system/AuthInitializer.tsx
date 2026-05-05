@@ -14,10 +14,11 @@ export function AuthInitializer({ children }: { children: React.ReactNode }) {
     const store = useAuthStore.getState();
     store.initializeFromToken();
 
-    // If we have a token, fetch fresh profile
+    // If we have a token, fetch fresh profile in the background
+    // Don't block the UI while fetching — the token decode already gives us basic info
     const token = getToken();
     if (token) {
-      store.setLoading(true);
+      // Don't set loading=true to avoid blocking the UI
       fetch('/api/v1/users/me', {
         headers: {
           Authorization: `Bearer ${token}`,
