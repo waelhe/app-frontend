@@ -34,7 +34,7 @@ import type { ListingSummary } from '@/lib/types';
 import { Hero } from '@/components/ui';
 import CategoryCTACards from '@/components/sections/CategoryCTACards';
 import TrendingCarousel from '@/components/sections/TrendingCarousel';
-import SmartSearchBar from '@/components/sections/SmartSearchBar';
+
 import MapListSplitView from '@/components/sections/MapListSplitView';
 import ListingDetailSheet from '@/components/sections/ListingDetailSheet';
 
@@ -1097,30 +1097,6 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ── Smart Search Bar + Action Buttons ── */}
-      <div
-        className="sticky z-30 bg-white"
-        style={{ top: 'var(--header-height, 130px)' }}
-      >
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Smart Search Bar — Villow Pattern 2 */}
-          <div className="pt-1 pb-0.5">
-            <SmartSearchBar />
-          </div>
-          {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2 pb-1">
-            <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200" onClick={() => { if (!isOverlayView) navigate('search'); }}><Search className="w-4 h-4" /><span className="hidden sm:inline">{t('بحث', 'Search')}</span></Button>
-            {isAuthenticated && <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200" onClick={() => { if (!isOverlayView) navigate('inbox'); }}><MessageSquare className="w-4 h-4" /><span className="hidden sm:inline">{t('الرسائل', 'Messages')}</span></Button>}
-            {isAuthenticated && <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200 relative" onClick={() => { if (!isOverlayView) navigate('notifications'); }}><Bell className="w-4 h-4" /><span className="hidden sm:inline">{t('الإشعارات', 'Notifications')}</span></Button>}
-            {isAuthenticated && user && (user.role === 'PROVIDER' || user.role === 'ADMIN') && <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200" onClick={() => { if (!isOverlayView) navigate('dashboard'); }}><LayoutDashboard className="w-4 h-4" /><span className="hidden sm:inline">{t('لوحة التحكم', 'Dashboard')}</span></Button>}
-            <div className="flex-1" />
-            {isAuthenticated && <Button variant="ghost" size="sm" className="gap-1.5 text-gray-600 hover:text-red-500" onClick={() => navigate('favorites')}><Heart className="w-4 h-4" />{favoritesCount > 0 && <Badge className="bg-red-500 text-white text-[9px] px-1 min-w-[18px] h-[18px]">{favoritesCount}</Badge>}</Button>}
-            {isAuthenticated && <Button variant="ghost" size="sm" className="gap-1.5 text-gray-600 hover:text-red-500" onClick={() => navigate('profile')}><Users className="w-4 h-4" /></Button>}
-          </div>
-        </div>
-        <div className="h-px bg-gray-100" />
-      </div>
-
       {/* ── Main Content ───────────────────── */}
       {isOverlayView ? renderOverlayView() : renderTabContent()}
 

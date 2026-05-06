@@ -893,3 +893,29 @@ Stage Summary:
 - Visual gap removed - search bar is now flush against header with no separation
 - BackendStatusBanner also updated to use dynamic header height
 - Nested main tags fixed
+
+---
+Task ID: header-rebuild
+Agent: Main
+Task: Rebuild Header from scratch to eliminate white space below icon bar and search bar
+
+Work Log:
+- Read complete Header.tsx (981 lines), SmartSearchBar.tsx (603 lines), HomePage.tsx, layout.tsx, globals.css, BackendStatusBanner.tsx
+- Identified root cause of white space: SmartSearchBar was a separate sticky element in HomePage.tsx positioned with `top: var(--header-height, 130px)`, creating a gap when header height changed during scroll (category row collapse)
+- The `--header-height` CSS variable had stale value (130px default in globals.css) and ResizeObserver only re-triggered on `[isScrollingDown]` changes, not on mobile search open/close
+- Completely rebuilt Header.tsx from scratch with SmartSearchBar integrated directly inside the header element
+- This eliminates the separate sticky container and `--header-height` dependency for SmartSearchBar positioning
+- Updated globals.css `--header-height` from 130px to 160px (header is now taller with built-in search bar)
+- Removed SmartSearchBar sticky container from HomePage.tsx (the entire `<div className="sticky z-30 bg-white" style={{ top: 'var(--header-height, 130px)' }}>` block)
+- Removed SmartSearchBar import from HomePage.tsx
+- Added `isMobileSearchOpen` to ResizeObserver dependency array so header height updates correctly
+- All SmartSearchBar logic (classification, suggestions, recent searches, API search) now lives in Header.tsx
+- Lint: 0 errors, dev server: HTTP 200
+
+Stage Summary:
+- Header.tsx completely rebuilt from scratch (~700 lines, cleaner than the previous 981)
+- SmartSearchBar is now part of the header (Row 3), eliminating all gaps
+- No separate sticky container needed — search bar is always flush against category bar
+- Removed SmartSearchBar dependency from HomePage.tsx
+- Fixed `--header-height` CSS variable timing issues
+- BackendStatusBanner still uses `--header-height` correctly (updated by ResizeObserver)
