@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
@@ -20,6 +20,8 @@ import {
   Maximize,
   RefreshCw,
   AlertCircle,
+  MapPin,
+  X,
 } from 'lucide-react';
 import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
@@ -53,6 +55,44 @@ interface PropertyType {
   image: string;
   color: string;
   keywords: string[];
+}
+
+// ════════════════════════════════════════════════════════════════════
+// City Definitions
+// ════════════════════════════════════════════════════════════════════
+
+interface SyrianCity {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  keywords: string[];
+}
+
+const SYRIAN_CITIES: SyrianCity[] = [
+  { id: 'all', nameAr: 'كل المدن', nameEn: 'All Cities', keywords: [] },
+  { id: 'damascus', nameAr: 'دمشق', nameEn: 'Damascus', keywords: ['دمشق', 'damascus', 'دمشقي', 'شام', 'الشام'] },
+  { id: 'aleppo', nameAr: 'حلب', nameEn: 'Aleppo', keywords: ['حلب', 'aleppo', 'حلبي'] },
+  { id: 'homs', nameAr: 'حمص', nameEn: 'Homs', keywords: ['حمص', 'homs', 'حمصي'] },
+  { id: 'hama', nameAr: 'حماة', nameEn: 'Hama', keywords: ['حماة', 'hama', 'حموي'] },
+  { id: 'latakia', nameAr: 'اللاذقية', nameEn: 'Latakia', keywords: ['اللاذقية', 'latakia', 'لاذقية', 'لاذقي'] },
+  { id: 'tartus', nameAr: 'طرطوس', nameEn: 'Tartus', keywords: ['طرطوس', 'tartus', 'طرطوسي'] },
+  { id: 'idlib', nameAr: 'إدلب', nameEn: 'Idlib', keywords: ['إدلب', 'idlib', 'ادلب'] },
+  { id: 'deir-ez-zor', nameAr: 'دير الزور', nameEn: 'Deir ez-Zor', keywords: ['دير الزور', 'deir ez-zor', 'ديرالزور', 'دير'] },
+  { id: 'raqqa', nameAr: 'الرقة', nameEn: 'Raqqa', keywords: ['الرقة', 'raqqa', 'رقة'] },
+  { id: 'daraa', nameAr: 'درعا', nameEn: 'Daraa', keywords: ['درعا', 'daraa'] },
+  { id: 'hasakah', nameAr: 'الحسكة', nameEn: 'Hasakah', keywords: ['الحسكة', 'hasakah', 'حسكة'] },
+  { id: 'qamishli', nameAr: 'القامشلي', nameEn: 'Qamishli', keywords: ['القامشلي', 'qamishli', 'قامشلي'] },
+  { id: 'sweida', nameAr: 'السويداء', nameEn: 'Sweida', keywords: ['السويداء', 'sweida', 'سويداء'] },
+];
+
+function filterByCity(listings: ListingSummary[], cityId: string): ListingSummary[] {
+  if (cityId === 'all') return listings;
+  const city = SYRIAN_CITIES.find((c) => c.id === cityId);
+  if (!city) return listings;
+  return listings.filter((listing) => {
+    const text = `${listing.title} ${listing.providerName ?? ''}`.toLowerCase();
+    return city.keywords.some((kw) => text.includes(kw.toLowerCase()));
+  });
 }
 
 const PROPERTY_TYPES: PropertyType[] = [
@@ -381,6 +421,7 @@ export default function RealEstate() {
   const isArabic = language === 'ar';
   const navigate = useNavigationStore((s) => s.navigate);
   const [selectedType, setSelectedType] = useState('all');
+  const [selectedCity, setSelectedCity] = useState('all');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -395,7 +436,32 @@ export default function RealEstate() {
 
   const allListings = data?.content ?? [];
   const totalElements = data?.totalElements ?? 0;
-  const filteredListings = filterByPropertyType(allListings, selectedType);
+  const filteredByType = filterByPropertyType(allListings, selectedType);
+  const filteredListings = filterByCity(filteredByType, selectedCity);
+
+  // ── Group listings by city for display ──
+  const listingsByCity = useMemo(() => {
+    if (selectedCity !== 'all') return { [selectedCity]: filteredListings };
+    const groups: Record<string, { city: SyrianCity; listings: ListingSummary[] }> = {};
+    for (const listing of filteredByType) {
+      const text = `${listing.title} ${listing.providerName ?? ''}`.toLowerCase();
+      let matched = false;
+      for (const city of SYRIAN_CITIES) {
+        if (city.id === 'all') continue;
+        if (city.keywords.some((kw) => text.includes(kw.toLowerCase()))) {
+          if (!groups[city.id]) groups[city.id] = { city, listings: [] };
+          groups[city.id].listings.push(listing);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        if (!groups['other']) groups['other'] = { city: { id: 'other', nameAr: 'أخرى', nameEn: 'Other', keywords: [] }, listings: [] };
+        groups['other'].listings.push(listing);
+      }
+    }
+    return groups;
+  }, [filteredByType, selectedCity]);
 
   const sectionTitle = isArabic ? 'العقارات' : 'Real Estate';
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
@@ -472,24 +538,58 @@ export default function RealEstate() {
           <RealEstateCategoryBar selectedType={selectedType} onSelect={setSelectedType} />
         </div>
 
-        {/* ── Filter Label ── */}
-        {selectedType !== 'all' && (
+        {/* ── City Filter Bar ── */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+            {SYRIAN_CITIES.map((city) => {
+              const isSelected = selectedCity === city.id;
+              return (
+                <button
+                  key={city.id}
+                  onClick={() => setSelectedCity(city.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${
+                    isSelected
+                      ? 'bg-gray-900 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                  }`}
+                >
+                  <span>{isArabic ? city.nameAr : city.nameEn}</span>
+                  {isSelected && city.id !== 'all' && (
+                    <X className="w-3 h-3 hover:scale-110" onClick={(e) => { e.stopPropagation(); setSelectedCity('all'); }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Filter Labels ── */}
+        {(selectedType !== 'all' || selectedCity !== 'all') && (
           <motion.div
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 mb-3"
+            className="flex items-center gap-2 mb-3 flex-wrap"
           >
-            <Badge variant="outline" className="text-xs px-2.5 py-1 border-emerald-200 text-emerald-700 bg-emerald-50">
-              {selectedTypeLabel}
-            </Badge>
+            {selectedType !== 'all' && (
+              <Badge variant="outline" className="text-xs px-2.5 py-1 border-emerald-200 text-emerald-700 bg-emerald-50">
+                {selectedTypeLabel}
+              </Badge>
+            )}
+            {selectedCity !== 'all' && (
+              <Badge variant="outline" className="text-xs px-2.5 py-1 border-amber-200 text-amber-700 bg-amber-50">
+                <MapPin className="w-3 h-3 me-1" />
+                {isArabic ? SYRIAN_CITIES.find((c) => c.id === selectedCity)?.nameAr : SYRIAN_CITIES.find((c) => c.id === selectedCity)?.nameEn}
+              </Badge>
+            )}
             <span className="text-xs text-gray-400">
               {isArabic ? `${filteredListings.length} نتيجة` : `${filteredListings.length} results`}
             </span>
             <button
-              onClick={() => setSelectedType('all')}
+              onClick={() => { setSelectedType('all'); setSelectedCity('all'); }}
               className="text-xs text-red-500 hover:text-red-600 font-medium ms-1"
             >
-              {isArabic ? 'إلغاء الفلتر' : 'Clear filter'}
+              {isArabic ? 'إلغاء الكل' : 'Clear all'}
             </button>
           </motion.div>
         )}
@@ -511,86 +611,86 @@ export default function RealEstate() {
           </div>
         )}
 
-        {/* ── Horizontal Scrolling Cards (Airbnb Style) ── */}
+        {/* ── Listings Grouped by City ── */}
         {!isLoading && !isError && filteredListings.length > 0 && (
-          <div className="relative">
-            {/* Left Nav Button */}
-            {canScrollLeft && (
-              <button
-                onClick={() => scrollCards(isRTL ? 'right' : 'left')}
-                className="absolute start-0 top-[120px] -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200 hover:scale-105 transition-transform"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-700" />
-              </button>
-            )}
+          <div className="space-y-6">
+            {Object.entries(listingsByCity).map(([cityId, group]) => {
+              if (group.listings.length === 0) return null;
+              const cityName = isArabic ? group.city.nameAr : group.city.nameEn;
 
-            {/* Right Nav Button */}
-            {canScrollRight && (
-              <button
-                onClick={() => scrollCards(isRTL ? 'left' : 'right')}
-                className="absolute end-0 top-[120px] -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center border border-gray-200 hover:scale-105 transition-transform"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-700" />
-              </button>
-            )}
+              return (
+                <div key={cityId}>
+                  {/* City Section Header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="w-4 h-4 text-teal-500" />
+                    <h3 className="text-sm font-bold text-gray-800">{cityName}</h3>
+                    <span className="text-xs text-gray-400">
+                      {isArabic ? `${group.listings.length} عقار` : `${group.listings.length} properties`}
+                    </span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
 
-            {/* Scrollable Cards Container */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={selectedType}
-                ref={scrollRef}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {filteredListings.map((listing, idx) => {
-                  const badge = getListingBadge(listing.title, isArabic);
-                  const features = getPropertyFeatures(listing.title, isArabic);
-                  const listingImages = getListingImages('real-estate', idx);
+                  {/* Horizontal Scrolling Cards for this city */}
+                  <div className="relative">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={`${selectedType}-${cityId}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      >
+                        {group.listings.map((listing, idx) => {
+                          const badge = getListingBadge(listing.title, isArabic);
+                          const features = getPropertyFeatures(listing.title, isArabic);
+                          const listingImages = getListingImages('real-estate', idx);
 
-                  return (
-                    <ListingCard
-                      key={listing.id}
-                      id={listing.id}
-                      title={listing.title}
-                      category="real-estate"
-                      price={listing.price}
-                      providerName={listing.providerName}
-                      subtitle={listing.providerName}
-                      rating={4.5 + Math.random() * 0.5}
-                      reviewCount={Math.floor(Math.random() * 50) + 5}
-                      isFavorite={favorites.includes(listing.id)}
-                      onToggleFavorite={toggleFavorite}
-                      badgeText={badge?.text}
-                      badgeColor={badge?.color}
-                      secondaryBadge={idx < 3 ? (isArabic ? '⭐ مميز' : '⭐ Featured') : undefined}
-                      features={features}
-                      images={listingImages}
-                      imageIndex={idx}
-                      isScrollCard={true}
-                    />
-                  );
-                })}
+                          return (
+                            <ListingCard
+                              key={listing.id}
+                              id={listing.id}
+                              title={listing.title}
+                              category="real-estate"
+                              price={listing.price}
+                              providerName={listing.providerName}
+                              subtitle={listing.providerName}
+                              rating={4.5 + Math.random() * 0.5}
+                              reviewCount={Math.floor(Math.random() * 50) + 5}
+                              isFavorite={favorites.includes(listing.id)}
+                              onToggleFavorite={toggleFavorite}
+                              badgeText={badge?.text}
+                              badgeColor={badge?.color}
+                              secondaryBadge={idx < 2 ? (isArabic ? '⭐ مميز' : '⭐ Featured') : undefined}
+                              features={features}
+                              images={listingImages}
+                              imageIndex={idx}
+                              isScrollCard={true}
+                            />
+                          );
+                        })}
 
-                {/* View All Card (2×2 Photo Grid) */}
-                {filteredListings.length > 4 && (
-                  <ViewAllCard
-                    count={filteredListings.length}
-                    labelAr="عرض الكل"
-                    labelEn="Show all"
-                    images={getListingImages('real-estate', 0).concat(
-                      getListingImages('real-estate', 1),
-                      getListingImages('real-estate', 2),
-                      getListingImages('real-estate', 3)
-                    )}
-                    onClick={() => setShowAll(true)}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
+                        {/* View All Card */}
+                        {group.listings.length > 4 && (
+                          <ViewAllCard
+                            count={group.listings.length}
+                            labelAr="عرض الكل"
+                            labelEn="Show all"
+                            images={getListingImages('real-estate', 0).concat(
+                              getListingImages('real-estate', 1),
+                              getListingImages('real-estate', 2),
+                              getListingImages('real-estate', 3)
+                            )}
+                            onClick={() => setShowAll(true)}
+                          />
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
