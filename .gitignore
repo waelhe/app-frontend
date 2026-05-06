@@ -52,3 +52,17 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Android build
+android/app/build/
+android/build/
+android/.gradle/
+android/app/capacitor.build.gradle
+
+# Downloaded APK
+download/*.apk
+
+# Next export
+out/
+
+# JDK
+jdk/
