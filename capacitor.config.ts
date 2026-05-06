@@ -5,17 +5,18 @@ const config: CapacitorConfig = {
   appName: 'نبض',
   webDir: 'out',
   server: {
-    // For live reload during development - change to your Next.js dev server
-    // url: 'http://192.168.1.100:3000',
+    // Load from live Railway deployment - this ensures all SSR/API features work
+    url: 'https://app-frontend-production-aa3f.up.railway.app',
     androidScheme: 'https',
     cleartext: true,
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 3000,
       launchAutoHide: true,
       backgroundColor: '#ffffff',
-      showSpinner: false,
+      showSpinner: true,
+      spinnerColor: '#D32F2F',
       androidScaleType: 'CENTER_CROP',
       splashFullScreen: true,
       splashImmersive: true,
