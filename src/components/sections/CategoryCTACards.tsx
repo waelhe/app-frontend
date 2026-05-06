@@ -90,8 +90,11 @@ export default function CategoryCTACards() {
           </p>
         </div>
 
-        {/* Cards Grid — Zillow/Villow Style */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-5">
+        {/* Cards — Horizontal scroll on mobile, grid on desktop */}
+        <div
+          className="flex gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 xl:grid-cols-5 lg:overflow-x-visible lg:pb-0 md:gap-4"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {CTA_CARDS.map((card, index) => {
             const Icon = card.icon;
             return (
@@ -103,11 +106,11 @@ export default function CategoryCTACards() {
                 whileHover={{ y: -6, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(card.navigateTo)}
-                className="group cursor-pointer"
+                className="group cursor-pointer shrink-0 w-[160px] sm:w-[180px] lg:w-auto"
               >
-                <div className="relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300">
+                <div className="relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 h-full">
                   {/* Image */}
-                  <div className="relative h-36 sm:h-44 md:h-56 overflow-hidden">
+                  <div className="relative h-32 sm:h-40 md:h-48 lg:h-56 overflow-hidden">
                     <Image
                       src={card.image}
                       alt={t(card.titleAr, card.titleEn)}
@@ -118,8 +121,8 @@ export default function CategoryCTACards() {
                     <div className={`absolute inset-0 bg-gradient-to-t ${card.gradient} opacity-60 group-hover:opacity-70 transition-opacity duration-300`} />
 
                     {/* Icon */}
-                    <div className="absolute top-3 start-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-white" />
+                    <div className="absolute top-3 start-3 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                   </div>
 
