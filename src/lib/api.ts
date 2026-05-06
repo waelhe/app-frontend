@@ -40,18 +40,21 @@ import type {
   SearchParams,
 } from '@/lib/types';
 
+import { isMobileApp, getMobileBackendUrl } from './mobile-detect';
+
 // ── Configuration ─────────────────────────────────────────────────
 
-/** Relative path — requests are proxied through Next.js API routes.
+/** Dynamic backend URL: empty for web (proxied through Next.js),
+ *  full URL for mobile (direct calls to backend from Capacitor shell).
  *
- *  On Z.ai Sandbox: XTransformPort=3000 ensures Caddy routes to Next.js
- *  instead of proxying directly to the Railway backend (which fails via CDN).
+ *  On Web (Z.ai Sandbox): XTransformPort=3000 ensures Caddy routes to Next.js.
+ *  On Web (Railway): Not needed — Next.js IS the server.
+ *  On Mobile (Capacitor): Uses full backend URL directly, no proxy needed.
  *
- *  On Railway: Not needed — Next.js IS the server, no Caddy in between.
  *  Controlled by NEXT_PUBLIC_USE_XTRANSFORM env var (default: true for sandbox).
  */
-const BACKEND_URL = '';
-const USE_XTRANSFORM = process.env.NEXT_PUBLIC_USE_XTRANSFORM !== 'false';
+const BACKEND_URL = typeof window !== 'undefined' && isMobileApp() ? getMobileBackendUrl() : '';
+const USE_XTRANSFORM = typeof window !== 'undefined' && !isMobileApp() && process.env.NEXT_PUBLIC_USE_XTRANSFORM !== 'false';
 const PROXY_PORT_PARAM = USE_XTRANSFORM ? 'XTransformPort=3000' : '';
 
 /** Maximum number of retry attempts for transient errors */

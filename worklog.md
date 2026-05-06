@@ -919,3 +919,90 @@ Stage Summary:
 - Removed SmartSearchBar dependency from HomePage.tsx
 - Fixed `--header-height` CSS variable timing issues
 - BackendStatusBanner still uses `--header-height` correctly (updated by ResizeObserver)
+
+---
+Task ID: 3
+Agent: capacitor-config-agent
+Task: Create Capacitor configuration files for converting نبض web app to mobile app
+
+Work Log:
+- Read worklog.md and package.json to understand project context and existing Capacitor dependencies
+- Created capacitor.config.ts with appId 'com.nabd.app', appName 'نبض', webDir 'out', and plugin configs (SplashScreen, StatusBar, LocalNotifications, Camera, Keyboard, App) plus Android-specific settings
+- Created scripts/mobile-build.sh: build script that temporarily modifies next.config.ts for static export (output:'export', images.unoptimized:true), runs next build, creates capacitor.js detection file in out/, runs cap copy android, and restores original config via trap EXIT
+- Created scripts/mobile-dev.sh: development script that detects local IP, starts Next.js dev server in background, and opens Android with live reload via cap run android --livereload
+- Created src/lib/mobile-detect.ts: utility with isMobileApp(), getPlatform(), isPluginAvailable(), getMobileBackendUrl() functions, including global Window.Capacitor and Window.IS_MOBILE_APP type declarations
+- Created src/lib/capacitor-plugins.ts: wrapper module for 11 Capacitor plugins (Haptics, Camera, Geolocation, Share, Network, App, StatusBar, SplashScreen, Preferences, Keyboard, LocalNotifications) with dynamic imports and web fallbacks for each
+- Created src/hooks/useMobileApp.ts: React hook that provides isMobile, platform, isOnline, networkType state plus hapticFeedback() and hapticNotification() callbacks; uses lazy state initializer (getInitialState) to avoid lint error with setState in effect body
+- Updated package.json: added 8 mobile-related scripts (mobile:init, mobile:add:android, mobile:build, mobile:dev, mobile:open:android, mobile:sync, mobile:run:android, mobile:copy)
+- Fixed lint error in useMobileApp.ts: moved isMobileApp()/getPlatform() calls from effect body to useState initializer function to avoid "set-state-in-effect" rule violation
+- Lint: 0 errors
+
+Stage Summary:
+- 6 new files created: capacitor.config.ts, scripts/mobile-build.sh, scripts/mobile-dev.sh, src/lib/mobile-detect.ts, src/lib/capacitor-plugins.ts, src/hooks/useMobileApp.ts
+- 1 file updated: package.json (8 mobile scripts added)
+- Full Capacitor mobile app configuration ready for Android build
+- Plugin wrappers provide graceful web fallbacks (localStorage for Preferences, navigator.share for Share, navigator.onLine for Network)
+- Build script handles safe next.config.ts backup/restore via trap EXIT
+
+---
+Task ID: 8
+Agent: icon-generation-agent
+Task: Generate app icon for نبض (Nabd) marketplace app
+
+Work Log:
+- Read worklog.md to understand project context (Arabic marketplace app, coral-red #D32F2F primary color, PWA manifest already exists)
+- Generated 1024x1024 source icon using z-ai image CLI with prompt: stylized pulse/heartbeat wave in white on solid coral-red background, flat design, modern, professional, suitable for mobile app stores
+- First attempt with Arabic letter text in prompt triggered content filter; redesigned prompt to use visual description (pulse wave + calligraphic curve) without text
+- Created /public/icons/ directory and saved icon-1024x1024.png (39KB)
+- Used sharp to resize source icon to all required sizes:
+  - icon-512x512.png (109KB) — primary requested size
+  - icon-384x384.png (76KB)
+  - icon-192x192.png (33KB)
+  - icon-180x180.png (31KB) — Apple Touch Icon
+  - icon-152x152.png (24KB) — Apple Touch Icon
+  - icon-144x144.png (23KB)
+  - icon-128x128.png (16KB)
+  - icon-120x120.png (18KB) — Apple Touch Icon
+  - icon-96x96.png (13KB)
+  - icon-72x72.png (8KB)
+  - icon-32x32.png (2KB)
+  - icon-16x16.png (793B)
+- Created favicon.ico (3KB) with 32x32 and 16x16 PNG entries using manual ICO format
+- Updated layout.tsx metadata.icons: replaced external CDN URL (z-cdn.chatglm.cn) with local icon references:
+  - icon: favicon.ico + 16x16 + 32x32 PNG entries
+  - apple: 120x120 + 152x152 + 180x180 PNG entries
+- Manifest.json already referenced all icon paths correctly — no changes needed
+- Lint: 0 errors
+
+Stage Summary:
+- 14 icon files generated (1024x1024 source + 12 resized PNGs + 1 favicon.ico)
+- Icon design: stylized pulse/heartbeat wave in white on coral-red (#D32F2F) background, flat design, no text
+- All manifest.json icon references now served by local files instead of missing placeholders
+- layout.tsx updated with proper icon and apple-touch-icon metadata using local files
+- External CDN icon reference removed from metadata
+
+---
+Task ID: 4+5
+Agent: mobile-pwa-config-agent
+Task: Mobile API configuration and PWA manifest
+
+Work Log:
+- Read worklog.md, api.ts, layout.tsx, mobile-detect.ts, capacitor-plugins.ts to understand current project context
+- Modified src/lib/api.ts: made BACKEND_URL dynamic — uses getMobileBackendUrl() when running in Capacitor (full backend URL for direct calls), empty string for web (proxied through Next.js API routes)
+- Modified src/lib/api.ts: made USE_XTRANSFORM conditional — only applies XTransformPort=3000 when NOT in mobile app AND env var is not false
+- Added import of isMobileApp and getMobileBackendUrl from ./mobile-detect in api.ts
+- Created public/manifest.json: PWA manifest with Arabic name (نبض - Nabd | سوق الخدمات المحلية), RTL direction, portrait orientation, 8 icon sizes (72-512px), theme color #D32F2F, related Play Store app
+- Created public/sw.js: Service worker with network-first strategy, cache fallback for offline support, API calls bypass cache, cache versioning (nabd-v1) with automatic old cache cleanup
+- Created src/components/system/CapacitorInitializer.tsx: Client component that initializes Capacitor-specific features on mount — configures status bar (white background, light style for Android), keyboard (body resize mode, accessory bar for Android), hides splash screen after 1.5s delay
+- Updated src/app/layout.tsx: Added PWA meta tags (manifest link, theme-color, apple-mobile-web-app-capable, apple-mobile-web-app-status-bar-style, apple-mobile-web-app-title), added CapacitorInitializer inside body after QueryProvider, added service worker registration script
+- Updated src/components/system/index.ts: Added exports for CapacitorInitializer, AuthInitializer, BackendStatusBanner, NotificationCenter
+- Created public/icons/ directory (placeholder for future icon generation)
+- Lint: 0 errors
+
+Stage Summary:
+- API client now supports dual-mode: web (proxied via Next.js + XTransformPort) and mobile (direct backend URL)
+- PWA manifest enables "Add to Home Screen" with Arabic RTL configuration
+- Service worker provides offline-capable browsing with network-first strategy
+- CapacitorInitializer auto-configures native device features (status bar, keyboard, splash screen) on mount
+- All PWA meta tags properly configured for iOS and Android
+- Service worker auto-registers on page load
