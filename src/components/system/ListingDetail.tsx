@@ -200,12 +200,13 @@ const reportReasons = [
 // Category-specific expanded specs
 // ═══════════════════════════════════════════════════════════════════════
 
-function getCategorySpecs(category: string, listing: ListingResponse, isRTL: boolean) {
+function getCategorySpecs(category: string, listing: ListingResponse, isRTL: boolean, listingType: string = 'sale') {
   const specs: Array<{ label: string; value: string }> = [];
 
   switch (category) {
     case 'real-estate':
       specs.push(
+        { label: isRTL ? 'نوع العرض' : 'Listing Type', value: isRTL ? (listingType === 'rent' ? 'إيجار' : 'بيع') : (listingType === 'rent' ? 'Rent' : 'Sale') },
         { label: isRTL ? 'الغرف' : 'Rooms', value: isRTL ? '٣ غرف' : '3 Rooms' },
         { label: isRTL ? 'المساحة' : 'Area', value: '150 m²' },
         { label: isRTL ? 'الطابق' : 'Floor', value: isRTL ? 'الثالث' : '3rd' },
@@ -409,10 +410,10 @@ const simulatedReviews = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// Simulated host data
+// Simulated seller data
 // ═══════════════════════════════════════════════════════════════════════
 
-function getHostData(listingId: string, isRTL: boolean) {
+function getSellerData(listingId: string, isRTL: boolean) {
   const hash = listingId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const namesAr = ['أبو أحمد', 'أم يوسف', 'سعيد الحسن', 'فاطمة الزهراء', 'خالد العلي'];
   const namesEn = ['Abu Ahmad', 'Om Youssef', 'Saeed Al-Hassan', 'Fatima Al-Zahra', 'Khaled Al-Ali'];
@@ -425,8 +426,10 @@ function getHostData(listingId: string, isRTL: boolean) {
     responseTimeAr: 'خلال ساعة',
     responseTimeEn: 'Within an hour',
     memberSince: '2023',
-    isSuperhost: hash % 3 !== 0,
+    isVerifiedSeller: hash % 3 !== 0,
     listingCount: 2 + (hash % 6),
+    phone: '+963 9' + String(hash % 10) + String((hash * 3) % 10) + String((hash * 7) % 10) + ' ' + String((hash * 11) % 10) + String((hash * 13) % 10) + String((hash * 17) % 10) + String((hash * 19) % 10),
+    whatsapp: '+9639' + String(hash % 10) + String((hash * 3) % 10) + String((hash * 7) % 10) + String((hash * 11) % 10) + String((hash * 13) % 10) + String((hash * 17) % 10) + String((hash * 19) % 10),
   };
 }
 
@@ -672,10 +675,19 @@ export function ListingDetail() {
     return images;
   }, [listing, gradient]);
 
+  const isRealEstate = listing?.category === 'real-estate';
+
+  // Listing type: بيع/إيجار (deterministic based on listing ID)
+  const listingType = useMemo((): string => {
+    if (!isRealEstate) return 'sale';
+    const hash = (listingId ?? '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return hash % 3 === 0 ? 'rent' : 'sale'; // 2/3 sale, 1/3 rent
+  }, [listingId, isRealEstate]);
+
   const categorySpecs = useMemo(() => {
     if (!listing) return [];
-    return getCategorySpecs(listing.category, listing, isRTL);
-  }, [listing, isRTL]);
+    return getCategorySpecs(listing.category, listing, isRTL, listingType);
+  }, [listing, isRTL, listingType]);
 
   const categoryHighlights = useMemo(() => {
     if (!listing) return [];
@@ -687,9 +699,9 @@ export function ListingDetail() {
     return getCategoryAmenities(listing.category);
   }, [listing]);
 
-  const hostData = useMemo(() => {
-    if (!listingId) return getHostData('default', isRTL);
-    return getHostData(listingId, isRTL);
+  const sellerData = useMemo(() => {
+    if (!listingId) return getSellerData('default', isRTL);
+    return getSellerData(listingId, isRTL);
   }, [listingId, isRTL]);
 
   const filteredReviews = useMemo(() => {
@@ -697,17 +709,26 @@ export function ListingDetail() {
     return allReviews.filter((r: ReviewResponse) => Math.round(r.rating) === reviewFilter);
   }, [allReviews, reviewFilter]);
 
-  const isRealEstate = listing?.category === 'real-estate';
+  // ── Handlers ─────────────────────────────────────────────────────────────────
 
-  // ── Handlers ────────────────────────────────────────────────────────
-
-  const handleBook = useCallback(() => {
+  const handleContact = useCallback(() => {
     if (!isAuthenticated) {
       window.dispatchEvent(new CustomEvent('show-login-dialog'));
       return;
     }
-    navigate('booking', { listingId: listingId ?? '' });
+    navigate('messages', { listingId: listingId ?? '' });
   }, [isAuthenticated, navigate, listingId]);
+
+  const handleCall = useCallback(() => {
+    if (!sellerData.phone) return;
+    window.open(`tel:${sellerData.phone.replace(/\s/g, '')}`, '_self');
+  }, [sellerData.phone]);
+
+  const handleWhatsApp = useCallback(() => {
+    if (!sellerData.whatsapp) return;
+    const msg = encodeURIComponent(isRTL ? `مرحباً، أنا مهتم بالإعلان: ${listing?.title}` : `Hi, I'm interested in: ${listing?.title}`);
+    window.open(`https://wa.me/${sellerData.whatsapp.replace(/[^0-9]/g, '')}?text=${msg}`, '_blank');
+  }, [sellerData.whatsapp, listing?.title, isRTL]);
 
   const handleMessage = useCallback(() => {
     if (!isAuthenticated) {
@@ -1253,6 +1274,14 @@ export function ListingDetail() {
                 )}
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {isRealEstate && (
+                  <Badge className={`text-xs px-3 py-1 ${listingType === 'rent' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'} font-semibold`}>
+                    {listingType === 'rent'
+                      ? (isRTL ? '🏠 للإيجار' : '🏠 For Rent')
+                      : (isRTL ? '🔑 للبيع' : '🔑 For Sale')
+                    }
+                  </Badge>
+                )}
                 <ShieldCheck className="h-5 w-5 text-emerald-500" />
                 <span className="text-xs text-emerald-600 font-medium">{isRTL ? 'إعلان موثق' : 'Verified listing'}</span>
                 <Badge variant="secondary" className="text-xs gap-1 bg-gray-100 text-gray-600">
@@ -1288,13 +1317,13 @@ export function ListingDetail() {
               <Separator className="my-6" />
             </motion.div>
 
-            {/* ═══ 4. Host Information Card ═════════════════════════ */}
+            {/* ═══ 4. Seller Information Card ═════════════════════════ */}
             <motion.div {...fadeInUp} className="mb-6">
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-14 w-14 border-2 border-white shadow-md">
                     <AvatarFallback className="bg-gradient-to-br from-rose-400 to-rose-600 text-white font-bold text-lg">
-                      {hostData.initials}
+                      {sellerData.initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
@@ -1304,12 +1333,12 @@ export function ListingDetail() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-gray-900 text-base">
-                      {isRTL ? hostData.nameAr : hostData.nameEn}
+                      {isRTL ? sellerData.nameAr : sellerData.nameEn}
                     </h3>
-                    {hostData.isSuperhost && (
-                      <Badge className="bg-amber-100 text-amber-700 gap-1 text-[10px] px-2 py-0.5">
-                        <Award className="h-3 w-3" />
-                        {isRTL ? 'مضيف مميز' : 'Superhost'}
+                    {sellerData.isVerifiedSeller && (
+                      <Badge className="bg-emerald-100 text-emerald-700 gap-1 text-[10px] px-2 py-0.5">
+                        <ShieldCheck className="h-3 w-3" />
+                        {isRTL ? 'بائع موثوق' : 'Verified Seller'}
                       </Badge>
                     )}
                   </div>
@@ -1324,34 +1353,61 @@ export function ListingDetail() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                    <span>{isRTL ? `معدل الرد ${hostData.responseRate}%` : `${hostData.responseRate}% response rate`}</span>
+                    <span>{isRTL ? `معدل الرد ${sellerData.responseRate}%` : `${sellerData.responseRate}% response rate`}</span>
                     <span className="text-gray-300">·</span>
-                    <span>{isRTL ? hostData.responseTimeAr : hostData.responseTimeEn}</span>
+                    <span>{isRTL ? sellerData.responseTimeAr : sellerData.responseTimeEn}</span>
                     <span className="text-gray-300">·</span>
-                    <span>{isRTL ? `عضو منذ ${hostData.memberSince}` : `Member since ${hostData.memberSince}`}</span>
+                    <span>{isRTL ? `عضو منذ ${sellerData.memberSince}` : `Member since ${sellerData.memberSince}`}</span>
                   </div>
                 </div>
-                <div className="hidden sm:block">
+                <div className="hidden sm:flex sm:flex-col sm:gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2 text-sm border-gray-200"
-                    onClick={handleMessage}
+                    className="gap-2 text-sm border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    onClick={handleCall}
                   >
-                    <MessageCircle className="h-4 w-4" />
-                    {isRTL ? 'تواصل' : 'Contact'}
+                    <Phone className="h-4 w-4" />
+                    {isRTL ? 'اتصل' : 'Call'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-sm border-green-200 text-green-700 hover:bg-green-50"
+                    onClick={handleWhatsApp}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {isRTL ? 'واتساب' : 'WhatsApp'}
                   </Button>
                 </div>
               </div>
-              <div className="sm:hidden mt-3">
+              <div className="sm:hidden mt-3 flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full gap-2 text-sm border-gray-200"
-                  onClick={handleMessage}
+                  className="flex-1 gap-2 text-sm border-gray-200"
+                  onClick={handleContact}
                 >
                   <MessageCircle className="h-4 w-4" />
-                  {isRTL ? 'تواصل مع المضيف' : 'Contact Host'}
+                  {isRTL ? 'تواصل' : 'Contact'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2 text-sm border-emerald-200 text-emerald-700"
+                  onClick={handleCall}
+                >
+                  <Phone className="h-4 w-4" />
+                  {isRTL ? 'اتصل' : 'Call'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2 text-sm border-green-200 text-green-700"
+                  onClick={handleWhatsApp}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  WhatsApp
                 </Button>
               </div>
               <Separator className="my-6" />
@@ -1391,7 +1447,7 @@ export function ListingDetail() {
             {/* ═══ 6. Description Section ═══════════════════════════ */}
             <motion.div {...fadeInUp} className="mb-6">
               <h2 className="text-lg font-bold text-gray-900 mb-3">
-                {isRTL ? 'عن هذا المكان' : 'About this place'}
+                {isRTL ? 'وصف الإعلان' : 'Listing Description'}
               </h2>
               <div className="relative">
                 <p
@@ -1809,131 +1865,126 @@ export function ListingDetail() {
 
           </div>
 
-          {/* ═══ Right Column: Sticky Booking Sidebar (Desktop) ═══ */}
+          {/* ═══ Right Column: Sticky Contact Sidebar (Desktop) ═══ */}
           <div className="hidden lg:block lg:w-[380px] shrink-0">
             <div className="sticky top-20">
               <Card className="border border-gray-200 shadow-xl rounded-2xl overflow-hidden">
                 <CardContent className="p-6">
-                  {/* Price */}
-                  <div className="flex items-baseline gap-1 mb-4">
+                  {/* Price & Listing Type */}
+                  <div className="flex items-baseline gap-1 mb-1">
                     <span className="text-2xl font-bold text-gray-900" dir="ltr">
                       {formatPrice(listing.price, listing.currency)}
                     </span>
-                    {isRealEstate && (
+                    {isRealEstate && listingType === 'rent' && (
                       <span className="text-sm text-gray-500">
                         {isRTL ? '/ شهرياً' : '/ month'}
                       </span>
                     )}
                   </div>
-
-                  {/* Date pickers placeholder */}
-                  <div className="grid grid-cols-2 border border-gray-300 rounded-xl overflow-hidden mb-4">
-                    <div className="p-3 border-l border-gray-300">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                        {isRTL ? 'تاريخ الوصول' : 'Check-in'}
-                      </label>
-                      <p className="text-sm text-gray-400 mt-0.5">{isRTL ? 'أضف تاريخ' : 'Add date'}</p>
-                    </div>
-                    <div className="p-3">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                        {isRTL ? 'تاريخ المغادرة' : 'Checkout'}
-                      </label>
-                      <p className="text-sm text-gray-400 mt-0.5">{isRTL ? 'أضف تاريخ' : 'Add date'}</p>
-                    </div>
-                  </div>
-
-                  {/* Guests placeholder */}
-                  <div className="border border-gray-300 rounded-xl p-3 mb-4">
-                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                      {isRTL ? 'الضيوف' : 'Guests'}
-                    </label>
-                    <p className="text-sm text-gray-400 mt-0.5">1 {isRTL ? 'ضيف' : 'guest'}</p>
-                  </div>
-
-                  {/* Reserve / Contact button */}
-                  <motion.div whileTap={{ scale: 0.98 }}>
-                    <Button
-                      className="w-full h-12 text-base font-semibold bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200"
-                      onClick={isRealEstate ? handleBook : handleMessage}
-                    >
-                      {isRealEstate
-                        ? (isRTL ? 'احجز الآن' : 'Reserve')
-                        : (isRTL ? 'تواصل مع البائع' : 'Contact Seller')
+                  {/* Listing type badge */}
+                  {isRealEstate && (
+                    <Badge className={`mt-1 mb-4 ${listingType === 'rent' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'} text-xs px-2.5 py-1`}>
+                      {listingType === 'rent'
+                        ? (isRTL ? '🏠 للإيجار' : '🏠 For Rent')
+                        : (isRTL ? '🔑 للبيع' : '🔑 For Sale')
                       }
-                    </Button>
-                  </motion.div>
+                    </Badge>
+                  )}
 
-                  <p className="text-center text-xs text-gray-400 mt-2">
-                    {isRTL ? 'لن يتم سحب أي مبلغ الآن' : "You won't be charged yet"}
+                  {/* Seller Info */}
+                  <div className="flex items-center gap-3 mb-4 pt-4 border-t border-gray-100">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-gradient-to-br from-rose-400 to-rose-600 text-white text-sm font-bold">
+                        {sellerData.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{isRTL ? sellerData.nameAr : sellerData.nameEn}</p>
+                      <p className="text-xs text-gray-400">
+                        {sellerData.listingCount} {isRTL ? 'إعلان' : 'listings'} · {isRTL ? 'عضو منذ ' + sellerData.memberSince : 'Since ' + sellerData.memberSince}
+                      </p>
+                    </div>
+                    {sellerData.isVerifiedSeller && (
+                      <Badge className="bg-emerald-100 text-emerald-700 gap-1 text-[10px] shrink-0">
+                        <ShieldCheck className="h-3 w-3" />
+                        {isRTL ? 'موثوق' : 'Verified'}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Contact Buttons */}
+                  <div className="space-y-2.5">
+                    <motion.div whileTap={{ scale: 0.98 }}>
+                      <Button
+                        className="w-full h-11 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 gap-2"
+                        onClick={handleCall}
+                      >
+                        <Phone className="h-4 w-4" />
+                        {isRTL ? 'اتصل بالبائع' : 'Call Seller'}
+                      </Button>
+                    </motion.div>
+                    <motion.div whileTap={{ scale: 0.98 }}>
+                      <Button
+                        className="w-full h-11 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200 gap-2"
+                        onClick={handleWhatsApp}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        {isRTL ? 'واتساب' : 'WhatsApp'}
+                      </Button>
+                    </motion.div>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 text-sm border-gray-200"
+                      onClick={handleContact}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {isRTL ? 'أرسل رسالة' : 'Send Message'}
+                    </Button>
+                  </div>
+
+                  <p className="text-center text-xs text-gray-400 mt-3">
+                    {isRTL ? 'لن يتم مشاركة رقمك مع البائع' : "Your number won't be shared with the seller"}
                   </p>
 
-                  {/* Price breakdown */}
-                  {isRealEstate && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 underline decoration-dotted">
-                          {formatPrice(listing.price, listing.currency)} × 1 {isRTL ? 'شهر' : 'month'}
-                        </span>
-                        <span className="text-gray-900" dir="ltr">{formatPrice(listing.price, listing.currency)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 underline decoration-dotted">
-                          {isRTL ? 'رسوم الخدمة' : 'Service fee'}
-                        </span>
-                        <span className="text-gray-900" dir="ltr">{formatPrice(Math.round(listing.price * 0.05), listing.currency)}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between text-sm font-bold">
-                        <span>{isRTL ? 'المجموع' : 'Total'}</span>
-                        <span dir="ltr">{formatPrice(Math.round(listing.price * 1.05), listing.currency)}</span>
-                      </div>
+                  {/* Quick Info */}
+                  <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                      <span>{isRTL ? 'بائع موثق وهوية مُتحقق منها' : 'Verified seller with confirmed identity'}</span>
                     </div>
-                  )}
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4 text-amber-500 shrink-0" />
+                      <span>{isRTL ? `معدل الاستجابة ${sellerData.responseRate}%` : `${sellerData.responseRate}% response rate`}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Zap className="h-4 w-4 text-blue-500 shrink-0" />
+                      <span>{isRTL ? sellerData.responseTimeAr : sellerData.responseTimeEn}</span>
+                    </div>
+                  </div>
 
-                  {/* Quick actions for non-real-estate */}
-                  {!isRealEstate && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2 text-sm"
-                        onClick={handleMessage}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        {isRTL ? 'أرسل رسالة' : 'Send Message'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2 text-sm"
-                        onClick={handleShare}
-                      >
-                        <Share2 className="h-4 w-4" />
-                        {isRTL ? 'مشاركة الإعلان' : 'Share Listing'}
-                      </Button>
-                    </div>
-                  )}
+                  {/* Share & Report */}
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-2 text-xs"
+                      onClick={handleShare}
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      {isRTL ? 'مشاركة' : 'Share'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-2 text-xs"
+                      onClick={handleToggleFavorite}
+                    >
+                      <Heart className={`h-3.5 w-3.5 ${isFavorite(listingId) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                      {isFavorite(listingId) ? (isRTL ? 'محفوظ' : 'Saved') : (isRTL ? 'حفظ' : 'Save')}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-
-              {/* Quick host info below sidebar */}
-              <div className="mt-3 flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-gradient-to-br from-rose-400 to-rose-600 text-white text-sm font-bold">
-                    {hostData.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{isRTL ? hostData.nameAr : hostData.nameEn}</p>
-                  <p className="text-xs text-gray-400">
-                    {hostData.listingCount} {isRTL ? 'إعلان' : 'listings'}
-                  </p>
-                </div>
-                {hostData.isSuperhost && (
-                  <Badge className="bg-amber-100 text-amber-700 gap-1 text-[10px] shrink-0">
-                    <Award className="h-3 w-3" />
-                    {isRTL ? 'مميز' : 'Super'}
-                  </Badge>
-                )}
-              </div>
             </div>
           </div>
         </div>
@@ -1951,28 +2002,41 @@ export function ListingDetail() {
           >
             <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
               <div className="shrink-0 min-w-0">
-                <p className="text-[10px] text-gray-400">{isRTL ? 'السعر' : 'Price'}</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-lg font-bold text-gray-900" dir="ltr">
                     {formatPrice(listing.price, listing.currency)}
                   </span>
-                  {isRealEstate && (
+                  {isRealEstate && listingType === 'rent' && (
                     <span className="text-xs text-gray-400">{isRTL ? '/شهر' : '/mo'}</span>
                   )}
                 </div>
+                {isRealEstate && (
+                  <span className={`text-[10px] font-semibold ${listingType === 'rent' ? 'text-blue-600' : 'text-emerald-600'}`}>
+                    {listingType === 'rent' ? (isRTL ? 'للإيجار' : 'For Rent') : (isRTL ? 'للبيع' : 'For Sale')}
+                  </span>
+                )}
               </div>
               <Separator orientation="vertical" className="h-10" />
-              <motion.div whileTap={{ scale: 0.95 }} className="flex-1">
-                <Button
-                  className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold shadow-md shadow-rose-200 h-11"
-                  onClick={isRealEstate ? handleBook : handleMessage}
-                >
-                  {isRealEstate
-                    ? (isRTL ? 'احجز الآن' : 'Book Now')
-                    : (isRTL ? 'تواصل' : 'Contact')
-                  }
-                </Button>
-              </motion.div>
+              <div className="flex-1 flex gap-2">
+                <motion.div whileTap={{ scale: 0.95 }} className="flex-1">
+                  <Button
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md shadow-emerald-200 h-11 gap-1.5"
+                    onClick={handleCall}
+                  >
+                    <Phone className="h-4 w-4" />
+                    {isRTL ? 'اتصل' : 'Call'}
+                  </Button>
+                </motion.div>
+                <motion.div whileTap={{ scale: 0.95 }} className="flex-1">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md shadow-green-200 h-11 gap-1.5"
+                    onClick={handleWhatsApp}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    WhatsApp
+                  </Button>
+                </motion.div>
+              </div>
             </div>
           </motion.div>
         )}
