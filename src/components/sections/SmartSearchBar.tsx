@@ -15,14 +15,6 @@ import {
 import { useLanguage } from '@/stores/languageStore';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useSearch } from '@/hooks/useApi';
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -423,186 +415,186 @@ export default function SmartSearchBar() {
         </PopoverTrigger>
 
         <PopoverContent
-          className="p-0 w-[var(--radix-popover-trigger-width)] rounded-2xl border border-gray-200 shadow-xl"
+          className="p-2 w-[var(--radix-popover-trigger-width)] rounded-2xl border border-gray-200 shadow-xl"
           align="start"
           sideOffset={8}
+          onInteractOutside={(e) => {
+            // Prevent closing when clicking inside the popover content
+            const target = e.target as HTMLElement;
+            if (target.closest('[data-popover-content]')) {
+              e.preventDefault();
+            }
+          }}
         >
-          <Command
-            className="rounded-2xl"
-            loop
-          >
-            <CommandList className="max-h-[360px] overflow-y-auto">
-              {/* Empty state */}
-              {!hasAnySuggestions && query.trim() && (
-                <CommandEmpty>
-                  <div className="py-6 text-center">
-                    <Search className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">
-                      {tAr('لا توجد نتائج', 'No results found')}
-                    </p>
-                  </div>
-                </CommandEmpty>
-              )}
+          <div className="max-h-[360px] overflow-y-auto rounded-xl" style={{ scrollbarWidth: 'thin' }}>
+            {/* Empty state */}
+            {!hasAnySuggestions && query.trim() && (
+              <div className="py-6 text-center">
+                <Search className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">
+                  {tAr('لا توجد نتائج', 'No results found')}
+                </p>
+              </div>
+            )}
 
-              {/* ── API Search Results ── */}
-              {apiListings.length > 0 && (
-                <CommandGroup
-                  heading={tAr('نتائج البحث', 'Search Results')}
-                >
-                  {apiListings.map((listing) => (
-                    <CommandItem
-                      key={listing.id}
-                      value={listing.title || listing.id}
-                      onSelect={() => handleSelect(listing.title || listing.id, 'keyword')}
-                      className="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg"
-                    >
-                      <Search className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="flex-1 text-sm truncate">
-                        {listing.title}
-                      </span>
-                      <span className="text-[10px] text-gray-400 shrink-0">
-                        {tAr('إعلان', 'Listing')}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+            {/* ── API Search Results ── */}
+            {apiListings.length > 0 && (
+              <div className="mb-1">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  {tAr('نتائج البحث', 'Search Results')}
+                </div>
+                {apiListings.map((listing) => (
+                  <button
+                    key={listing.id}
+                    onClick={() => handleSelect(listing.title || listing.id, 'keyword')}
+                    className="flex items-center gap-2 px-3 py-2.5 w-full cursor-pointer rounded-lg hover:bg-gray-50 transition-colors text-start"
+                  >
+                    <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="flex-1 text-sm truncate">
+                      {listing.title}
+                    </span>
+                    <span className="text-[10px] text-gray-400 shrink-0">
+                      {tAr('إعلان', 'Listing')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* ── Regions Group ── */}
-              {filteredRegions.length > 0 && (
-                <CommandGroup
-                  heading={tAr('المناطق', 'Regions')}
-                >
-                  {filteredRegions.map((region, idx) => (
-                    <CommandItem
-                      key={`region-${idx}`}
-                      value={region.ar + ' ' + region.en}
-                      onSelect={() => handleSelect(region.ar, 'region')}
-                      className="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg"
-                    >
-                      <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <span className="flex-1 text-sm">
-                        {isRTL ? region.ar : region.en}
-                      </span>
-                      <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">
-                        {tAr('منطقة', 'Region')}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+            {/* ── Regions Group ── */}
+            {filteredRegions.length > 0 && (
+              <div className="mb-1">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  {tAr('المناطق', 'Regions')}
+                </div>
+                {filteredRegions.map((region, idx) => (
+                  <button
+                    key={`region-${idx}`}
+                    onClick={() => handleSelect(region.ar, 'region')}
+                    className="flex items-center gap-2 px-3 py-2.5 w-full cursor-pointer rounded-lg hover:bg-emerald-50 transition-colors text-start"
+                  >
+                    <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span className="flex-1 text-sm">
+                      {isRTL ? region.ar : region.en}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">
+                      {tAr('منطقة', 'Region')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* ── Districts Group ── */}
-              {filteredDistricts.length > 0 && (
-                <CommandGroup
-                  heading={tAr('الأحياء', 'Districts')}
-                >
-                  {filteredDistricts.map((district, idx) => (
-                    <CommandItem
-                      key={`district-${idx}`}
-                      value={district.ar + ' ' + district.en}
-                      onSelect={() => handleSelect(district.ar, 'district')}
-                      className="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg"
-                    >
-                      <MapPinned className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span className="flex-1 text-sm">
-                        {isRTL ? district.ar : district.en}
-                      </span>
-                      <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md shrink-0">
-                        {tAr('حي', 'District')}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+            {/* ── Districts Group ── */}
+            {filteredDistricts.length > 0 && (
+              <div className="mb-1">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  {tAr('الأحياء', 'Districts')}
+                </div>
+                {filteredDistricts.map((district, idx) => (
+                  <button
+                    key={`district-${idx}`}
+                    onClick={() => handleSelect(district.ar, 'district')}
+                    className="flex items-center gap-2 px-3 py-2.5 w-full cursor-pointer rounded-lg hover:bg-amber-50 transition-colors text-start"
+                  >
+                    <MapPinned className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="flex-1 text-sm">
+                      {isRTL ? district.ar : district.en}
+                    </span>
+                    <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md shrink-0">
+                      {tAr('حي', 'District')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* ── Categories Group ── */}
-              {filteredCategories.length > 0 && (
-                <CommandGroup
-                  heading={tAr('الفئات', 'Categories')}
-                >
-                  {filteredCategories.map((cat) => (
-                    <CommandItem
-                      key={cat.id}
-                      value={cat.ar + ' ' + cat.en}
-                      onSelect={() => handleSelect(cat.ar, 'category', cat.categoryId)}
-                      className="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg"
-                    >
-                      <Tag className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span className="flex-1 text-sm">
-                        {isRTL ? cat.ar : cat.en}
-                      </span>
-                      <span className="text-[10px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md shrink-0">
-                        {tAr('فئة', 'Category')}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+            {/* ── Categories Group ── */}
+            {filteredCategories.length > 0 && (
+              <div className="mb-1">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  {tAr('الفئات', 'Categories')}
+                </div>
+                {filteredCategories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleSelect(cat.ar, 'category', cat.categoryId)}
+                    className="flex items-center gap-2 px-3 py-2.5 w-full cursor-pointer rounded-lg hover:bg-rose-50 transition-colors text-start"
+                  >
+                    <Tag className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span className="flex-1 text-sm">
+                      {isRTL ? cat.ar : cat.en}
+                    </span>
+                    <span className="text-[10px] text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md shrink-0">
+                      {tAr('فئة', 'Category')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* ── Recent Searches Group ── */}
-              {recentSearches.length > 0 && !query.trim() && (
-                <CommandGroup
-                  heading={
-                    <div className="flex items-center justify-between w-full">
-                      <span>{tAr('عمليات البحث الأخيرة', 'Recent Searches')}</span>
-                      <button
-                        onClick={handleClearRecent}
-                        className="text-[10px] text-rose-500 hover:text-rose-600 transition-colors"
-                      >
-                        {tAr('مسح الكل', 'Clear all')}
-                      </button>
-                    </div>
-                  }
-                >
-                  {recentSearches.map((search, idx) => (
-                    <CommandItem
-                      key={`recent-${idx}`}
-                      value={search.query}
-                      onSelect={() => handleSelect(search.query, search.type)}
-                      className="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg"
-                    >
-                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="flex-1 text-sm text-gray-600">
-                        {search.query}
-                      </span>
-                      {getTypeIcon(search.type)}
-                      <span className="text-[10px] text-gray-400 shrink-0">
-                        {getTypeLabel(search.type)}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
+            {/* ── Recent Searches Group ── */}
+            {recentSearches.length > 0 && !query.trim() && (
+              <div className="mb-1">
+                <div className="flex items-center justify-between w-full px-3 py-1.5">
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    {tAr('عمليات البحث الأخيرة', 'Recent Searches')}
+                  </span>
+                  <button
+                    onClick={handleClearRecent}
+                    className="text-[10px] text-rose-500 hover:text-rose-600 transition-colors"
+                  >
+                    {tAr('مسح الكل', 'Clear all')}
+                  </button>
+                </div>
+                {recentSearches.map((search, idx) => (
+                  <button
+                    key={`recent-${idx}`}
+                    onClick={() => handleSelect(search.query, search.type)}
+                    className="flex items-center gap-2 px-3 py-2.5 w-full cursor-pointer rounded-lg hover:bg-gray-50 transition-colors text-start"
+                  >
+                    <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="flex-1 text-sm text-gray-600">
+                      {search.query}
+                    </span>
+                    {getTypeIcon(search.type)}
+                    <span className="text-[10px] text-gray-400 shrink-0">
+                      {getTypeLabel(search.type)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
-              {/* ── Quick Actions (when empty) ── */}
-              {!query.trim() && recentSearches.length === 0 && (
-                <CommandGroup heading={tAr('بحث سريع', 'Quick Search')}>
-                  {[
-                    { ar: 'عقارات دمشق', en: 'Damascus Real Estate', type: 'category' as ClassificationType, categoryId: 'real-estate' },
-                    { ar: 'سيارات حلب', en: 'Aleppo Cars', type: 'category' as ClassificationType, categoryId: 'cars' },
-                    { ar: 'وظائف حمص', en: 'Homs Jobs', type: 'category' as ClassificationType, categoryId: 'jobs' },
-                    { ar: 'خدمات سباكة', en: 'Plumbing Services', type: 'category' as ClassificationType, categoryId: 'services' },
-                  ].map((quick, idx) => (
-                    <CommandItem
-                      key={`quick-${idx}`}
-                      value={quick.ar + ' ' + quick.en}
-                      onSelect={() => handleSelect(quick.ar, quick.type, quick.categoryId)}
-                      className="flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg"
-                    >
-                      <Search className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="flex-1 text-sm">
-                        {isRTL ? quick.ar : quick.en}
-                      </span>
-                      <span className="text-[10px] text-gray-400 shrink-0">
-                        {tAr('بحث سريع', 'Quick')}
-                      </span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
+            {/* ── Quick Actions (when empty) ── */}
+            {!query.trim() && recentSearches.length === 0 && (
+              <div className="mb-1">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                  {tAr('بحث سريع', 'Quick Search')}
+                </div>
+                {[
+                  { ar: 'عقارات دمشق', en: 'Damascus Real Estate', type: 'category' as ClassificationType, categoryId: 'real-estate' },
+                  { ar: 'سيارات حلب', en: 'Aleppo Cars', type: 'category' as ClassificationType, categoryId: 'cars' },
+                  { ar: 'وظائف حمص', en: 'Homs Jobs', type: 'category' as ClassificationType, categoryId: 'jobs' },
+                  { ar: 'خدمات سباكة', en: 'Plumbing Services', type: 'category' as ClassificationType, categoryId: 'services' },
+                ].map((quick, idx) => (
+                  <button
+                    key={`quick-${idx}`}
+                    onClick={() => handleSelect(quick.ar, quick.type, quick.categoryId)}
+                    className="flex items-center gap-2 px-3 py-2.5 w-full cursor-pointer rounded-lg hover:bg-gray-50 transition-colors text-start"
+                  >
+                    <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="flex-1 text-sm">
+                      {isRTL ? quick.ar : quick.en}
+                    </span>
+                    <span className="text-[10px] text-gray-400 shrink-0">
+                      {tAr('بحث سريع', 'Quick')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
     </div>
