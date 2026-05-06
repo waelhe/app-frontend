@@ -32,6 +32,8 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useListings } from '@/hooks/useApi';
 import type { ListingSummary } from '@/lib/types';
 import { Hero } from '@/components/ui';
+import CategoryCTACards from '@/components/sections/CategoryCTACards';
+import TrendingCarousel from '@/components/sections/TrendingCarousel';
 
 // ── Loading skeleton for lazy-loaded views ────────────────────────────
 function ViewSkeleton() {
@@ -839,6 +841,17 @@ export function HomePage() {
 
       {/* ⚡ QuickServices - Airbnb-style category bar */}
       <QuickServices />
+
+      {/* 🏷️ Category CTA Cards — Zillow/Villow style navigation */}
+      <CategoryCTACards />
+
+      {/* 🔥 Trending Carousel — Featured listings */}
+      <TrendingCarousel
+        titleAr="أفضل العروض لك"
+        titleEn="Best Offers For You"
+        subtitleAr="بناءً على مشاهداتك واهتماماتك"
+        subtitleEn="Based on your views and interests"
+      />
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* 🏠 الجزء الأول: السوق والإعلانات                                */}
