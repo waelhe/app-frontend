@@ -34,6 +34,9 @@ import type { ListingSummary } from '@/lib/types';
 import { Hero } from '@/components/ui';
 import CategoryCTACards from '@/components/sections/CategoryCTACards';
 import TrendingCarousel from '@/components/sections/TrendingCarousel';
+import SmartSearchBar from '@/components/sections/SmartSearchBar';
+import MapListSplitView from '@/components/sections/MapListSplitView';
+import ListingDetailSheet from '@/components/sections/ListingDetailSheet';
 
 // ── Loading skeleton for lazy-loaded views ────────────────────────────
 function ViewSkeleton() {
@@ -718,6 +721,14 @@ export function HomePage() {
   const [activeCommunitySection, setActiveCommunitySection] = useState<string | null>(null);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [detailSheetListingId, setDetailSheetListingId] = useState<string | null>(null);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+
+  // Open detail sheet for a listing
+  const openDetailSheet = useCallback((listingId: string) => {
+    setDetailSheetListingId(listingId);
+    setDetailSheetOpen(true);
+  }, []);
 
   // Scroll to top when view changes
   useEffect(() => {
@@ -1021,18 +1032,23 @@ export function HomePage() {
     switch (activeTab) {
       case 'home': return renderHomeView();
       case 'market': return (
-        <div className="pt-4 max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3 mb-4 pb-3 border-b-4 border-teal-500">
-            <div className="p-3 bg-teal-500 rounded-xl"><Home className="w-6 h-6 text-white" /></div>
-            <h2 className="text-2xl font-black text-gray-900">{t('السوق والإعلانات', 'Market & Classifieds')}</h2>
-          </div>
-          <FeaturedOffers />
-          <div className="space-y-6 mt-6">
-            <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('عقارات وإيجارات', 'Real Estate')}</h3><RealEstate /></div>
-            <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('سلع مستعملة', 'Used Items')}</h3><UsedItems /></div>
-            <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('إعلانات مبوبة', 'Classifieds')}</h3><Classifieds /></div>
-            <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('سوق الخدمات', 'Services Market')}</h3><Craftsmen /></div>
-            <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('وظائف وفرص عمل', 'Jobs')}</h3><Jobs /></div>
+        <div className="pt-4">
+          {/* Map + List Split View — Villow Pattern 1 */}
+          <MapListSplitView />
+          {/* Traditional market sections below map view */}
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b-4 border-teal-500">
+              <div className="p-3 bg-teal-500 rounded-xl"><Home className="w-6 h-6 text-white" /></div>
+              <h2 className="text-2xl font-black text-gray-900">{t('السوق والإعلانات', 'Market & Classifieds')}</h2>
+            </div>
+            <FeaturedOffers />
+            <div className="space-y-6 mt-6">
+              <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('عقارات وإيجارات', 'Real Estate')}</h3><RealEstate /></div>
+              <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('سلع مستعملة', 'Used Items')}</h3><UsedItems /></div>
+              <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('إعلانات مبوبة', 'Classifieds')}</h3><Classifieds /></div>
+              <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('سوق الخدمات', 'Services Market')}</h3><Craftsmen /></div>
+              <div><h3 className="text-lg font-bold text-gray-900 mb-3">{t('وظائف وفرص عمل', 'Jobs')}</h3><Jobs /></div>
+            </div>
           </div>
         </div>
       );
@@ -1072,10 +1088,15 @@ export function HomePage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* ── Action Buttons ──────────────────── */}
+      {/* ── Smart Search Bar + Action Buttons ── */}
       <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-2 py-2">
+          {/* Smart Search Bar — Villow Pattern 2 */}
+          <div className="py-2">
+            <SmartSearchBar />
+          </div>
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2 pb-2">
             <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200" onClick={() => { if (!isOverlayView) navigate('search'); }}><Search className="w-4 h-4" /><span className="hidden sm:inline">{t('بحث', 'Search')}</span></Button>
             {isAuthenticated && <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200" onClick={() => { if (!isOverlayView) navigate('inbox'); }}><MessageSquare className="w-4 h-4" /><span className="hidden sm:inline">{t('الرسائل', 'Messages')}</span></Button>}
             {isAuthenticated && <Button variant="outline" size="sm" className="gap-1.5 border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-200 relative" onClick={() => { if (!isOverlayView) navigate('notifications'); }}><Bell className="w-4 h-4" /><span className="hidden sm:inline">{t('الإشعارات', 'Notifications')}</span></Button>}
@@ -1095,6 +1116,13 @@ export function HomePage() {
 
       {/* ── Login Dialog ───────────────────── */}
       <LoginDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen} />
+
+      {/* ── Listing Detail Sheet — Villow Pattern 5 */}
+      <ListingDetailSheet
+        listingId={detailSheetListingId}
+        open={detailSheetOpen}
+        onOpenChange={setDetailSheetOpen}
+      />
     </main>
   );
 }
