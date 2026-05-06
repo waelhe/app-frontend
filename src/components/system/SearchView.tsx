@@ -113,11 +113,22 @@ const popularSearches = [
 const RECENT_SEARCHES_KEY = 'nabd_recent_searches';
 const MAX_RECENT = 5;
 
+interface RecentSearchEntry {
+  query: string;
+  type: string;
+  timestamp: number;
+}
+
 function getRecentSearches(): string[] {
   if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    const parsed: unknown[] = JSON.parse(stored);
+    // Handle both string[] and object[] formats (SmartSearchBar stores objects)
+    return parsed.map((item) =>
+      typeof item === 'string' ? item : (item as RecentSearchEntry).query || String(item)
+    ).filter(Boolean);
   } catch {
     return [];
   }
@@ -741,19 +752,22 @@ export function SearchView() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {recentSearches.map((search, index) => (
-                  <motion.button
-                    key={`${search}-${index}`}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleRecentSearch(search)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200 transition-colors"
-                  >
-                    <Clock className="h-3 w-3 text-gray-400" />
-                    {search}
-                  </motion.button>
-                ))}
+                {recentSearches.map((search, index) => {
+                  const label = typeof search === 'string' ? search : String(search);
+                  return (
+                    <motion.button
+                      key={`${label}-${index}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => handleRecentSearch(label)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200 transition-colors"
+                    >
+                      <Clock className="h-3 w-3 text-gray-400" />
+                      {label}
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
           )}
