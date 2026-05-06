@@ -56,6 +56,66 @@ const ROOMS_FILTERS: FilterChip[] = [
 const ALL_FILTERS = [...PRICE_FILTERS, ...TYPE_FILTERS, ...ROOMS_FILTERS];
 
 // ════════════════════════════════════════════════════════════════════
+// City Definitions & Filtering
+// ════════════════════════════════════════════════════════════════════
+
+interface SyrianCity {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  keywords: string[];
+  mapRegion?: { x: number; y: number; w: number; h: number };
+}
+
+const SYRIAN_CITIES: SyrianCity[] = [
+  { id: 'all', nameAr: 'كل المدن', nameEn: 'All Cities', keywords: [] },
+  { id: 'damascus', nameAr: 'دمشق', nameEn: 'Damascus', keywords: ['دمشق', 'damascus', 'شام', 'الشام'], mapRegion: { x: 35, y: 30, w: 40, h: 40 } },
+  { id: 'aleppo', nameAr: 'حلب', nameEn: 'Aleppo', keywords: ['حلب', 'aleppo'], mapRegion: { x: 30, y: 5, w: 40, h: 25 } },
+  { id: 'homs', nameAr: 'حمص', nameEn: 'Homs', keywords: ['حمص', 'homs'], mapRegion: { x: 30, y: 30, w: 20, h: 15 } },
+  { id: 'hama', nameAr: 'حماة', nameEn: 'Hama', keywords: ['حماة', 'hama'], mapRegion: { x: 30, y: 18, w: 20, h: 15 } },
+  { id: 'latakia', nameAr: 'اللاذقية', nameEn: 'Latakia', keywords: ['اللاذقية', 'latakia', 'لاذقية'], mapRegion: { x: 5, y: 20, w: 25, h: 20 } },
+  { id: 'tartus', nameAr: 'طرطوس', nameEn: 'Tartus', keywords: ['طرطوس', 'tartus'], mapRegion: { x: 5, y: 35, w: 25, h: 20 } },
+  { id: 'idlib', nameAr: 'إدلب', nameEn: 'Idlib', keywords: ['إدلب', 'idlib', 'ادلب'], mapRegion: { x: 15, y: 10, w: 20, h: 15 } },
+  { id: 'deir-ez-zor', nameAr: 'دير الزور', nameEn: 'Deir ez-Zor', keywords: ['دير الزور', 'deir ez-zor', 'ديرالزور', 'دير'], mapRegion: { x: 70, y: 30, w: 25, h: 25 } },
+  { id: 'raqqa', nameAr: 'الرقة', nameEn: 'Raqqa', keywords: ['الرقة', 'raqqa', 'رقة'], mapRegion: { x: 60, y: 15, w: 25, h: 20 } },
+  { id: 'daraa', nameAr: 'درعا', nameEn: 'Daraa', keywords: ['درعا', 'daraa'], mapRegion: { x: 25, y: 65, w: 25, h: 20 } },
+  { id: 'hasakah', nameAr: 'الحسكة', nameEn: 'Hasakah', keywords: ['الحسكة', 'hasakah', 'حسكة'], mapRegion: { x: 75, y: 10, w: 20, h: 20 } },
+  { id: 'sweida', nameAr: 'السويداء', nameEn: 'Sweida', keywords: ['السويداء', 'sweida', 'سويداء'], mapRegion: { x: 30, y: 70, w: 25, h: 20 } },
+];
+
+function filterByCity(listings: { id: string; title: string; providerName?: string; category: string; price: number }[], cityId: string) {
+  if (cityId === 'all') return listings;
+  const city = SYRIAN_CITIES.find((c) => c.id === cityId);
+  if (!city) return listings;
+  return listings.filter((listing) => {
+    const text = `${listing.title} ${listing.providerName ?? ''}`.toLowerCase();
+    return city.keywords.some((kw) => text.includes(kw.toLowerCase()));
+  });
+}
+
+function groupByCity(listings: { id: string; title: string; providerName?: string; category: string; price: number }[]) {
+  const groups: Record<string, { city: SyrianCity; listings: typeof listings }> = {};
+  for (const listing of listings) {
+    const text = `${listing.title} ${listing.providerName ?? ''}`.toLowerCase();
+    let matched = false;
+    for (const city of SYRIAN_CITIES) {
+      if (city.id === 'all') continue;
+      if (city.keywords.some((kw) => text.includes(kw.toLowerCase()))) {
+        if (!groups[city.id]) groups[city.id] = { city, listings: [] };
+        groups[city.id].listings.push(listing);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      if (!groups['other']) groups['other'] = { city: { id: 'other', nameAr: 'أخرى', nameEn: 'Other', keywords: [] }, listings: [] };
+      groups['other'].listings.push(listing);
+    }
+  }
+  return groups;
+}
+
+// ════════════════════════════════════════════════════════════════════
 // SVG Map — Damascus & Surrounding Areas Visualization
 // ════════════════════════════════════════════════════════════════════
 
@@ -529,6 +589,7 @@ export default function MapListSplitView() {
 
   // ── Filter State ──
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  const [selectedCity, setSelectedCity] = useState('all');
 
   const toggleFilter = useCallback((id: string) => {
     setActiveFilters((prev) => {
@@ -552,12 +613,11 @@ export default function MapListSplitView() {
   // ── Mobile Map Sheet State ──
   const [isMapSheetOpen, setIsMapSheetOpen] = useState(false);
 
-  // ── Map Dots ──
-  const mapDots = useMemo(() => generateMapDots(listings), [listings]);
-
   // ── Filtered Listings ──
   const filteredListings = useMemo(() => {
-    if (activeFilters.size === 0) return listings;
+    // First filter by city
+    const cityFilteredListings = filterByCity(listings, selectedCity);
+    if (activeFilters.size === 0) return cityFilteredListings;
 
     const activePrice = PRICE_FILTERS.filter((f) => activeFilters.has(f.id));
     const activeType = TYPE_FILTERS.filter((f) => activeFilters.has(f.id));
@@ -602,7 +662,10 @@ export default function MapListSplitView() {
 
       return true;
     });
-  }, [listings, activeFilters]);
+  }, [listings, activeFilters, selectedCity]);
+
+  // ── Map Dots (based on filtered listings) ──
+  const mapDots = useMemo(() => generateMapDots(filteredListings), [filteredListings]);
 
   // ── Map dot click ──
   const handleDotClick = useCallback(
@@ -622,24 +685,25 @@ export default function MapListSplitView() {
     return null;
   }, [hoveredDotId, hoveredListingId]);
 
-  // ── Listing Card Props ──
-  const listingCards = useMemo(() => {
-    return filteredListings.map((listing, idx) => ({
-      id: listing.id,
-      title: listing.title,
-      category: listing.category,
-      price: listing.price,
-      providerName: listing.providerName,
-      subtitle: tAr('دمشق', 'Damascus'),
-      rating: 3.5 + (Math.sin(idx * 42.7) * 1.5),
-      badgeText: tAr(
-        ['شقة', 'فيلا', 'أرض', 'مكتب'][idx % 4],
-        ['Apartment', 'Villa', 'Land', 'Office'][idx % 4]
-      ),
-      badgeColor: ['bg-teal-600/90 text-white', 'bg-amber-600/90 text-white', 'bg-emerald-600/90 text-white', 'bg-sky-600/90 text-white'][idx % 4],
-      imageIndex: idx,
-    }));
-  }, [filteredListings, tAr]);
+  // ── Grouped listings by city ──
+  const cityGroups = useMemo(() => groupByCity(filteredListings), [filteredListings]);
+
+  // ── Listing Card Props helper ──
+  const makeCardProps = useCallback((listing: { id: string; title: string; category: string; price: number; providerName?: string }, idx: number, cityNameAr: string, cityNameEn: string) => ({
+    id: listing.id,
+    title: listing.title,
+    category: listing.category,
+    price: listing.price,
+    providerName: listing.providerName,
+    subtitle: isArabic ? cityNameAr : cityNameEn,
+    rating: 3.5 + (Math.sin(idx * 42.7) * 1.5),
+    badgeText: tAr(
+      ['شقة', 'فيلا', 'أرض', 'مكتب'][idx % 4],
+      ['Apartment', 'Villa', 'Land', 'Office'][idx % 4]
+    ),
+    badgeColor: ['bg-teal-600/90 text-white', 'bg-amber-600/90 text-white', 'bg-emerald-600/90 text-white', 'bg-sky-600/90 text-white'][idx % 4],
+    imageIndex: idx,
+  }), [isArabic, tAr]);
 
   return (
     <section className="w-full">
@@ -654,12 +718,44 @@ export default function MapListSplitView() {
               {tAr('استكشف على الخريطة', 'Explore on Map')}
             </h2>
             <p className="text-xs text-gray-500">
-              {tAr(
-                `${filteredListings.length} عقار متاح في دمشق`,
-                `${filteredListings.length} properties available in Damascus`
-              )}
+              {selectedCity !== 'all'
+                ? tAr(
+                    `${filteredListings.length} عقار في ${SYRIAN_CITIES.find(c => c.id === selectedCity)?.nameAr ?? ''}`,
+                    `${filteredListings.length} properties in ${SYRIAN_CITIES.find(c => c.id === selectedCity)?.nameEn ?? ''}`
+                  )
+                : tAr(
+                    `${filteredListings.length} عقار متاح`,
+                    `${filteredListings.length} properties available`
+                  )
+              }
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── City Filter Bar ── */}
+      <div className="mb-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <MapPin className="w-4 h-4 text-teal-500 shrink-0" />
+          {SYRIAN_CITIES.map((city) => {
+            const isSelected = selectedCity === city.id;
+            return (
+              <button
+                key={city.id}
+                onClick={() => setSelectedCity(city.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${
+                  isSelected
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                }`}
+              >
+                <span>{isArabic ? city.nameAr : city.nameEn}</span>
+                {isSelected && city.id !== 'all' && (
+                  <X className="w-3 h-3 hover:scale-110" onClick={(e) => { e.stopPropagation(); setSelectedCity('all'); }} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -707,7 +803,7 @@ export default function MapListSplitView() {
             </span>
           </div>
 
-          {/* Listing Grid */}
+          {/* Listing Grid — Grouped by City */}
           {isLoading ? (
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -724,25 +820,51 @@ export default function MapListSplitView() {
               <MapPin className="w-8 h-8 mb-2" />
               <p className="text-sm">{tAr('لا توجد نتائج', 'No results found')}</p>
             </div>
-          ) : (
+          ) : selectedCity !== 'all' ? (
+            /* Single city — flat grid */
             <div className="grid grid-cols-2 gap-3">
-              {listingCards.map((card) => (
-                <div
-                  key={card.id}
-                  onMouseEnter={() => setHoveredListingId(card.id)}
-                  onMouseLeave={() => setHoveredListingId(null)}
-                  className={`
-                    rounded-xl transition-all duration-200
-                    ${effectiveHoveredDot === `dot-${card.id}` ? 'ring-2 ring-teal-400 ring-offset-2' : ''}
-                  `}
-                >
-                  <ListingCard
-                    {...card}
-                    isScrollCard={false}
-                    widthClass="w-full"
-                  />
-                </div>
-              ))}
+              {filteredListings.map((listing, idx) => {
+                const card = makeCardProps(listing, idx, SYRIAN_CITIES.find(c => c.id === selectedCity)?.nameAr ?? '', SYRIAN_CITIES.find(c => c.id === selectedCity)?.nameEn ?? '');
+                return (
+                  <div key={card.id}
+                    onMouseEnter={() => setHoveredListingId(card.id)}
+                    onMouseLeave={() => setHoveredListingId(null)}
+                    className={`rounded-xl transition-all duration-200 ${effectiveHoveredDot === `dot-${card.id}` ? 'ring-2 ring-teal-400 ring-offset-2' : ''}`}>
+                    <ListingCard {...card} isScrollCard={false} widthClass="w-full" />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* All cities — grouped */
+            <div className="space-y-4">
+              {Object.entries(cityGroups).map(([cityId, group]) => {
+                if (group.listings.length === 0) return null;
+                const cityName = isArabic ? group.city.nameAr : group.city.nameEn;
+                return (
+                  <div key={cityId}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="w-3.5 h-3.5 text-teal-500" />
+                      <h3 className="text-xs font-bold text-gray-700">{cityName}</h3>
+                      <span className="text-[10px] text-gray-400">{group.listings.length}</span>
+                      <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {group.listings.map((listing, idx) => {
+                        const card = makeCardProps(listing, idx, group.city.nameAr, group.city.nameEn);
+                        return (
+                          <div key={card.id}
+                            onMouseEnter={() => setHoveredListingId(card.id)}
+                            onMouseLeave={() => setHoveredListingId(null)}
+                            className={`rounded-xl transition-all duration-200 ${effectiveHoveredDot === `dot-${card.id}` ? 'ring-2 ring-teal-400 ring-offset-2' : ''}`}>
+                            <ListingCard {...card} isScrollCard={false} widthClass="w-full" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -752,7 +874,7 @@ export default function MapListSplitView() {
           Mobile: List + Bottom Sheet Map
           ══════════════════════════════════════════════════════════════ */}
       <div className="lg:hidden">
-        {/* Listing Grid */}
+        {/* Listing Grid — Mobile, Grouped by City */}
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -769,25 +891,49 @@ export default function MapListSplitView() {
             <MapPin className="w-8 h-8 mb-2" />
             <p className="text-sm">{tAr('لا توجد نتائج', 'No results found')}</p>
           </div>
-        ) : (
+        ) : selectedCity !== 'all' ? (
           <div className="grid grid-cols-2 gap-3">
-            {listingCards.map((card) => (
-              <div
-                key={card.id}
-                onMouseEnter={() => setHoveredListingId(card.id)}
-                onMouseLeave={() => setHoveredListingId(null)}
-                className={`
-                  rounded-xl transition-all duration-200
-                  ${effectiveHoveredDot === `dot-${card.id}` ? 'ring-2 ring-teal-400 ring-offset-2' : ''}
-                `}
-              >
-                <ListingCard
-                  {...card}
-                  isScrollCard={false}
-                  widthClass="w-full"
-                />
-              </div>
-            ))}
+            {filteredListings.map((listing, idx) => {
+              const card = makeCardProps(listing, idx, SYRIAN_CITIES.find(c => c.id === selectedCity)?.nameAr ?? '', SYRIAN_CITIES.find(c => c.id === selectedCity)?.nameEn ?? '');
+              return (
+                <div key={card.id}
+                  onMouseEnter={() => setHoveredListingId(card.id)}
+                  onMouseLeave={() => setHoveredListingId(null)}
+                  className={`rounded-xl transition-all duration-200 ${effectiveHoveredDot === `dot-${card.id}` ? 'ring-2 ring-teal-400 ring-offset-2' : ''}`}>
+                  <ListingCard {...card} isScrollCard={false} widthClass="w-full" />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(cityGroups).map(([cityId, group]) => {
+              if (group.listings.length === 0) return null;
+              const cityName = isArabic ? group.city.nameAr : group.city.nameEn;
+              return (
+                <div key={cityId}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-3.5 h-3.5 text-teal-500" />
+                    <h3 className="text-xs font-bold text-gray-700">{cityName}</h3>
+                    <span className="text-[10px] text-gray-400">{group.listings.length}</span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {group.listings.map((listing, idx) => {
+                      const card = makeCardProps(listing, idx, group.city.nameAr, group.city.nameEn);
+                      return (
+                        <div key={card.id}
+                          onMouseEnter={() => setHoveredListingId(card.id)}
+                          onMouseLeave={() => setHoveredListingId(null)}
+                          className={`rounded-xl transition-all duration-200 ${effectiveHoveredDot === `dot-${card.id}` ? 'ring-2 ring-teal-400 ring-offset-2' : ''}`}>
+                          <ListingCard {...card} isScrollCard={false} widthClass="w-full" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
