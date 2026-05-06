@@ -125,7 +125,7 @@ const categoryIcons: Record<string, string> = {
 // ── Price Formatting ────────────────────────────────────────────────
 
 function formatPrice(price: number): string {
-  return `${price.toLocaleString('ar-SA')} ر.س`;
+  return `${price.toLocaleString('ar-SY')} ل.س`;
 }
 
 // ── Listing Card ────────────────────────────────────────────────────

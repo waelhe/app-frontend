@@ -60,7 +60,7 @@ function formatPriceShort(price: number): string {
  * Formats a price for full display (hover tooltip).
  */
 function formatPriceFull(price: number): string {
-  return `${price.toLocaleString('ar-SA')} ر.س`;
+  return `${price.toLocaleString('ar-SY')} ل.س`;
 }
 
 // ── SVG Gradient ID Generator ─────────────────────────────────────────

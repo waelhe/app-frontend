@@ -92,25 +92,25 @@ const categoryLabelsEn: Record<string, string> = {
 const mockConversations: ConversationSummary[] = [
   {
     conversation: { id: 'mock-1', bookingId: 'book-1', createdAt: new Date(Date.now() - 3600000).toISOString(), updatedAt: new Date(Date.now() - 300000).toISOString() },
-    booking: { id: 'book-1', consumerId: 'c1', providerId: 'p1', listingId: 'listing-1', status: 'CONFIRMED', priceCents: 50000, currency: 'SAR', createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date(Date.now() - 300000).toISOString() },
+    booking: { id: 'book-1', consumerId: 'c1', providerId: 'p1', listingId: 'listing-1', status: 'CONFIRMED', priceCents: 50000, currency: 'SYP', createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date(Date.now() - 300000).toISOString() },
     lastMessage: { id: 'msg-1', conversationId: 'mock-1', content: 'مرحباً، هل هذه الخدمة متاحة هذا الأسبوع؟', read: false, createdAt: new Date(Date.now() - 300000).toISOString(), updatedAt: new Date(Date.now() - 300000).toISOString() },
     unreadCount: 3,
   },
   {
     conversation: { id: 'mock-2', bookingId: 'book-2', createdAt: new Date(Date.now() - 7200000).toISOString(), updatedAt: new Date(Date.now() - 7200000).toISOString() },
-    booking: { id: 'book-2', consumerId: 'c2', providerId: 'p2', listingId: 'listing-2', status: 'PENDING', priceCents: 150000, currency: 'SAR', createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date(Date.now() - 7200000).toISOString() },
+    booking: { id: 'book-2', consumerId: 'c2', providerId: 'p2', listingId: 'listing-2', status: 'PENDING', priceCents: 150000, currency: 'SYP', createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date(Date.now() - 7200000).toISOString() },
     lastMessage: { id: 'msg-2', conversationId: 'mock-2', content: 'تم تأكيد الحجز، سنتواصل معك قريباً', read: true, createdAt: new Date(Date.now() - 7200000).toISOString(), updatedAt: new Date(Date.now() - 7200000).toISOString() },
     unreadCount: 0,
   },
   {
     conversation: { id: 'mock-3', bookingId: 'book-3', createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString() },
-    booking: { id: 'book-3', consumerId: 'c3', providerId: 'p3', listingId: 'listing-3', status: 'COMPLETED', priceCents: 75000, currency: 'SAR', createdAt: new Date(Date.now() - 259200000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString() },
+    booking: { id: 'book-3', consumerId: 'c3', providerId: 'p3', listingId: 'listing-3', status: 'COMPLETED', priceCents: 75000, currency: 'SYP', createdAt: new Date(Date.now() - 259200000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString() },
     lastMessage: { id: 'msg-3', conversationId: 'mock-3', content: 'شكراً لك! الخدمة كانت ممتازة', read: true, createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString() },
     unreadCount: 1,
   },
   {
     conversation: { id: 'mock-4', bookingId: 'book-4', createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date(Date.now() - 172800000).toISOString() },
-    booking: { id: 'book-4', consumerId: 'c4', providerId: 'p4', listingId: 'listing-4', status: 'CONFIRMED', priceCents: 200000, currency: 'SAR', createdAt: new Date(Date.now() - 345600000).toISOString(), updatedAt: new Date(Date.now() - 172800000).toISOString() },
+    booking: { id: 'book-4', consumerId: 'c4', providerId: 'p4', listingId: 'listing-4', status: 'CONFIRMED', priceCents: 200000, currency: 'SYP', createdAt: new Date(Date.now() - 345600000).toISOString(), updatedAt: new Date(Date.now() - 172800000).toISOString() },
     lastMessage: null,
     unreadCount: 0,
   },
@@ -137,7 +137,7 @@ function formatRelativeTime(iso: string, isRTL: boolean): string {
     if (diffMin < 60) return isRTL ? `منذ ${diffMin} دقيقة` : `${diffMin}m ago`;
     if (diffHour < 24) return isRTL ? `منذ ${diffHour} ساعة` : `${diffHour}h ago`;
     if (diffDay < 7) return isRTL ? `منذ ${diffDay} يوم` : `${diffDay}d ago`;
-    return date.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }

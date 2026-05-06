@@ -323,8 +323,8 @@ export function SettingsView() {
 
   // ── Mock sessions data ──────────────────────────────────────────
   const mockSessions = [
-    { device: isRTL ? 'آيفون 15 برو' : 'iPhone 15 Pro', location: isRTL ? 'الرياض، السعودية' : 'Riyadh, Saudi Arabia', time: isRTL ? 'نشط الآن' : 'Active now', current: true, icon: Smartphone },
-    { device: isRTL ? 'ماك بوك برو' : 'MacBook Pro', location: isRTL ? 'جدة، السعودية' : 'Jeddah, Saudi Arabia', time: isRTL ? 'منذ ساعتين' : '2 hours ago', current: false, icon: Monitor },
+    { device: isRTL ? 'آيفون 15 برو' : 'iPhone 15 Pro', location: isRTL ? 'دمشق، سوريا' : 'Damascus, Syria', time: isRTL ? 'نشط الآن' : 'Active now', current: true, icon: Smartphone },
+    { device: isRTL ? 'ماك بوك برو' : 'MacBook Pro', location: isRTL ? 'حلب، سوريا' : 'Aleppo, Syria', time: isRTL ? 'منذ ساعتين' : '2 hours ago', current: false, icon: Monitor },
   ];
 
   const mockLoginHistory = [
@@ -451,7 +451,7 @@ export function SettingsView() {
                           <Input
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
-                            placeholder={isRTL ? '+966 5XX XXX XXXX' : '+966 5XX XXX XXXX'}
+                            placeholder={isRTL ? '+963 9XX XXX XXXX' : '+963 9XX XXX XXXX'}
                             className="ps-10 text-sm"
                             dir="ltr"
                           />

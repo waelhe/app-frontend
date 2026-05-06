@@ -33,10 +33,10 @@ interface FilterChip {
 }
 
 const PRICE_FILTERS: FilterChip[] = [
-  { id: 'price-1', labelAr: 'أقل من 500K', labelEn: 'Under 500K', group: 'price' },
-  { id: 'price-2', labelAr: '500K-1M', labelEn: '500K-1M', group: 'price' },
-  { id: 'price-3', labelAr: '1M-3M', labelEn: '1M-3M', group: 'price' },
-  { id: 'price-4', labelAr: '3M+', labelEn: '3M+', group: 'price' },
+  { id: 'price-1', labelAr: 'أقل من 50M', labelEn: 'Under 50M', group: 'price' },
+  { id: 'price-2', labelAr: '50M-200M', labelEn: '50M-200M', group: 'price' },
+  { id: 'price-3', labelAr: '200M-500M', labelEn: '200M-500M', group: 'price' },
+  { id: 'price-4', labelAr: '500M+', labelEn: '500M+', group: 'price' },
 ];
 
 const TYPE_FILTERS: FilterChip[] = [
@@ -56,7 +56,7 @@ const ROOMS_FILTERS: FilterChip[] = [
 const ALL_FILTERS = [...PRICE_FILTERS, ...TYPE_FILTERS, ...ROOMS_FILTERS];
 
 // ════════════════════════════════════════════════════════════════════
-// SVG Map — Riyadh Districts Visualization
+// SVG Map — Damascus & Surrounding Areas Visualization
 // ════════════════════════════════════════════════════════════════════
 
 interface MapDot {
@@ -84,24 +84,24 @@ function generateMapDots(listings: { id: string; category: string; price: number
     default: '#6b7280',
   };
 
-  // Riyadh district positions (approximate SVG coordinates)
+  // Damascus area district positions (approximate SVG coordinates)
   const districtPositions = [
-    { x: 50, y: 30 },   // North Riyadh
-    { x: 70, y: 25 },   // Al Olaya
-    { x: 35, y: 45 },   // Al Malqa
-    { x: 55, y: 50 },   // King Fahd District
-    { x: 80, y: 40 },   // Al Sulimaniyah
-    { x: 25, y: 60 },   // Al Nakheel
-    { x: 45, y: 70 },   // Al Mursalat
-    { x: 65, y: 65 },   // Al Rawdah
-    { x: 40, y: 35 },   // Al Aqiq
-    { x: 75, y: 55 },   // Al Murabba
-    { x: 20, y: 40 },   // Diriyah
-    { x: 85, y: 70 },   // Al Shifa
-    { x: 30, y: 75 },   // Al Naseem
-    { x: 60, y: 80 },   // Al Aziziyah
-    { x: 90, y: 30 },   // Al Rabwa
-    { x: 15, y: 25 },   // Al Hamra
+    { x: 45, y: 40 },   // المزة (Al-Mezzeh)
+    { x: 55, y: 35 },   // كفرسوسة (Kafr Souseh)
+    { x: 35, y: 45 },   // أبو رمانة (Abu Rummaneh)
+    { x: 60, y: 50 },   // البرامكة (Al-Baramkeh)
+    { x: 50, y: 55 },   // الميدان (Al-Midan)
+    { x: 40, y: 30 },   // المهاجرين (Al-Muhajireen)
+    { x: 65, y: 40 },   // الشعلان (Al-Shaalan)
+    { x: 30, y: 55 },   // كفرسوسة التحتا (Kafr Souseh Lower)
+    { x: 70, y: 55 },   // القصور (Al-Qusour)
+    { x: 75, y: 30 },   // الروضة (Al-Rawdah)
+    { x: 25, y: 35 },   // قدسيا (Qudsaya)
+    { x: 20, y: 50 },   // الديماس (Al-Dimas)
+    { x: 80, y: 45 },   // جرمانا (Jaramana)
+    { x: 55, y: 70 },   // داريا (Daraya)
+    { x: 85, y: 60 },   // الضاحية (Dahia)
+    { x: 50, y: 20 },   // بلودان (Bloudan)
   ];
 
   return listings.slice(0, 16).map((listing, i) => {
@@ -114,7 +114,7 @@ function generateMapDots(listings: { id: string; category: string; price: number
       x: pos.x + jitterX,
       y: pos.y + jitterY,
       color: categoryColors[listing.category] ?? categoryColors.default,
-      price: `ر.س ${(listing.price / 100).toLocaleString('ar-SA')}`,
+      price: `ل.س ${(listing.price / 100).toLocaleString('ar-SY')}`,
       category: listing.category,
       listingId: listing.id,
     };
@@ -177,7 +177,7 @@ function MapPlaceholder({
         <rect width="100" height="100" fill="url(#grid)" />
         <rect width="100" height="100" fill="url(#mainRoads)" />
 
-        {/* Ring Road (circular) */}
+        {/* Damascus Ring Road */}
         <ellipse
           cx="50"
           cy="52"
@@ -190,7 +190,7 @@ function MapPlaceholder({
           strokeDasharray="2 1"
         />
 
-        {/* King Fahd Road (vertical) */}
+        {/* Autostrad Road (vertical) */}
         <line
           x1="50"
           y1="5"
@@ -201,7 +201,7 @@ function MapPlaceholder({
           opacity="0.5"
         />
 
-        {/* Makkah Road (horizontal) */}
+        {/* Mezzeh Autostrad (horizontal) */}
         <line
           x1="5"
           y1="50"
@@ -214,16 +214,16 @@ function MapPlaceholder({
 
         {/* District labels */}
         <text x="50" y="18" textAnchor="middle" fontSize="2.2" fill="#6b7280" fontWeight="600" fontFamily="sans-serif">
-          شمال الرياض
+          شمال دمشق
         </text>
         <text x="20" y="52" textAnchor="middle" fontSize="2" fill="#9ca3af" fontFamily="sans-serif">
-          الدرعية
+          قدسيا
         </text>
         <text x="75" y="35" textAnchor="middle" fontSize="2" fill="#9ca3af" fontFamily="sans-serif">
-          العليا
+          المزة
         </text>
         <text x="50" y="85" textAnchor="middle" fontSize="2.2" fill="#6b7280" fontWeight="600" fontFamily="sans-serif">
-          جنوب الرياض
+          ريف دمشق
         </text>
 
         {/* Listing dots */}
@@ -566,13 +566,13 @@ export default function MapListSplitView() {
     return listings.filter((listing) => {
       // Price filter
       if (activePrice.length > 0) {
-        const priceSAR = listing.price / 100;
+        const priceSYP = listing.price / 100;
         const matchesPrice = activePrice.some((f) => {
           switch (f.id) {
-            case 'price-1': return priceSAR < 500_000;
-            case 'price-2': return priceSAR >= 500_000 && priceSAR < 1_000_000;
-            case 'price-3': return priceSAR >= 1_000_000 && priceSAR < 3_000_000;
-            case 'price-4': return priceSAR >= 3_000_000;
+            case 'price-1': return priceSYP < 50_000_000;
+            case 'price-2': return priceSYP >= 50_000_000 && priceSYP < 200_000_000;
+            case 'price-3': return priceSYP >= 200_000_000 && priceSYP < 500_000_000;
+            case 'price-4': return priceSYP >= 500_000_000;
             default: return true;
           }
         });
@@ -630,7 +630,7 @@ export default function MapListSplitView() {
       category: listing.category,
       price: listing.price,
       providerName: listing.providerName,
-      subtitle: tAr('الرياض', 'Riyadh'),
+      subtitle: tAr('دمشق', 'Damascus'),
       rating: 3.5 + (Math.sin(idx * 42.7) * 1.5),
       badgeText: tAr(
         ['شقة', 'فيلا', 'أرض', 'مكتب'][idx % 4],
@@ -655,8 +655,8 @@ export default function MapListSplitView() {
             </h2>
             <p className="text-xs text-gray-500">
               {tAr(
-                `${filteredListings.length} عقار متاح في الرياض`,
-                `${filteredListings.length} properties available in Riyadh`
+                `${filteredListings.length} عقار متاح في دمشق`,
+                `${filteredListings.length} properties available in Damascus`
               )}
             </p>
           </div>
@@ -817,7 +817,7 @@ export default function MapListSplitView() {
           <div className="h-full px-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-gray-900">
-                {tAr('خريطة الرياض', 'Riyadh Map')}
+                {tAr('خريطة دمشق', 'Damascus Map')}
               </h3>
               <button
                 onClick={() => setIsMapSheetOpen(false)}

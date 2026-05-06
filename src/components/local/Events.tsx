@@ -72,7 +72,7 @@ export default function Events() {
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return isArabic
-      ? d.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' })
+      ? d.toLocaleDateString('ar-SY', { month: 'short', day: 'numeric' })
       : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 

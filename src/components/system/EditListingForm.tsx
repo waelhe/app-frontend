@@ -158,22 +158,21 @@ const subCategoriesMap: Record<string, { value: string; labelAr: string; labelEn
 };
 
 const currencies = [
-  { value: 'SAR', label: 'ر.س (SAR)' },
+  { value: 'SYP', label: 'ل.س (SYP)' },
   { value: 'USD', label: '$ (USD)' },
   { value: 'EUR', label: '€ (EUR)' },
-  { value: 'AED', label: 'د.إ (AED)' },
 ];
 
 const locations = [
-  { value: 'riyadh', labelAr: 'الرياض', labelEn: 'Riyadh' },
-  { value: 'jeddah', labelAr: 'جدة', labelEn: 'Jeddah' },
-  { value: 'mecca', labelAr: 'مكة المكرمة', labelEn: 'Mecca' },
-  { value: 'medina', labelAr: 'المدينة المنورة', labelEn: 'Medina' },
-  { value: 'dammam', labelAr: 'الدمام', labelEn: 'Dammam' },
-  { value: 'khobar', labelAr: 'الخبر', labelEn: 'Khobar' },
-  { value: 'taif', labelAr: 'الطائف', labelEn: 'Taif' },
-  { value: 'tabuk', labelAr: 'تبوك', labelEn: 'Tabuk' },
-  { value: 'abha', labelAr: 'أبها', labelEn: 'Abha' },
+  { value: 'damascus', labelAr: 'دمشق', labelEn: 'Damascus' },
+  { value: 'aleppo', labelAr: 'حلب', labelEn: 'Aleppo' },
+  { value: 'homs', labelAr: 'حمص', labelEn: 'Homs' },
+  { value: 'hama', labelAr: 'حماة', labelEn: 'Hama' },
+  { value: 'latakia', labelAr: 'اللاذقية', labelEn: 'Latakia' },
+  { value: 'tartus', labelAr: 'طرطوس', labelEn: 'Tartus' },
+  { value: 'idlib', labelAr: 'إدلب', labelEn: 'Idlib' },
+  { value: 'deir-ez-zor', labelAr: 'دير الزور', labelEn: 'Deir ez-Zor' },
+  { value: 'daraa', labelAr: 'درعا', labelEn: 'Daraa' },
   { value: 'other', labelAr: 'أخرى', labelEn: 'Other' },
 ];
 
@@ -228,7 +227,7 @@ export function EditListingForm() {
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
   const [priceDisplay, setPriceDisplay] = useState('');
-  const [currency, setCurrency] = useState('SAR');
+  const [currency, setCurrency] = useState('SYP');
   const [negotiable, setNegotiable] = useState(false);
   const [discountPrice, setDiscountPrice] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -259,7 +258,7 @@ export function EditListingForm() {
     setDescription(listing.description ?? '');
     setCategory(listing.category);
     setPriceDisplay(centsToDisplay(listing.price));
-    setCurrency(listing.currency ?? 'SAR');
+    setCurrency(listing.currency ?? 'SYP');
     setFormError('');
     setHasChanges(false);
     setInitialValues({
@@ -267,7 +266,7 @@ export function EditListingForm() {
       description: listing.description ?? '',
       category: listing.category,
       priceDisplay: centsToDisplay(listing.price),
-      currency: listing.currency ?? 'SAR',
+      currency: listing.currency ?? 'SYP',
     });
   }
 
@@ -523,11 +522,11 @@ export function EditListingForm() {
             </div>
             <div className="text-end">
               <div className="text-xl font-extrabold">
-                {priceDisplay ? `${priceDisplay} ${isRTL ? 'ر.س' : 'SAR'}` : '—'}
+                {priceDisplay ? `${priceDisplay} ${isRTL ? 'ل.س' : 'SYP'}` : '—'}
               </div>
               {discountPrice && (
                 <div className="text-xs text-white/60 line-through">
-                  {discountPrice} {isRTL ? 'ر.س' : 'SAR'}
+                  {discountPrice} {isRTL ? 'ل.س' : 'SYP'}
                 </div>
               )}
             </div>
@@ -698,7 +697,7 @@ export function EditListingForm() {
                     dir="ltr"
                   />
                   <span className="absolute top-1/2 -translate-y-1/2 text-sm text-gray-400 end-3">
-                    {isRTL ? 'ر.س' : 'SAR'}
+                    {isRTL ? 'ل.س' : 'SYP'}
                   </span>
                 </div>
               </div>
@@ -1129,7 +1128,7 @@ export function EditListingForm() {
               </span>
               <span>
                 {isRTL
-                  ? `آخر تحديث: ${new Date(listing.updatedAt).toLocaleDateString('ar-SA', {
+                  ? `آخر تحديث: ${new Date(listing.updatedAt).toLocaleDateString('ar-SY', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',

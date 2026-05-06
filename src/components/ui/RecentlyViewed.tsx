@@ -154,7 +154,7 @@ export function RecentlyViewed() {
                       </h4>
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-red-500" dir="ltr">
-                          {item.price.toLocaleString()} ر.س
+                          {item.price.toLocaleString()} ل.س
                         </span>
                         <span className="text-[9px] text-gray-400 flex items-center gap-0.5">
                           <Clock className="h-2.5 w-2.5" />
@@ -188,7 +188,7 @@ function getTimeAgo(dateStr: string, isRTL: boolean): string {
     if (diffMin < 60) return isRTL ? `منذ ${diffMin} دقيقة` : `${diffMin}m ago`;
     if (diffHour < 24) return isRTL ? `منذ ${diffHour} ساعة` : `${diffHour}h ago`;
     if (diffDay < 7) return isRTL ? `منذ ${diffDay} يوم` : `${diffDay}d ago`;
-    return date.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', { month: 'short', day: 'numeric' });
   } catch {
     return '';
   }

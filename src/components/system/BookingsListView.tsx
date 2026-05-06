@@ -138,7 +138,7 @@ function formatPrice(cents: number, currency: string): string {
 function formatDate(iso: string, isRTL: boolean): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+    return d.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -151,7 +151,7 @@ function formatDate(iso: string, isRTL: boolean): string {
 function formatTime(iso: string, isRTL: boolean): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleTimeString(isRTL ? 'ar-SA' : 'en-US', {
+    return d.toLocaleTimeString(isRTL ? 'ar-SY' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });

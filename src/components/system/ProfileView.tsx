@@ -93,7 +93,7 @@ function getRoleLabel(role: string | undefined, isRTL: boolean): string {
 function formatDate(iso: string, isRTL: boolean): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+    return d.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

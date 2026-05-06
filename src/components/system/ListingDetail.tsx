@@ -253,7 +253,7 @@ function getCategorySpecs(category: string, listing: ListingResponse, isRTL: boo
     case 'jobs':
       specs.push(
         { label: isRTL ? 'نوع الوظيفة' : 'Job Type', value: isRTL ? 'دوام كامل' : 'Full-time' },
-        { label: isRTL ? 'الراتب' : 'Salary Range', value: isRTL ? '٥,٠٠٠ - ٨,٠٠٠ ر.س' : '5,000 - 8,000 SAR' },
+        { label: isRTL ? 'الراتب' : 'Salary Range', value: isRTL ? '٥,٠٠٠ - ٨,٠٠٠ ل.س' : '5,000 - 8,000 SYP' },
         { label: isRTL ? 'المتطلبات' : 'Requirements', value: isRTL ? 'خبرة ٣ سنوات' : '3 years exp.' },
         { label: isRTL ? 'المزايا' : 'Benefits', value: isRTL ? 'تأمين صحي + نقل' : 'Health Insurance + Transport' },
         { label: isRTL ? 'مكان العمل' : 'Workplace', value: isRTL ? 'مكتب - قدسيا' : 'Office - Qudsaya' },
@@ -266,8 +266,8 @@ function getCategorySpecs(category: string, listing: ListingResponse, isRTL: boo
   // Always add generic specs
   specs.push(
     { label: isRTL ? 'الفئة' : 'Category', value: isRTL ? (categoryLabelsAr[category] ?? category) : (categoryLabelsEn[category] ?? category) },
-    { label: isRTL ? 'السعر' : 'Price', value: `${listing.price.toLocaleString(isRTL ? 'ar-SA' : 'en-US')} ${listing.currency === 'SAR' ? 'ر.س' : listing.currency}` },
-    { label: isRTL ? 'تاريخ النشر' : 'Date Posted', value: new Date(listing.createdAt).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) },
+    { label: isRTL ? 'السعر' : 'Price', value: `${listing.price.toLocaleString(isRTL ? 'ar-SY' : 'en-US')} ${listing.currency === 'SYP' ? 'ل.س' : listing.currency}` },
+    { label: isRTL ? 'تاريخ النشر' : 'Date Posted', value: new Date(listing.createdAt).toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) },
     { label: isRTL ? 'الموقع' : 'Location', value: isRTL ? 'قدسيا، دمشق' : 'Qudsaya, Damascus' },
   );
 
@@ -775,15 +775,15 @@ export function ListingDetail() {
 
   const formatPrice = useCallback(
     (price: number, currency: string) => {
-      const formatted = price.toLocaleString(isRTL ? 'ar-SA' : 'en-US');
-      return currency === 'SAR' ? `${formatted} ر.س` : `${formatted} ${currency}`;
+      const formatted = price.toLocaleString(isRTL ? 'ar-SY' : 'en-US');
+      return currency === 'SYP' ? `${formatted} ل.س` : `${formatted} ${currency}`;
     },
     [isRTL]
   );
 
   const formatDate = useCallback(
     (dateStr: string, format: 'full' | 'short' = 'short') => {
-      const locale = isRTL ? 'ar-SA' : 'en-US';
+      const locale = isRTL ? 'ar-SY' : 'en-US';
       if (format === 'full') {
         return new Date(dateStr).toLocaleDateString(locale, {
           year: 'numeric',

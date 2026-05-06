@@ -71,7 +71,7 @@ function getDateLabel(date: Date, isRTL: boolean): string {
   if (msgDate.getTime() === yesterday.getTime()) {
     return isRTL ? 'أمس' : 'Yesterday';
   }
-  return date.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+  return date.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
     month: 'short',
     day: 'numeric',
   });
@@ -495,7 +495,7 @@ export function MessagingView() {
               const { msg, isSent } = item;
               const isSystem = isSystemMessage(msg.content);
               const msgTime = new Date(msg.createdAt).toLocaleTimeString(
-                isRTL ? 'ar-SA' : 'en-US',
+                isRTL ? 'ar-SY' : 'en-US',
                 { hour: '2-digit', minute: '2-digit' }
               );
 

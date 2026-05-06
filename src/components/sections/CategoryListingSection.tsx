@@ -48,7 +48,7 @@ export interface CategoryListingSectionProps {
 // ── Helper: Format price ───────────────────────────────────────────
 
 function formatPriceLocal(price: number, language: 'ar' | 'en'): string {
-  const formatted = price.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US');
+  const formatted = price.toLocaleString(language === 'ar' ? 'ar-SY' : 'en-US');
   return language === 'ar' ? `${formatted} ل.س` : `${formatted} SYP`;
 }
 

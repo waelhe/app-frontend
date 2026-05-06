@@ -313,7 +313,7 @@ function TrendingListingsSection() {
                     </div>
                     <CardContent className="p-2.5 space-y-1.5">
                       <h4 className="text-xs font-semibold text-gray-900 line-clamp-1">{listing.title}</h4>
-                      <span className="text-xs font-bold text-red-500" dir="ltr">{listing.price.toLocaleString()} {t('ر.س', 'SAR')}</span>
+                      <span className="text-xs font-bold text-red-500" dir="ltr">{listing.price.toLocaleString()} {t('ل.س', 'SYP')}</span>
                     </CardContent>
                   </Card>
                 </div>
@@ -532,7 +532,16 @@ const subCategoriesMap: Record<string, { value: string; labelAr: string; labelEn
   beauty: [{ value: 'salon', labelAr: 'صالون', labelEn: 'Salon' }, { value: 'spa', labelAr: 'سبا', labelEn: 'Spa' }, { value: 'skincare', labelAr: 'عناية بالبشرة', labelEn: 'Skincare' }, { value: 'haircare', labelAr: 'عناية بالشعر', labelEn: 'Haircare' }, { value: 'makeup', labelAr: 'مكياج', labelEn: 'Makeup' }],
 };
 const predefinedLocations = [
-  { value: 'riyadh', labelAr: 'الرياض', labelEn: 'Riyadh' }, { value: 'jeddah', labelAr: 'جدة', labelEn: 'Jeddah' }, { value: 'mecca', labelAr: 'مكة المكرمة', labelEn: 'Mecca' }, { value: 'medina', labelAr: 'المدينة المنورة', labelEn: 'Medina' }, { value: 'dammam', labelAr: 'الدمام', labelEn: 'Dammam' }, { value: 'khobar', labelAr: 'الخبر', labelEn: 'Khobar' }, { value: 'taif', labelAr: 'الطائف', labelEn: 'Taif' }, { value: 'tabuk', labelAr: 'تبوك', labelEn: 'Tabuk' }, { value: 'abha', labelAr: 'أبها', labelEn: 'Abha' }, { value: 'other', labelAr: 'أخرى', labelEn: 'Other' },
+  { value: 'damascus', labelAr: 'دمشق', labelEn: 'Damascus' },
+  { value: 'aleppo', labelAr: 'حلب', labelEn: 'Aleppo' },
+  { value: 'homs', labelAr: 'حمص', labelEn: 'Homs' },
+  { value: 'hama', labelAr: 'حماة', labelEn: 'Hama' },
+  { value: 'latakia', labelAr: 'اللاذقية', labelEn: 'Latakia' },
+  { value: 'tartus', labelAr: 'طرطوس', labelEn: 'Tartus' },
+  { value: 'idlib', labelAr: 'إدلب', labelEn: 'Idlib' },
+  { value: 'deir-ez-zor', labelAr: 'دير الزور', labelEn: 'Deir ez-Zor' },
+  { value: 'daraa', labelAr: 'درعا', labelEn: 'Daraa' },
+  { value: 'other', labelAr: 'أخرى', labelEn: 'Other' },
 ];
 const weekDays = [{ value: 'sat', labelAr: 'السبت', labelEn: 'Sat' }, { value: 'sun', labelAr: 'الأحد', labelEn: 'Sun' }, { value: 'mon', labelAr: 'الاثنين', labelEn: 'Mon' }, { value: 'tue', labelAr: 'الثلاثاء', labelEn: 'Tue' }, { value: 'wed', labelAr: 'الأربعاء', labelEn: 'Wed' }, { value: 'thu', labelAr: 'الخميس', labelEn: 'Thu' }, { value: 'fri', labelAr: 'الجمعة', labelEn: 'Fri' }];
 
@@ -545,7 +554,7 @@ function CreateListingForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [currency, setCurrency] = useState('SAR');
+  const [currency, setCurrency] = useState('SYP');
   const [isNegotiable, setIsNegotiable] = useState(false);
   const [condition, setCondition] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -635,7 +644,7 @@ function CreateListingForm() {
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label htmlFor="listing-title">{t('العنوان', 'Title')} <span className="text-red-500">*</span></Label><Input id="listing-title" value={title} onChange={(e) => setTitle(e.target.value.slice(0, 120))} placeholder={t('أدخل عنوان الإعلان', 'Enter listing title')} maxLength={120} required /><div className="flex justify-between items-center"><p className="text-xs text-gray-400">{t('عنوان واضح يجذب المزيد من المهتمين', 'A clear title attracts more interest')}</p><p className={`text-xs ${title.length > 100 ? 'text-red-500' : 'text-gray-400'}`}>{title.length}/120</p></div></div>
               <div className="space-y-2"><Label htmlFor="listing-desc">{t('الوصف', 'Description')}</Label><Textarea id="listing-desc" value={description} onChange={(e) => setDescription(e.target.value.slice(0, 2000))} placeholder={t('أضف وصفاً تفصيلياً', 'Add a detailed description')} className="min-h-28 resize-none" maxLength={2000} /><div className="flex justify-between"><p className="text-xs text-gray-400">{t('يمكنك ذكر المواصفات والمميزات', 'Include specs and highlights')}</p><p className={`text-xs ${description.length > 1800 ? 'text-red-500' : 'text-gray-400'}`}>{description.length}/2000</p></div></div>
-              <div className="space-y-2"><Label htmlFor="listing-price">{t('السعر', 'Price')} <span className="text-red-500">*</span></Label><div className="flex gap-2"><div className="relative flex-1"><Input id="listing-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t('أدخل السعر', 'Enter price')} dir="ltr" className="text-left" min="0" step="0.01" required /></div><Select value={currency} onValueChange={setCurrency}><SelectTrigger className="w-24"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="SAR">SAR</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent></Select></div></div>
+              <div className="space-y-2"><Label htmlFor="listing-price">{t('السعر', 'Price')} <span className="text-red-500">*</span></Label><div className="flex gap-2"><div className="relative flex-1"><Input id="listing-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t('أدخل السعر', 'Enter price')} dir="ltr" className="text-left" min="0" step="0.01" required /></div><Select value={currency} onValueChange={setCurrency}><SelectTrigger className="w-24"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="SYP">SYP</SelectItem><SelectItem value="USD">USD</SelectItem></SelectContent></Select></div></div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50"><Switch checked={isNegotiable} onCheckedChange={setIsNegotiable} className="data-[state=checked]:bg-red-500" /><div><Label className="text-sm font-medium cursor-pointer">{t('قابل للتفاوض', 'Negotiable')}</Label><p className="text-xs text-gray-400">{t('يمكن للمشترين التفاوض على السعر', 'Buyers can negotiate the price')}</p></div></div>
               {conditionApplicable && <div className="space-y-2"><Label>{t('الحالة', 'Condition')}</Label><div className="flex gap-2">{[{ value: 'new', labelAr: 'جديد', labelEn: 'New' }, { value: 'used', labelAr: 'مستعمل', labelEn: 'Used' }, { value: 'refurbished', labelAr: 'مجددد', labelEn: 'Refurbished' }].map((cond) => <button key={cond.value} type="button" onClick={() => setCondition(cond.value)} className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 ${condition === cond.value ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t(cond.labelAr, cond.labelEn)}</button>)}</div></div>}
               <div className="space-y-2"><Label htmlFor="listing-phone" className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-gray-400" />{t('رقم الهاتف', 'Contact Phone')}</Label><Input id="listing-phone" type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="05XXXXXXXX" dir="ltr" className="text-left" /></div>

@@ -91,7 +91,7 @@ export default function CategoryCTACards() {
         </div>
 
         {/* Cards Grid — Zillow/Villow Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-5">
           {CTA_CARDS.map((card, index) => {
             const Icon = card.icon;
             return (
@@ -107,7 +107,7 @@ export default function CategoryCTACards() {
               >
                 <div className="relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300">
                   {/* Image */}
-                  <div className="relative h-48 md:h-56 overflow-hidden">
+                  <div className="relative h-36 sm:h-44 md:h-56 overflow-hidden">
                     <Image
                       src={card.image}
                       alt={t(card.titleAr, card.titleEn)}
@@ -124,16 +124,16 @@ export default function CategoryCTACards() {
                   </div>
 
                   {/* Content */}
-                  <div className="relative p-4 bg-white">
-                    <h3 className="text-base font-bold text-gray-900 mb-1">
+                  <div className="relative p-3 sm:p-4 bg-white">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">
                       {t(card.titleAr, card.titleEn)}
                     </h3>
-                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                    <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-2">
                       {t(card.descAr, card.descEn)}
                     </p>
 
                     {/* CTA Button */}
-                    <div className="mt-3 flex items-center gap-1.5">
+                    <div className="mt-2 sm:mt-3 flex items-center gap-1.5">
                       <span
                         className="text-xs font-semibold transition-colors"
                         style={{ color: card.color }}

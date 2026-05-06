@@ -182,7 +182,7 @@ export function FavoritesView() {
   const formatAddedDate = (iso: string) => {
     try {
       const d = new Date(iso);
-      return d.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+      return d.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
         month: 'short',
         day: 'numeric',
       });
@@ -449,7 +449,7 @@ export function FavoritesView() {
                               <span className="text-sm font-bold text-red-500">
                                 {item.price.toLocaleString()}
                               </span>
-                              <span className="text-[10px] text-gray-400"> SAR</span>
+                              <span className="text-[10px] text-gray-400"> SYP</span>
                             </div>
                           </div>
                           <div className="flex items-center justify-between">

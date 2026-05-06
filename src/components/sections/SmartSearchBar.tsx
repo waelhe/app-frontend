@@ -28,31 +28,32 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 // ── Classification Data ────────────────────────────────────────────
 
-/** Saudi regions / major cities */
+/** Syrian regions / major cities */
 const REGIONS = [
-  { ar: 'الرياض', en: 'Riyadh' },
-  { ar: 'جدة', en: 'Jeddah' },
-  { ar: 'مكة', en: 'Mecca' },
-  { ar: 'المدينة', en: 'Medina' },
-  { ar: 'الدمام', en: 'Dammam' },
-  { ar: 'الخبر', en: 'Khobar' },
-  { ar: 'الطائف', en: 'Taif' },
-  { ar: 'تبوك', en: 'Tabuk' },
-  { ar: 'أبها', en: 'Abha' },
+  { ar: 'دمشق', en: 'Damascus' },
+  { ar: 'حلب', en: 'Aleppo' },
+  { ar: 'حمص', en: 'Homs' },
+  { ar: 'حماة', en: 'Hama' },
+  { ar: 'اللاذقية', en: 'Latakia' },
+  { ar: 'طرطوس', en: 'Tartus' },
+  { ar: 'إدلب', en: 'Idlib' },
+  { ar: 'دير الزور', en: 'Deir ez-Zor' },
+  { ar: 'الرقة', en: 'Raqqa' },
+  { ar: 'درعا', en: 'Daraa' },
 ];
 
-/** Riyadh districts / neighborhoods */
+/** Damascus districts / neighborhoods */
 const DISTRICTS = [
-  { ar: 'الملز', en: 'Al-Malaz' },
-  { ar: 'العليا', en: 'Al-Olaya' },
-  { ar: 'السليمانية', en: 'Al-Sulaimaniyah' },
-  { ar: 'النرجس', en: 'Al-Narjis' },
-  { ar: 'الياسمين', en: 'Al-Yasmin' },
+  { ar: 'المزة', en: 'Al-Mezzeh' },
+  { ar: 'كفرسوسة', en: 'Kafr Souseh' },
+  { ar: 'البرامكة', en: 'Al-Baramkeh' },
+  { ar: 'أبو رمانة', en: 'Abu Rummaneh' },
+  { ar: 'الميدان', en: 'Al-Midan' },
+  { ar: 'المهاجرين', en: 'Al-Muhajireen' },
+  { ar: 'الشعلان', en: 'Al-Shaalan' },
+  { ar: 'القصور', en: 'Al-Qusour' },
   { ar: 'الروضة', en: 'Al-Rawdah' },
-  { ar: 'السلامة', en: 'Al-Salamah' },
-  { ar: 'الحمراء', en: 'Al-Hamra' },
-  { ar: 'الشميسي', en: 'Al-Shemaisi' },
-  { ar: 'المرسلات', en: 'Al-Mursalat' },
+  { ar: 'قدسيا', en: 'Qudsaya' },
 ];
 
 /** Category keywords mapping */
@@ -578,9 +579,9 @@ export default function SmartSearchBar() {
               {!query.trim() && recentSearches.length === 0 && (
                 <CommandGroup heading={tAr('بحث سريع', 'Quick Search')}>
                   {[
-                    { ar: 'عقارات الرياض', en: 'Riyadh Real Estate', type: 'category' as ClassificationType, categoryId: 'real-estate' },
-                    { ar: 'سيارات جدة', en: 'Jeddah Cars', type: 'category' as ClassificationType, categoryId: 'cars' },
-                    { ar: 'وظائف الدمام', en: 'Dammam Jobs', type: 'category' as ClassificationType, categoryId: 'jobs' },
+                    { ar: 'عقارات دمشق', en: 'Damascus Real Estate', type: 'category' as ClassificationType, categoryId: 'real-estate' },
+                    { ar: 'سيارات حلب', en: 'Aleppo Cars', type: 'category' as ClassificationType, categoryId: 'cars' },
+                    { ar: 'وظائف حمص', en: 'Homs Jobs', type: 'category' as ClassificationType, categoryId: 'jobs' },
                     { ar: 'خدمات سباكة', en: 'Plumbing Services', type: 'category' as ClassificationType, categoryId: 'services' },
                   ].map((quick, idx) => (
                     <CommandItem

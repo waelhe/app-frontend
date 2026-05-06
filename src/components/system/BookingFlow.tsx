@@ -269,7 +269,7 @@ export function BookingFlow() {
 
   const formatDate = useCallback(
     (date: Date) => {
-      return date.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+      return date.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -453,7 +453,7 @@ export function BookingFlow() {
                 <h2 className="text-xl font-bold">{listing?.title ?? (isRTL ? 'خدمة' : 'Service')}</h2>
                 <div className="mt-2 flex items-center gap-3">
                   <span className="text-2xl font-extrabold">
-                    {listing ? `${formatPrice(listing.price)} ${isRTL ? 'ر.س' : 'SAR'}` : '—'}
+                    {listing ? `${formatPrice(listing.price)} ${isRTL ? 'ل.س' : 'SYP'}` : '—'}
                   </span>
                   <span className="text-sm text-white/70">
                     {isRTL ? 'السعر الأساسي' : 'Base price'}
@@ -526,7 +526,7 @@ export function BookingFlow() {
                             {formatPrice(price)}
                           </div>
                           <div className="text-[10px] text-gray-400">
-                            {isRTL ? 'ر.س' : 'SAR'}
+                            {isRTL ? 'ل.س' : 'SYP'}
                           </div>
                         </div>
                       </div>
@@ -627,7 +627,7 @@ export function BookingFlow() {
                     </Button>
                     <span className="min-w-[8rem] text-center text-sm font-medium">
                       {new Date(calendarMonth.year, calendarMonth.month).toLocaleDateString(
-                        isRTL ? 'ar-SA' : 'en-US',
+                        isRTL ? 'ar-SY' : 'en-US',
                         { month: 'long', year: 'numeric' },
                       )}
                     </span>
@@ -901,7 +901,7 @@ export function BookingFlow() {
                     </div>
                   </div>
                   <span className="text-sm font-semibold text-gray-900">
-                    {formatPrice(subtotal)} {isRTL ? 'ر.س' : 'SAR'}
+                    {formatPrice(subtotal)} {isRTL ? 'ل.س' : 'SYP'}
                   </span>
                 </div>
 
@@ -917,7 +917,7 @@ export function BookingFlow() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500">{isRTL ? 'المجموع الفرعي' : 'Subtotal'}</span>
                   <span className="font-medium text-gray-700">
-                    {formatPrice(subtotal)} {isRTL ? 'ر.س' : 'SAR'}
+                    {formatPrice(subtotal)} {isRTL ? 'ل.س' : 'SYP'}
                   </span>
                 </div>
 
@@ -927,7 +927,7 @@ export function BookingFlow() {
                     {isRTL ? 'رسوم الخدمة (5%)' : 'Service Fee (5%)'}
                   </span>
                   <span className="font-medium text-gray-700">
-                    {formatPrice(serviceFee)} {isRTL ? 'ر.س' : 'SAR'}
+                    {formatPrice(serviceFee)} {isRTL ? 'ل.س' : 'SYP'}
                   </span>
                 </div>
 
@@ -938,7 +938,7 @@ export function BookingFlow() {
                       <Tag className="h-3.5 w-3.5" />
                       {isRTL ? 'خصم (10%)' : 'Discount (10%)'}
                     </span>
-                    <span className="font-medium">-{formatPrice(discount)} {isRTL ? 'ر.س' : 'SAR'}</span>
+                    <span className="font-medium">-{formatPrice(discount)} {isRTL ? 'ل.س' : 'SYP'}</span>
                   </div>
                 )}
 
@@ -950,7 +950,7 @@ export function BookingFlow() {
                     {isRTL ? 'الإجمالي' : 'Total'}
                   </span>
                   <span className="text-xl font-extrabold text-red-500">
-                    {formatPrice(total)} {isRTL ? 'ر.س' : 'SAR'}
+                    {formatPrice(total)} {isRTL ? 'ل.س' : 'SYP'}
                   </span>
                 </div>
               </CardContent>
@@ -1163,7 +1163,7 @@ export function BookingFlow() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">{isRTL ? 'التاريخ' : 'Date'}</span>
                       <span className="font-medium text-gray-800">
-                        {new Date(selectedDate).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+                        {new Date(selectedDate).toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
                           month: 'short',
                           day: 'numeric',
                         })}
@@ -1179,7 +1179,7 @@ export function BookingFlow() {
                   <div className="flex justify-between">
                     <span className="text-gray-500">{isRTL ? 'المجموع' : 'Total'}</span>
                     <span className="font-bold text-red-500">
-                      {formatPrice(total)} {isRTL ? 'ر.س' : 'SAR'}
+                      {formatPrice(total)} {isRTL ? 'ل.س' : 'SYP'}
                     </span>
                   </div>
                 </CardContent>

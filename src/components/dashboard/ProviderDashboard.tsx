@@ -137,7 +137,7 @@ const monthlyEarnings = [
 function formatDate(iso: string, isRTL: boolean): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+    return d.toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -415,7 +415,7 @@ export function ProviderDashboard() {
                   </div>
                   <CardContent className="p-3 space-y-2">
                     <h4 className="text-sm font-semibold text-gray-900 truncate">{listing.title}</h4>
-                    <p className="text-sm font-bold text-red-500" dir="ltr">{listing.price.toLocaleString()} SAR</p>
+                    <p className="text-sm font-bold text-red-500" dir="ltr">{listing.price.toLocaleString()} SYP</p>
                     <div className="flex items-center gap-2 text-[10px] text-gray-400">
                       <span className="flex items-center gap-0.5">
                         <Eye className="h-3 w-3" /> {Math.floor(Math.random() * 200 + 50)}

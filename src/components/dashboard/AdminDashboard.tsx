@@ -122,7 +122,7 @@ function timeAgo(iso: string, isRTL: boolean): string {
   if (mins < 60) return isRTL ? `منذ ${mins} دقيقة` : `${mins}m ago`;
   if (hours < 24) return isRTL ? `منذ ${hours} ساعة` : `${hours}h ago`;
   if (days < 30) return isRTL ? `منذ ${days} يوم` : `${days}d ago`;
-  return new Date(iso).toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(isRTL ? 'ar-SY' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
 // ── Recent Activity Mock ──────────────────────────────────────────
@@ -332,7 +332,7 @@ export function AdminDashboard() {
     },
     {
       label: isRTL ? 'الإيرادات' : 'Revenue',
-      value: `${(revenue / 100).toLocaleString()} ${isRTL ? 'ر.س' : 'SAR'}`,
+      value: `${(revenue / 100).toLocaleString()} ${isRTL ? 'ل.س' : 'SYP'}`,
       icon: <DollarSign className="h-5 w-5 text-white" />,
       color: 'from-amber-500 to-amber-600',
       trend: '+5%',
@@ -739,7 +739,7 @@ export function AdminDashboard() {
                               </Badge>
                             </TableCell>
                             <TableCell dir="ltr" className="text-sm">
-                              {listing.price.toLocaleString()} SAR
+                              {listing.price.toLocaleString()} SYP
                             </TableCell>
                             <TableCell>
                               <Badge className={`text-[10px] ${listingStatusColors[listing.status] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -903,7 +903,7 @@ export function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-xs text-gray-500">
                             {new Date(payment.createdAt).toLocaleDateString(
-                              isRTL ? 'ar-SA' : 'en-US',
+                              isRTL ? 'ar-SY' : 'en-US',
                               { month: 'short', day: 'numeric' }
                             )}
                           </TableCell>

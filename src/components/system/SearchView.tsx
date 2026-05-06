@@ -155,10 +155,10 @@ const sortOptions = [
 // ── Location options ───────────────────────────────────────────────
 const locationOptions = [
   { value: 'all', labelAr: 'كل المواقع', labelEn: 'All Locations' },
-  { value: 'riyadh', labelAr: 'الرياض', labelEn: 'Riyadh' },
-  { value: 'jeddah', labelAr: 'جدة', labelEn: 'Jeddah' },
-  { value: 'mecca', labelAr: 'مكة', labelEn: 'Mecca' },
-  { value: 'dammam', labelAr: 'الدمام', labelEn: 'Dammam' },
+  { value: 'damascus', labelAr: 'دمشق', labelEn: 'Damascus' },
+  { value: 'aleppo', labelAr: 'حلب', labelEn: 'Aleppo' },
+  { value: 'homs', labelAr: 'حمص', labelEn: 'Homs' },
+  { value: 'lattakia', labelAr: 'اللاذقية', labelEn: 'Lattakia' },
 ];
 
 // ── Enhanced Listing Card ──────────────────────────────────────────
@@ -201,7 +201,7 @@ function ListingCard({
           {/* Price */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-red-500" dir="ltr">
-              {listing.price.toLocaleString()} {t('ر.س', 'SAR')}
+              {listing.price.toLocaleString()} {t('ل.س', 'SYP')}
             </span>
           </div>
 
@@ -223,7 +223,7 @@ function ListingCard({
           {/* Location chip */}
           <div className="flex items-center gap-1">
             <MapPin className="h-3 w-3 text-gray-400" />
-            <span className="text-[10px] text-gray-500">{t('الرياض', 'Riyadh')}</span>
+            <span className="text-[10px] text-gray-500">{t('دمشق', 'Damascus')}</span>
           </div>
 
           {/* View button */}

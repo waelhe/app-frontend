@@ -41,7 +41,7 @@ const placeholderGradients = [
 
 function formatPrice(price: number, currency: string = 'SYP'): string {
   if (currency === 'SYP') {
-    return `${price.toLocaleString('ar-SA')} ل.س`;
+    return `${price.toLocaleString('ar-SY')} ل.س`;
   }
   return `${currency} ${price.toLocaleString()}`;
 }
