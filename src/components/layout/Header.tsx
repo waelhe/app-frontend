@@ -407,8 +407,11 @@ export function Header() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-      if (currentScrollY > lastScrollYRef.current && currentScrollY > 80) {
+      const scrollingDown = currentScrollY > lastScrollYRef.current && currentScrollY > 80
+      if (scrollingDown) {
         setIsScrollingDown(true)
+        // Close search popover when scrolling down
+        if (smartOpen) setSmartOpen(false)
       } else {
         setIsScrollingDown(false)
       }
@@ -420,7 +423,7 @@ export function Header() {
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [hoveredCategory])
+  }, [hoveredCategory, smartOpen])
 
   // ── Backend health check ──
   useEffect(() => {
@@ -954,9 +957,11 @@ export function Header() {
         </div>
       )}
 
-      {/* ── Row 3: Smart Search Bar (integrated, no gap) ── */}
-      <div className="border-t border-gray-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-1.5">
+      {/* ── Row 3: Smart Search Bar (collapses on scroll like category icons) ── */}
+      <div className={`border-t border-gray-100 transition-all duration-300 overflow-hidden ${
+        isScrollingDown ? 'max-h-0 opacity-0 py-0 border-t-0' : 'max-h-20 opacity-100 py-1.5'
+      }`}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Popover open={smartOpen} onOpenChange={handleSmartOpenChange}>
             <PopoverTrigger asChild>
               <div
