@@ -864,3 +864,32 @@ Stage Summary:
   10. ✅ Category CTA Cards (CategoryCTACards.tsx - already existed)
 - New files: MapListSplitView.tsx, SmartSearchBar.tsx, ListingDetailSheet.tsx, PriceMapMarker.tsx, searchFilterStore.ts
 - Modified files: HomePage.tsx, favoritesStore.ts
+
+---
+Task ID: 9
+Agent: Main
+Task: Fix empty space below header icon bar and below search bar - invisible area with search engine focus
+
+Work Log:
+- Identified root cause: SmartSearchBar wrapper had `sticky top-16` (64px) but actual header height was ~130-163px depending on viewport and scroll state
+- When scrolling, SmartSearchBar stuck at 64px from top, which was BEHIND the header (130-163px tall, z-50 > z-30), creating an invisible interactive area that triggered search focus
+- Added `headerRef` to Header component with ResizeObserver to dynamically track and set `--header-height` CSS variable
+- Changed SmartSearchBar wrapper from `sticky top-16` to `style={{ top: 'var(--header-height, 130px)' }}` for dynamic sticky positioning
+- Updated BackendStatusBanner to also use `--header-height` CSS variable instead of hardcoded `top-16`
+- Added `--header-height: 130px` default to `:root` in globals.css for initial render before JS
+- Changed SmartSearchBar wrapper styling: removed `bg-white/95 backdrop-blur-md border-b shadow-sm` (was creating visual gap), replaced with `bg-white` only
+- Added thin `h-px bg-gray-100` separator at bottom of SmartSearchBar wrapper
+- Reduced padding in SmartSearchBar wrapper: `py-2` → `pt-1 pb-0.5`, `pb-2` → `pb-1`
+- Reduced SmartSearchBar input padding: `py-3.5` → `py-2.5`
+- Fixed nested `<main>` tags: changed inner `<main>` to `<div>` in HomePage.tsx
+- Verified with VLM analysis: mobile shows no gap between header and search bar, sticky behavior works correctly on scroll
+- Verified with JavaScript measurement: gap = 0px on both mobile and desktop, on both initial load and after scroll
+- Lint: 0 errors
+
+Stage Summary:
+- SmartSearchBar sticky positioning fixed from hardcoded top-16 (64px) to dynamic CSS variable
+- Header height tracked via ResizeObserver and exposed as --header-height CSS variable
+- Invisible "search engine focus" area eliminated - SmartSearchBar now properly sticks below header
+- Visual gap removed - search bar is now flush against header with no separation
+- BackendStatusBanner also updated to use dynamic header height
+- Nested main tags fixed

@@ -211,9 +211,27 @@ export function Header() {
   const locationRef = useRef<HTMLDivElement>(null)
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const lastScrollYRef = useRef(0)
+  const headerRef = useRef<HTMLElement>(null)
 
   // Helper: translate using tAr
   const tr = (ar: string, en: string) => tAr(ar, en)
+
+  // ── Track header height for SmartSearchBar sticky positioning ───
+
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+
+    const updateHeight = () => {
+      const height = header.offsetHeight
+      document.documentElement.style.setProperty('--header-height', `${height}px`)
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [isScrollingDown])
 
   // ── Scroll behavior ──────────────────────────────────────────────
 
@@ -514,6 +532,7 @@ export function Header() {
 
   return (
     <header
+      ref={headerRef}
       className={`sticky top-0 z-50 bg-white transition-all duration-300 relative ${
         isScrolled ? 'shadow-md' : 'shadow-sm'
       }`}

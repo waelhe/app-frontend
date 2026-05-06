@@ -55,11 +55,12 @@ export function BackendStatusBanner() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className={`sticky top-16 z-40 px-4 py-2 text-center text-sm font-medium ${
+        className={`sticky z-40 px-4 py-2 text-center text-sm font-medium ${
           status === 'offline'
             ? 'bg-amber-50 text-amber-800 border-b border-amber-200'
             : 'bg-orange-50 text-orange-800 border-b border-orange-200'
         }`}
+        style={{ top: 'var(--header-height, 130px)' }}
       >
         <div className="flex items-center justify-center gap-2">
           {status === 'offline' ? (

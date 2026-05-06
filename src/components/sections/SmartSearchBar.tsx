@@ -376,7 +376,7 @@ export default function SmartSearchBar() {
               }}
               placeholder={tAr('ابحث في نبض...', 'Search Nabd...')}
               className="
-                flex-1 py-3.5 bg-transparent text-sm text-gray-900 placeholder:text-gray-400
+                flex-1 py-2.5 bg-transparent text-sm text-gray-900 placeholder:text-gray-400
                 outline-none
               "
               aria-label={tAr('البحث', 'Search')}
